@@ -1,4 +1,5 @@
 {
+  "com.netflix.nebula:nebula-core": { "locked": "2.0.0", "requested": "2.0.+" },
   "com.netflix.nebula:nebula-test": { "locked": "2.0.2", "requested": "2.0.+" },
-  "org.ajoberstar:gradle-git": { "locked": "0.12.0", "requested": "0.+" }
+  "org.ajoberstar:gradle-git": { "locked": "0.12.0", "requested": "0.12.0" }
 }

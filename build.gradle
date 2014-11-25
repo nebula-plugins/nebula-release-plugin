@@ -12,11 +12,9 @@ contacts {
     }
 }
 
-def pluginGradleVersion = "2.0"
-
 dependencies {
     compile "com.netflix.nebula:nebula-core:${pluginGradleVersion}.+"
-    compile "org.ajoberstar:gradle-git:0.+"
+    compile "org.ajoberstar:gradle-git:0.12.0"
     testCompile("com.netflix.nebula:nebula-test:${pluginGradleVersion}.+") {
         exclude group: "org.codehaus.groovy", module: "groovy-all"
     }

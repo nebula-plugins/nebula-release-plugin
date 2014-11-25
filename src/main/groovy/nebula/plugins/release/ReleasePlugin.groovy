@@ -39,9 +39,7 @@ class ReleasePlugin implements Plugin<Project> {
                 tagStrategy {
                     generateMessage = { version ->
                         StringBuilder builder = new StringBuilder()
-                        builder << 'Release of '
-                        builder << version.version
-                        builder << '\n\n'
+                        builder << "Release of ${version.version}\n\n"
 
                         String previousVersion = "v${version.previousVersion}^{commit}"
                         List excludes = []
@@ -49,12 +47,10 @@ class ReleasePlugin implements Plugin<Project> {
                             excludes << previousVersion
                         }
                         grgit.log(
-                            includes: ['HEAD'],
+                            includes: ["HEAD"],
                             excludes: excludes
                         ).inject(builder) { bldr, commit ->
-                            bldr << '- '
-                            bldr << commit.shortMessage
-                            bldr << '\n'
+                            bldr << "- ${commit.id}: ${commit.shortMessage}\n"
                         }
                         builder.toString()
                     }
@@ -101,8 +97,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     void applyReleaseStage(String stage) {
         final String releaseStage = "release.stage"
-        project.ext.set(releaseStage, stage)
-        project.subprojects.each { it.ext.set(releaseStage, stage) }
+        project.allprojects.each { it.ext.set(releaseStage, stage) }
     }
 
     private boolean tagExists(Grgit grgit, String revStr) {
