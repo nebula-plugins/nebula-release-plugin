@@ -3,7 +3,6 @@ package nebula.plugins.release
 import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
-import org.ajoberstar.gradle.git.release.semver.SemVerStrategy
 import org.ajoberstar.grgit.Grgit
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -14,6 +13,7 @@ class ReleasePlugin implements Plugin<Project> {
     Project project
 
     static final String SNAPSHOT_TASK_NAME = "snapshot"
+    static final String DEV_SNAPSHOT_TASK_NAME = "devSnapshot"
     static final String CANDIDATE_TASK_NAME = "candidate"
     static final String FINAL_TASK_NAME = "final"
     static final String GROUP = "Nebula Release"
@@ -26,6 +26,7 @@ class ReleasePlugin implements Plugin<Project> {
         project.plugins.apply(BaseReleasePlugin)
         def releaseExtension = project.extensions.findByType(ReleasePluginExtension)
         releaseExtension.with {
+            versionStrategy NetflixOssStrategies.SNAPSHOT
             versionStrategy NetflixOssStrategies.DEVELOPMENT
             versionStrategy NetflixOssStrategies.PRE_RELEASE
             versionStrategy NetflixOssStrategies.FINAL
@@ -58,22 +59,21 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             def snapshotTask = project.task(SNAPSHOT_TASK_NAME)
-            snapshotTask.group = GROUP
-            snapshotTask.finalizedBy "release"
-
+            def devSnapshotTask = project.task(DEV_SNAPSHOT_TASK_NAME)
             def candidateTask = project.task(CANDIDATE_TASK_NAME)
-            snapshotTask.group = GROUP
-            candidateTask.finalizedBy "release"
-
             def finalTask = project.task(FINAL_TASK_NAME)
-            snapshotTask.group = GROUP
-            finalTask.finalizedBy "release"
+
+            [snapshotTask, devSnapshotTask, candidateTask, finalTask].each {
+                it.group = GROUP
+                it.finalizedBy project.tasks.release
+            }
 
             def cliTasks = project.gradle.startParameter.taskNames
             def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME)
+            def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME)
             def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME)
             def hasFinal = cliTasks.contains(FINAL_TASK_NAME)
-            if ([hasSnapshot, hasCandidate, hasFinal].count { it } > 2) {
+            if ([hasSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
                 throw new GradleException("Only one of snapshot, candidate, or final can be specified.")
             }
 
@@ -81,8 +81,10 @@ class ReleasePlugin implements Plugin<Project> {
                 applyReleaseStage("final")
             } else if (hasCandidate) {
                 applyReleaseStage("rc")
-            } else {
+            } else if (hasDevSnapshot) {
                 applyReleaseStage("dev")
+            } else {
+                applyReleaseStage("SNAPSHOT")
             }
         } else {
             releaseExtension.grgit = Grgit.open(project.rootProject.projectDir)    

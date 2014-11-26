@@ -31,14 +31,15 @@ All tasks will trigger gradle-git's release task which is configured to depend o
 
 * final - Sets the version to the appropriate `<major>.<minor>.<patch>`, creates tag `v<major>.<minor>.<patch>`
 * candidate - Sets the version to the appropriate `<major>.<minor>.<patch>-rc.#`, creates tag `v<major>.<minor>.<patch>-rc.#` where `#` is the number of release candidates for this version produced so far. 1st 1.0.0 will be 1.0.0-rc.1, 2nd 1.0.0-rc.2 and so on.
-* snapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-dev.#+<hash>`, does not create a tag. Where `#` is the number of commits since the last release and `hash` is the git hash of the current commit.
+* devSnapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-dev.#+<hash>`, does not create a tag. Where `#` is the number of commits since the last release and `hash` is the git hash of the current commit.
+* snapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-SNAPSHOT`, does not create a tag.
 
 # Releasing: Bumping major or patch versions
 
 There are many cases where a project may want to bump a part of the version string besides the minor number.
 
-*bump the major number*: `./gradlew <snapshot|candidate|final> -Prelease.scope=major`
-*bump the patch number*: `./gradlew <snapshot|candidate|final> -Prelease.scope=patch`
+*bump the major number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=major`
+*bump the patch number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=patch`
 
 # Caveats
 
