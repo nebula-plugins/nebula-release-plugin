@@ -47,12 +47,20 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         if (originGit) originGit.close()
     }
 
-    def "choose snapshot version"() {
+    def "choose devSnapshot version"() {
+        when:
+        def results = runTasksSuccessfully("devSnapshot")
+
+        then:
+        results.standardOutput.contains "0.1.0-dev.2+"
+    }
+
+    def "use maven style snapshot string"() {
         when:
         def results = runTasksSuccessfully("snapshot")
 
         then:
-        results.standardOutput.contains "0.1.0-dev.2+"
+        results.standardOutput.contains "0.1.0-SNAPSHOT"
     }
 
     def "choose candidate version"() {
@@ -142,7 +150,7 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         grgit.checkout(branch: oneX)
 
         when:
-        def results = runTasksSuccessfully("snapshot")
+        def results = runTasksSuccessfully("devSnapshot")
 
         then:
         results.standardOutput.contains "1.0.0-dev.2+"
@@ -156,7 +164,7 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         grgit.checkout(branch: oneX)
 
         when:
-        def results = runTasksSuccessfully("snapshot")
+        def results = runTasksSuccessfully("devSnapshot")
 
         then:
         results.standardOutput.contains "1.0.0-dev.2+"

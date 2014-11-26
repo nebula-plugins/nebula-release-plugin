@@ -10,6 +10,7 @@ class NetflixOssStrategies {
             Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
             Strategies.Normal.USE_NEAREST_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
 
+    static final SemVerStrategy SNAPSHOT = Strategies.SNAPSHOT.copyWith(normalStrategy: scopes)
     static final SemVerStrategy DEVELOPMENT = Strategies.DEVELOPMENT.copyWith(normalStrategy: scopes)
     static final SemVerStrategy PRE_RELEASE = Strategies.PRE_RELEASE.copyWith(normalStrategy: scopes)
     static final SemVerStrategy FINAL = Strategies.FINAL.copyWith(normalStrategy: scopes)
