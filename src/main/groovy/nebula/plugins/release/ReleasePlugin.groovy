@@ -16,6 +16,8 @@ class ReleasePlugin implements Plugin<Project> {
     static final String DEV_SNAPSHOT_TASK_NAME = "devSnapshot"
     static final String CANDIDATE_TASK_NAME = "candidate"
     static final String FINAL_TASK_NAME = "final"
+    static final String RELEASE_CHECK_TASK_NAME = "releaseCheck"
+    static final String NEBULA_RELEASE_EXTENSION_NAME = "nebulaRelease"
     static final String GROUP = "Nebula Release"
 
     @Override
@@ -58,6 +60,13 @@ class ReleasePlugin implements Plugin<Project> {
                 }
             }
 
+            def nebulaReleaseExtension = project.extensions.create(NEBULA_RELEASE_EXTENSION_NAME, ReleaseExtension)
+
+            def releaseCheck = project.tasks.create(RELEASE_CHECK_TASK_NAME, ReleaseCheck)
+            releaseCheck.group = GROUP
+            releaseCheck.grgit = releaseExtension.grgit
+            releaseCheck.patterns = nebulaReleaseExtension
+
             def snapshotTask = project.task(SNAPSHOT_TASK_NAME)
             def devSnapshotTask = project.task(DEV_SNAPSHOT_TASK_NAME)
             def candidateTask = project.task(CANDIDATE_TASK_NAME)
@@ -66,6 +75,7 @@ class ReleasePlugin implements Plugin<Project> {
             [snapshotTask, devSnapshotTask, candidateTask, finalTask].each {
                 it.group = GROUP
                 it.finalizedBy project.tasks.release
+                it.dependsOn releaseCheck
             }
 
             def cliTasks = project.gradle.startParameter.taskNames
@@ -74,7 +84,7 @@ class ReleasePlugin implements Plugin<Project> {
             def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME)
             def hasFinal = cliTasks.contains(FINAL_TASK_NAME)
             if ([hasSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
-                throw new GradleException("Only one of snapshot, candidate, or final can be specified.")
+                throw new GradleException("Only one of snapshot, devSnapshot, candidate, or final can be specified.")
             }
 
             if (hasFinal) {
