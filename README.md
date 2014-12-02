@@ -3,7 +3,7 @@ nebula-release-plugin
 
 This plugin provides opinions and tasks for the release process provided by [gradle-git](https://github.com/ajoberstar/gradle-git).
 
-# Applying the plugin:
+# Applying the plugin
 
     plugins {
         id "nebula.nebula-release" version "2.2.0"
@@ -18,6 +18,16 @@ This plugin provides opinions and tasks for the release process provided by [gra
         }
     }
     apply plugin: "nebula.nebula-release"
+
+# Optional Configuration
+
+If you want the release plugin to trigger or finalize a publishing task you will need to configure it
+
+    tasks.release.dependsOn tasks.<publish task name>
+
+-or-
+
+    tasks.release.finalizedBy tasks.<publish task name>
 
 # Opinions
 
@@ -34,12 +44,27 @@ All tasks will trigger gradle-git's release task which is configured to depend o
 * devSnapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-dev.#+<hash>`, does not create a tag. Where `#` is the number of commits since the last release and `hash` is the git hash of the current commit.
 * snapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-SNAPSHOT`, does not create a tag.
 
+# Extension Provided
+
+    nebulaRelease {
+      Set<String> releaseBranchPatterns = [/master/, /(release(-|\/))?\d+\.x/] as Set
+      Set<String> excludeBranchPatterns = [] as Set
+
+      void addReleaseBranchPattern(String pattern)
+      void addExcludeBranchPattern(String pattern)
+    }
+
+* releaseBranchPatterns - is a field which takes a `Set<String>` it defaults to including master and any branch that matches the release pattern `(release(-|\/))?\d+\.x` e.g. `1.x` or `release/2.x` or `release-42.x`, if this is set to the empty set it will accept any branch name not in the `excludeBranchPatterns` set
+* excludeBranchPatterns - is a field which takes a `Set<String>`, if the current branch matches a pattern in this set a release will fail, this defaults to the empty Set,
+* addReleaseBranchPattern - is a method which takes a String, calling this method will add a pattern to the set of acceptable releaseBranchPatterns, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)`
+* addExcludeBranchPattern - is a method which takes a String, calling this method will add a pattern to the set of unacceptable excludeBranchPatterns, usage: `nebulaRelease { addExcludeBranchPattern(/myregex/)`
+
 # Releasing: Bumping major or patch versions
 
 There are many cases where a project may want to bump a part of the version string besides the minor number.
 
-*bump the major number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=major`
-*bump the patch number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=patch`
+* *bump the major number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=major`
+* *bump the patch number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=patch`
 
 # Caveats
 

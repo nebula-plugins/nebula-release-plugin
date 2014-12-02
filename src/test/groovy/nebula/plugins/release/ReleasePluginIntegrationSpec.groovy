@@ -202,4 +202,32 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         then:
         results.wasExecuted("placeholderTask")
     }
+
+    def "fail build on non release branch"() {
+        grgit.checkout(branch: "testexample", createBranch: true)
+
+        when:
+        def result = runTasksWithFailure("final")
+
+        then:
+        result.failure != null
+    }
+
+    def "fail build on excluded master branch"() {
+        buildFile << """\
+            nebulaRelease {
+                addExcludeBranchPattern(/^master\$/)
+            }
+        """.stripIndent()
+
+        grgit.add(patterns: ["build.gradle"] as Set)
+        grgit.commit(message: "Setup")
+        grgit.push()
+
+        when:
+        def result = runTasksWithFailure("final")
+
+        then:
+        result.failure != null
+    }
 }
