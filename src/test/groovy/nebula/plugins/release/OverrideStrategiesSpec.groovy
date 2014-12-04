@@ -7,24 +7,18 @@ import org.ajoberstar.grgit.Grgit
 import java.nio.file.Files
 
 class OverrideStrategiesSpec extends ProjectSpec {
-
-    def cleanup() {
-        System.properties.remove(OverrideStrategies.SystemPropertyStrategy.PROPERTY_NAME)
-    }
-
-    def 'able to set via system property'() {
+    def "able to set via gradle property"() {
         setup:
-        System.setProperty('release.version', '1.2.3')
+        project.ext.set("release.version", "42.5.0")
 
         when:
         project.plugins.apply(BaseReleasePlugin)
         def releaseExtension = project.extensions.findByType(ReleasePluginExtension)
         releaseExtension.with {
-            versionStrategy OverrideStrategies.SYSTEM_PROPERTY
+            versionStrategy new OverrideStrategies.GradlePropertyStrategy(project, "release.version")
         }
 
         then:
-        project.version.toString() == '1.2.3'
-
+        project.version.toString() == '42.5.0'
     }
 }

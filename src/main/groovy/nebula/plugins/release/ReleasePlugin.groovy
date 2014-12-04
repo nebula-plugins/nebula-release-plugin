@@ -28,7 +28,8 @@ class ReleasePlugin implements Plugin<Project> {
         project.plugins.apply(BaseReleasePlugin)
         ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
         releaseExtension.with {
-            versionStrategy OverrideStrategies.SYSTEM_PROPERTY
+            versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
+            versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
             versionStrategy NetflixOssStrategies.SNAPSHOT
             versionStrategy NetflixOssStrategies.DEVELOPMENT
             versionStrategy NetflixOssStrategies.PRE_RELEASE
@@ -45,16 +46,18 @@ class ReleasePlugin implements Plugin<Project> {
                         StringBuilder builder = new StringBuilder()
                         builder << "Release of ${version.version}\n\n"
 
-                        String previousVersion = "v${version.previousVersion}^{commit}"
-                        List excludes = []
-                        if (tagExists(grgit, previousVersion)) {
-                            excludes << previousVersion
-                        }
-                        grgit.log(
-                            includes: ["HEAD"],
-                            excludes: excludes
-                        ).inject(builder) { bldr, commit ->
-                            bldr << "- ${commit.id}: ${commit.shortMessage}\n"
+                        if (version.previousVersion) {
+                            String previousVersion = "v${version.previousVersion}^{commit}"
+                            List excludes = []
+                            if (tagExists(grgit, previousVersion)) {
+                                excludes << previousVersion
+                            }
+                            grgit.log(
+                                    includes: ["HEAD"],
+                                    excludes: excludes
+                            ).inject(builder) { bldr, commit ->
+                                bldr << "- ${commit.id}: ${commit.shortMessage}\n"
+                            }
                         }
                         builder.toString()
                     }
