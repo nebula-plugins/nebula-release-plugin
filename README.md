@@ -21,7 +21,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 
 # Optional Configuration
 
-If you want the release plugin to trigger or finalize a publishing task you will need to configure it
+If you want the release plugin to trigger or finalize a publishing task you will need to configure it:
 
     tasks.release.dependsOn tasks.<publish task name>
 
