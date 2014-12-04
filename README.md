@@ -35,15 +35,6 @@ Project using this plugin will use [semantic versions](http://semver.org/) style
 
 All tasks default to bumping the minor version.
 
-# Tasks Provided
-
-All tasks will trigger gradle-git's release task which is configured to depend on the build task if the project produces JVM based jar or war artifacts.
-
-* final - Sets the version to the appropriate `<major>.<minor>.<patch>`, creates tag `v<major>.<minor>.<patch>`
-* candidate - Sets the version to the appropriate `<major>.<minor>.<patch>-rc.#`, creates tag `v<major>.<minor>.<patch>-rc.#` where `#` is the number of release candidates for this version produced so far. 1st 1.0.0 will be 1.0.0-rc.1, 2nd 1.0.0-rc.2 and so on.
-* devSnapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-dev.#+<hash>`, does not create a tag. Where `#` is the number of commits since the last release and `hash` is the git hash of the current commit.
-* snapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-SNAPSHOT`, does not create a tag.
-
 # Extension Provided
 
     nebulaRelease {
@@ -58,6 +49,17 @@ All tasks will trigger gradle-git's release task which is configured to depend o
 * excludeBranchPatterns - is a field which takes a `Set<String>`, if the current branch matches a pattern in this set a release will fail, this defaults to the empty Set,
 * addReleaseBranchPattern - is a method which takes a String, calling this method will add a pattern to the set of acceptable releaseBranchPatterns, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)`
 * addExcludeBranchPattern - is a method which takes a String, calling this method will add a pattern to the set of unacceptable excludeBranchPatterns, usage: `nebulaRelease { addExcludeBranchPattern(/myregex/)`
+
+# Tasks Provided
+
+All tasks will trigger gradle-git's release task which is configured to depend on the build task if the project produces JVM based jar or war artifacts.
+
+* final - Sets the version to the appropriate `<major>.<minor>.<patch>`, creates tag `v<major>.<minor>.<patch>`
+* candidate - Sets the version to the appropriate `<major>.<minor>.<patch>-rc.#`, creates tag `v<major>.<minor>.<patch>-rc.#` where `#` is the number of release candidates for this version produced so far. 1st 1.0.0 will be 1.0.0-rc.1, 2nd 1.0.0-rc.2 and so on.
+* devSnapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-dev.#+<hash>`, does not create a tag. Where `#` is the number of commits since the last release and `hash` is the git hash of the current commit.  If releasing a devSnapshot from a branch not listed in the `releaseBranchPatterns` and not excluded by `excludeBranchPatterns` the version will be `<major>.<minor>.<patch>-dev.#+<branchname>.<hash>`
+* snapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-SNAPSHOT`, does not create a tag.
+
+Use of devSnapshot vs snapshot is a project by project choice of whether you want maven style versioning (snapshot) or unique semantic versioned snapshots (devSnapshot).
 
 # Releasing: Bumping major or patch versions
 
