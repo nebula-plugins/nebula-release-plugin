@@ -28,6 +28,7 @@ class ReleasePlugin implements Plugin<Project> {
         project.plugins.apply(BaseReleasePlugin)
         ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
         releaseExtension.with {
+            versionStrategy OverrideStrategies.SYSTEM_PROPERTY
             versionStrategy NetflixOssStrategies.SNAPSHOT
             versionStrategy NetflixOssStrategies.DEVELOPMENT
             versionStrategy NetflixOssStrategies.PRE_RELEASE
