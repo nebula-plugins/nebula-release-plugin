@@ -35,6 +35,10 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
             group = "test"
             ${applyPlugin(ReleasePlugin)}
             ${applyPlugin(JavaPlugin)}
+
+            task showVersion << {
+                logger.lifecycle "Version in task: \${version.toString()}"
+            }
         """.stripIndent()
 
         grgit.add(patterns: ["build.gradle", ".gitignore"] as Set)
@@ -230,4 +234,20 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         then:
         result.failure != null
     }
+
+    def "choose release version as system property"() {
+        setup:
+        System.setProperty('release.version', '2.3.4')
+
+        when:
+        def results = runTasksSuccessfully("showVersion", "-Prelease.version=2.3.4")
+
+        then:
+        results.standardOutput.contains "Version in task: 2.3.4"
+
+        cleanup:
+        System.properties.remove('release.version')
+
+    }
+
 }

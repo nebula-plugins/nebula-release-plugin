@@ -66,6 +66,12 @@ There are many cases where a project may want to bump a part of the version stri
 * *bump the major number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=major`
 * *bump the patch number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=patch`
 
+# Overriding version from the command line
+
+To set the version from the command line, set the release.version system property: 
+
+    ./gradlew -Prelease.version=1.2.3 release
+
 # Caveats
 
 ### First release with this plugin
