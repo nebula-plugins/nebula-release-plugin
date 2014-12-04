@@ -47,6 +47,24 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         if (originGit) originGit.close()
     }
 
+    def "build defaults to dev version string"() {
+        when:
+        def results = runTasksSuccessfully("build")
+
+        then:
+        results.standardOutput.contains "0.1.0-dev.2+"
+    }
+
+    def "build on non standard branch appends name to dev version string"() {
+        grgit.checkout(branch: "testexample", createBranch: true)
+
+        when:
+        def results = runTasksSuccessfully("build")
+
+        then:
+        results.standardOutput.contains "0.1.0-dev.2+testexample."
+    }
+
     def "choose devSnapshot version"() {
         when:
         def results = runTasksSuccessfully("devSnapshot")
@@ -203,7 +221,7 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         results.wasExecuted("placeholderTask")
     }
 
-    def "fail build on non release branch"() {
+    def "fail final release on non release branch"() {
         grgit.checkout(branch: "testexample", createBranch: true)
 
         when:
@@ -211,6 +229,33 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
 
         then:
         result.failure != null
+        result.standardError.contains "testexample does not match one of the included patterns: [master, (release(-|/))?\\d+\\.x]"
+    }
+
+    def "version includes branch name on devSnapshot of non release branch"() {
+        grgit.branch.add(name: "testexample")
+        grgit.push(all: true)
+        grgit.branch.change(name: "testexample", startPoint: "origin/testexample")
+        grgit.checkout(branch: "testexample")
+
+        when:
+        def result = runTasksSuccessfully("devSnapshot")
+
+        then:
+        result.standardOutput.contains "0.1.0-dev.2+testexample."
+    }
+
+    def "version includes branch name with stripped off patterns on devSnapshot of non release branch"() {
+        grgit.branch.add(name: "feature/testexample")
+        grgit.push(all: true)
+        grgit.branch.change(name: "feature/testexample", startPoint: "origin/feature/testexample")
+        grgit.checkout(branch: "feature/testexample")
+
+        when:
+        def result = runTasksSuccessfully("devSnapshot")
+
+        then:
+        result.standardOutput.contains "0.1.0-dev.2+testexample."
     }
 
     def "fail build on excluded master branch"() {
@@ -229,5 +274,6 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
 
         then:
         result.failure != null
+        result.standardError.contains "master matched an excluded pattern: [^master\$]"
     }
 }

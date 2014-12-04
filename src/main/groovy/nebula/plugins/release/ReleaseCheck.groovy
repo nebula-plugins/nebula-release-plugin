@@ -8,6 +8,7 @@ import org.gradle.api.tasks.TaskAction
 class ReleaseCheck extends DefaultTask {
     Grgit grgit
     ReleaseExtension patterns
+    boolean isSnapshotRelease
 
     @TaskAction
     void check() {
@@ -24,7 +25,7 @@ class ReleaseCheck extends DefaultTask {
             if (branchName =~ pattern) excludeMatch = true
         }
 
-        if (!includeMatch) {
+        if (!includeMatch && !isSnapshotRelease) {
             String message = "${branchName} does not match one of the included patterns: ${patterns.releaseBranchPatterns}"
             logger.error(message)
             throw new GradleException(message)

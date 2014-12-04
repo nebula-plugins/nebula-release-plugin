@@ -26,7 +26,7 @@ class ReleasePlugin implements Plugin<Project> {
 
         ProjectType type = new ProjectType(project)
         project.plugins.apply(BaseReleasePlugin)
-        def releaseExtension = project.extensions.findByType(ReleasePluginExtension)
+        ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
         releaseExtension.with {
             versionStrategy NetflixOssStrategies.SNAPSHOT
             versionStrategy NetflixOssStrategies.DEVELOPMENT
@@ -61,6 +61,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             def nebulaReleaseExtension = project.extensions.create(NEBULA_RELEASE_EXTENSION_NAME, ReleaseExtension)
+            NetflixOssStrategies.BuildMetadata.nebulaReleaseExtension = nebulaReleaseExtension
 
             def releaseCheck = project.tasks.create(RELEASE_CHECK_TASK_NAME, ReleaseCheck)
             releaseCheck.group = GROUP
@@ -87,14 +88,16 @@ class ReleasePlugin implements Plugin<Project> {
                 throw new GradleException("Only one of snapshot, devSnapshot, candidate, or final can be specified.")
             }
 
+            releaseCheck.isSnapshotRelease = hasSnapshot || hasDevSnapshot || (!hasCandidate && !hasFinal)
+
             if (hasFinal) {
                 applyReleaseStage("final")
             } else if (hasCandidate) {
                 applyReleaseStage("rc")
-            } else if (hasDevSnapshot) {
-                applyReleaseStage("dev")
-            } else {
+            } else if (hasSnapshot) {
                 applyReleaseStage("SNAPSHOT")
+            } else {
+                applyReleaseStage("dev")
             }
         } else {
             releaseExtension.grgit = Grgit.open(project.rootProject.projectDir)    
