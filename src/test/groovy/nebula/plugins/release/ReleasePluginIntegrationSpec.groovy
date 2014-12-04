@@ -281,19 +281,22 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         result.standardError.contains "master matched an excluded pattern: [^master\$]"
     }
 
-    def "choose release version as system property"() {
-        setup:
-        System.setProperty('release.version', '2.3.4')
+    def "use last tag"() {
+        grgit.tag.add(name: "v42.5.3")
 
         when:
-        def results = runTasksSuccessfully("showVersion", "-Prelease.version=2.3.4")
+        def results = runTasksSuccessfully("final", "-Prelease.useLastTag=true")
 
         then:
-        results.standardOutput.contains "Version in task: 2.3.4"
-
-        cleanup:
-        System.properties.remove('release.version')
-
+        new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
     }
 
+    def "able to release with the override of version calculation"() {
+        when:
+        def results = runTasksSuccessfully("final", "-Prelease.version=42.5.0")
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-42.5.0.jar").exists()
+        originGit.tag.list()*.name.contains("v42.5.0")
+    }
 }

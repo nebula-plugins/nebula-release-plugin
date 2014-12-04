@@ -82,7 +82,7 @@ If this is the first time releasing with this plugin and you've released in the 
 
 ### Initial version not 0.1.0 or 1.0.0
 
-Options:
+This will create a tag `v<string>` where String is whatever you set on `release.version`. If you want the plugin to work from here on out you should choose a version that matches semantic versioning described above.
 
-1. Use your existing publish methods and set the version to what you want to release with and manually create the tag.
-2. Create a dummy tag with a value one less than you want to release with. Example, I want to start releasing at 1.4.0 create a tag `v1.3.0`. Another example, I want to start release 2.0.0 so I create a tag `v1.0.0`
+    ./gradlew -Prelease.version=42.5.0 final
+
