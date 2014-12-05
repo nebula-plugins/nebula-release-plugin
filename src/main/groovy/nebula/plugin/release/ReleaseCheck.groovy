@@ -1,4 +1,4 @@
-package nebula.plugins.release
+package nebula.plugin.release
 
 import org.ajoberstar.grgit.Grgit
 import org.gradle.api.DefaultTask

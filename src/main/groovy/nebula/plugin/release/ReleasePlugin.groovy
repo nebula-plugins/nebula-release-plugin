@@ -1,4 +1,4 @@
-package nebula.plugins.release
+package nebula.plugin.release
 
 import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
