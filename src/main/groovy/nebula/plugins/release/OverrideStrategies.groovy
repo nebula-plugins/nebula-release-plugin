@@ -29,7 +29,7 @@ class OverrideStrategies {
 
         @Override
         boolean selector(Project project, Grgit grgit) {
-            project.hasProperty(propertyName)
+            project.hasProperty(propertyName) ? project.property(propertyName).toBoolean() : false
         }
 
         @Override

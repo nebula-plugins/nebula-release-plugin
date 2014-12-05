@@ -291,6 +291,14 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
     }
 
+    def "skip useLastTag if false"() {
+        when:
+        def results = runTasksSuccessfully("final", "-Prelease.useLastTag=345")
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-0.1.0.jar").exists()
+    }
+
     def "able to release with the override of version calculation"() {
         when:
         def results = runTasksSuccessfully("final", "-Prelease.version=42.5.0")

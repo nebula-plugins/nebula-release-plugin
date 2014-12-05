@@ -40,6 +40,7 @@ All tasks default to bumping the minor version.
     nebulaRelease {
       Set<String> releaseBranchPatterns = [/master/, /(release(-|\/))?\d+\.x/] as Set
       Set<String> excludeBranchPatterns = [] as Set
+      String shortenedBranchPattern = /(?:feature(?:-|\/))?(.+)/
 
       void addReleaseBranchPattern(String pattern)
       void addExcludeBranchPattern(String pattern)
@@ -47,8 +48,9 @@ All tasks default to bumping the minor version.
 
 * releaseBranchPatterns - is a field which takes a `Set<String>` it defaults to including master and any branch that matches the release pattern `(release(-|\/))?\d+\.x` e.g. `1.x` or `release/2.x` or `release-42.x`, if this is set to the empty set it will accept any branch name not in the `excludeBranchPatterns` set
 * excludeBranchPatterns - is a field which takes a `Set<String>`, if the current branch matches a pattern in this set a release will fail, this defaults to the empty Set,
-* addReleaseBranchPattern - is a method which takes a String, calling this method will add a pattern to the set of acceptable releaseBranchPatterns, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)`
-* addExcludeBranchPattern - is a method which takes a String, calling this method will add a pattern to the set of unacceptable excludeBranchPatterns, usage: `nebulaRelease { addExcludeBranchPattern(/myregex/)`
+* shortenedBranchPattern - is a field which takes a `String`, it defaults to `/(?:feature(?:-|\/))?(.+)/` e.g. branch `widget1` will append `widget1` to snapshot version numbers, and `feature/widget2` will append `widget2` to snapshot version numbers. You may configure this field, the regex is expected to have exactly one capture group.
+* addReleaseBranchPattern - is a method which takes a `String`, calling this method will add a pattern to the set of acceptable releaseBranchPatterns, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)`
+* addExcludeBranchPattern - is a method which takes a `String`, calling this method will add a pattern to the set of unacceptable excludeBranchPatterns, usage: `nebulaRelease { addExcludeBranchPattern(/myregex/)`
 
 # Tasks Provided
 
