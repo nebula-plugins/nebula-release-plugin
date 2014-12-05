@@ -1,10 +1,8 @@
-package nebula.plugins.release
+package nebula.plugin.release
 
 import nebula.test.ProjectSpec
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
-import org.ajoberstar.grgit.Grgit
-import java.nio.file.Files
 
 class OverrideStrategiesSpec extends ProjectSpec {
     def "able to set via gradle property"() {

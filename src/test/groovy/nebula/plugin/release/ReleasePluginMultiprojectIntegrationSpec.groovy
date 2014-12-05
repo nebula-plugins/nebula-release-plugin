@@ -1,4 +1,4 @@
-package nebula.plugins.release
+package nebula.plugin.release
 
 import java.nio.file.Files
 import nebula.test.IntegrationSpec

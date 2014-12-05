@@ -1,4 +1,4 @@
-package nebula.plugins.release
+package nebula.plugin.release
 
 import org.ajoberstar.gradle.git.release.base.ReleaseVersion
 import org.ajoberstar.gradle.git.release.base.VersionStrategy
