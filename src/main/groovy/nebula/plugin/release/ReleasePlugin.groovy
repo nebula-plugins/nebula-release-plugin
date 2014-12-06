@@ -100,9 +100,7 @@ class ReleasePlugin implements Plugin<Project> {
                 applyReleaseStage("rc")
             } else if (hasSnapshot) {
                 applyReleaseStage("SNAPSHOT")
-            } else {
-                applyReleaseStage("dev")
-            }
+            } // else -- the fallthrough will be the dev stage
         } else {
             releaseExtension.grgit = Grgit.open(project.rootProject.projectDir)    
         }
