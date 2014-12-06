@@ -1,3 +1,8 @@
+2.2.2 / 2014-12-05
+==================
+
+* Minor change to allow users to configure the default versioning scheme via gradle-git's release extension
+
 2.2.1 / 2014-12-05
 ==================
 
