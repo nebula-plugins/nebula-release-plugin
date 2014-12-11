@@ -12,13 +12,13 @@ import org.gradle.api.plugins.JavaPlugin
 class ReleasePlugin implements Plugin<Project> {
     Project project
 
-    static final String SNAPSHOT_TASK_NAME = "snapshot"
-    static final String DEV_SNAPSHOT_TASK_NAME = "devSnapshot"
-    static final String CANDIDATE_TASK_NAME = "candidate"
-    static final String FINAL_TASK_NAME = "final"
-    static final String RELEASE_CHECK_TASK_NAME = "releaseCheck"
-    static final String NEBULA_RELEASE_EXTENSION_NAME = "nebulaRelease"
-    static final String GROUP = "Nebula Release"
+    static final String SNAPSHOT_TASK_NAME = 'snapshot'
+    static final String DEV_SNAPSHOT_TASK_NAME = 'devSnapshot'
+    static final String CANDIDATE_TASK_NAME = 'candidate'
+    static final String FINAL_TASK_NAME = 'final'
+    static final String RELEASE_CHECK_TASK_NAME = 'releaseCheck'
+    static final String NEBULA_RELEASE_EXTENSION_NAME = 'nebulaRelease'
+    static final String GROUP = 'Nebula Release'
 
     @Override
     void apply(Project project) {
@@ -53,7 +53,7 @@ class ReleasePlugin implements Plugin<Project> {
                                 excludes << previousVersion
                             }
                             grgit.log(
-                                    includes: ["HEAD"],
+                                    includes: ['HEAD'],
                                     excludes: excludes
                             ).inject(builder) { bldr, commit ->
                                 bldr << "- ${commit.id}: ${commit.shortMessage}\n"
@@ -89,17 +89,17 @@ class ReleasePlugin implements Plugin<Project> {
             def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME)
             def hasFinal = cliTasks.contains(FINAL_TASK_NAME)
             if ([hasSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
-                throw new GradleException("Only one of snapshot, devSnapshot, candidate, or final can be specified.")
+                throw new GradleException('Only one of snapshot, devSnapshot, candidate, or final can be specified.')
             }
 
             releaseCheck.isSnapshotRelease = hasSnapshot || hasDevSnapshot || (!hasCandidate && !hasFinal)
 
             if (hasFinal) {
-                applyReleaseStage("final")
+                applyReleaseStage('final')
             } else if (hasCandidate) {
-                applyReleaseStage("rc")
+                applyReleaseStage('rc')
             } else if (hasSnapshot) {
-                applyReleaseStage("SNAPSHOT")
+                applyReleaseStage('SNAPSHOT')
             } // else -- the fallthrough will be the dev stage
         } else {
             releaseExtension.grgit = Grgit.open(project.rootProject.projectDir)    
@@ -113,7 +113,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void applyReleaseStage(String stage) {
-        final String releaseStage = "release.stage"
+        final String releaseStage = 'release.stage'
         project.allprojects.each { it.ext.set(releaseStage, stage) }
     }
 
