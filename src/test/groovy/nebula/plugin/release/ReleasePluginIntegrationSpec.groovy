@@ -307,4 +307,21 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         new File(projectDir, "build/libs/${moduleName}-42.5.0.jar").exists()
         originGit.tag.list()*.name.contains('v42.5.0')
     }
+
+    def 'devSnapshot works if default is changed'() {
+        buildFile << '''\
+            release {
+                defaultVersionStrategy = nebula.plugin.release.NetflixOssStrategies.SNAPSHOT
+            }
+        '''.stripIndent()
+        grgit.add(patterns: ['build.gradle'] as Set)
+        grgit.commit(message: 'Setup')
+        grgit.push()
+
+        when:
+        def results = runTasksSuccessfully('devSnapshot')
+
+        then:
+        results.standardOutput.contains '0.1.0-dev.3+'
+    }
 }
