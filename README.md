@@ -70,6 +70,16 @@ There are many cases where a project may want to bump a part of the version stri
 * *bump the major number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=major`
 * *bump the patch number*: `./gradlew <snapshot|devSnapshot|candidate|final> -Prelease.scope=patch`
 
+# Releasing: Using last tag
+
+In the scenario, where the tag is already created but you want to go through the release process, you can use the "Last Tag Strategy".
+When enabled, the plugin will respect the last tag as the version. This works well in a CI environment where a user will tag the code, and
+CI is configured to do just the release upon finding a new tag. The tag names need to follow the versioning scheme, e.g. "v1.0.1". To enact,
+provide the release.useLastTag project property, e.g.
+
+    git tag v1.0.0
+    ./gradlew -Prelease.useLastTag=true final
+
 # Overriding version from the command line
 
 To set the version from the command line, set the release.version system property: 
