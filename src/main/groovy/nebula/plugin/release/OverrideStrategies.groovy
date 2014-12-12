@@ -12,7 +12,7 @@ import org.gradle.api.Project
 class OverrideStrategies {
 
     static class ReleaseLastTagStrategy implements VersionStrategy {
-        static final String PROPERTY_NAME = "release.useLastTag"
+        static final String PROPERTY_NAME = 'release.useLastTag'
 
         Project project
         String propertyName
@@ -40,7 +40,7 @@ class OverrideStrategies {
     }
 
     static class GradlePropertyStrategy implements VersionStrategy {
-        static final String PROPERTY_NAME = "release.version"
+        static final String PROPERTY_NAME = 'release.version'
         Project project
         String propertyName
 
@@ -51,7 +51,7 @@ class OverrideStrategies {
 
         @Override
         String getName() {
-            "gradle-properties"
+            'gradle-properties'
         }
 
         @Override
