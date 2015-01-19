@@ -1,3 +1,8 @@
+2.2.4 / 2015-01-19
+==================
+
+* Modify -Prelease.useLastTag so that it doesn't attempt to push tags to the remote
+
 2.2.3 / 2014-12-11
 ==================
 

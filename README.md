@@ -6,7 +6,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 # Applying the plugin
 
     plugins {
-        id 'nebula.nebula-release' version '2.2.1'
+        id 'nebula.nebula-release' version '2.2.4'
     }
 
 -or-
@@ -14,7 +14,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
     buildscripts {
         repositories { jcenter() }
         dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:2.2.1'
+            classpath 'com.netflix.nebula:nebula-release-plugin:2.2.4'
         }
     }
     apply plugin: 'nebula.nebula-release'
