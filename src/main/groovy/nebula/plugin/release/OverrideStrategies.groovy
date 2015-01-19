@@ -29,7 +29,13 @@ class OverrideStrategies {
 
         @Override
         boolean selector(Project project, Grgit grgit) {
-            project.hasProperty(propertyName) ? project.property(propertyName).toBoolean() : false
+            def shouldSelect = project.hasProperty(propertyName) ? project.property(propertyName).toBoolean() : false
+
+            if (shouldSelect) {
+                project.tasks.release.deleteAllActions() // remove tagging op since already tagged
+            }
+
+            shouldSelect
         }
 
         @Override
