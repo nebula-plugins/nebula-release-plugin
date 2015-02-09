@@ -17,12 +17,12 @@ class ReleaseCheck extends DefaultTask {
         boolean includeMatch = patterns.releaseBranchPatterns.isEmpty()
 
         patterns.releaseBranchPatterns.each { String pattern ->
-            if (branchName =~ pattern) includeMatch = true
+            if (branchName ==~ pattern) includeMatch = true
         }
 
         boolean excludeMatch = false
         patterns.excludeBranchPatterns.each { String pattern ->
-            if (branchName =~ pattern) excludeMatch = true
+            if (branchName ==~ pattern) excludeMatch = true
         }
 
         if (!includeMatch && !isSnapshotRelease) {

@@ -1,9 +1,9 @@
 plugins {
-  id "nebula.nebula-plugin" version "2.0.1"
+  id 'nebula.nebula-plugin' version '2.2.0'
+  id 'idea'
 }
 
 description "Release opinions on top of gradle-git"
-apply plugin: "idea"
 
 contacts {
     "rob.spieldenner@gmail.com" {
