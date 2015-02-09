@@ -9,6 +9,7 @@ import org.ajoberstar.gradle.git.release.semver.StrategyUtil
 class NetflixOssStrategies {
     private static final scopes = StrategyUtil.one(Strategies.Normal.USE_SCOPE_PROP,
             Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
+            Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
             Strategies.Normal.USE_NEAREST_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
 
     static final SemVerStrategy SNAPSHOT = Strategies.SNAPSHOT.copyWith(normalStrategy: scopes)

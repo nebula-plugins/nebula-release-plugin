@@ -1,3 +1,9 @@
+2.2.5 / 2015-02-09
+==================
+
+* Add ability to use major.minor.x branches along with major.x branches.
+* Update nebula dependencies to newest releases on 2.2.x branches.
+
 2.2.4 / 2015-01-19
 ==================
 

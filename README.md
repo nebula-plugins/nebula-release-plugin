@@ -6,7 +6,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 # Applying the plugin
 
     plugins {
-        id 'nebula.nebula-release' version '2.2.4'
+        id 'nebula.nebula-release' version '2.2.5'
     }
 
 -or-
@@ -14,7 +14,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
     buildscripts {
         repositories { jcenter() }
         dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:2.2.4'
+            classpath 'com.netflix.nebula:nebula-release-plugin:2.2.5'
         }
     }
     apply plugin: 'nebula.nebula-release'
@@ -38,7 +38,7 @@ All tasks default to bumping the minor version.
 # Extension Provided
 
     nebulaRelease {
-      Set<String> releaseBranchPatterns = [/master/, /(release(-|\/))?\d+\.x/] as Set
+      Set<String> releaseBranchPatterns = [/master/, /(release(-|\/))?\d+(\.\d+)?\.x/] as Set
       Set<String> excludeBranchPatterns = [] as Set
       String shortenedBranchPattern = /(?:feature(?:-|\/))?(.+)/
 
@@ -46,7 +46,7 @@ All tasks default to bumping the minor version.
       void addExcludeBranchPattern(String pattern)
     }
 
-* releaseBranchPatterns - is a field which takes a `Set<String>` it defaults to including master and any branch that matches the release pattern `(release(-|\/))?\d+\.x` e.g. `1.x` or `release/2.x` or `release-42.x`, if this is set to the empty set it will accept any branch name not in the `excludeBranchPatterns` set
+* releaseBranchPatterns - is a field which takes a `Set<String>` it defaults to including master and any branch that matches the release pattern `(release(-|\/))?\d+(\.\d+)?\.x` e.g. `1.x` or `release/2.x` or `release-42.x` or 1.2.x, if this is set to the empty set it will accept any branch name not in the `excludeBranchPatterns` set
 * excludeBranchPatterns - is a field which takes a `Set<String>`, if the current branch matches a pattern in this set a release will fail, this defaults to the empty Set,
 * shortenedBranchPattern - is a field which takes a `String`, it defaults to `/(?:feature(?:-|\/))?(.+)/` e.g. branch `widget1` will append `widget1` to snapshot version numbers, and `feature/widget2` will append `widget2` to snapshot version numbers. You may configure this field, the regex is expected to have exactly one capture group.
 * addReleaseBranchPattern - is a method which takes a `String`, calling this method will add a pattern to the set of acceptable releaseBranchPatterns, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)`
@@ -62,6 +62,16 @@ All tasks will trigger gradle-git's release task which is configured to depend o
 * snapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-SNAPSHOT`, does not create a tag.
 
 Use of devSnapshot vs snapshot is a project by project choice of whether you want maven style versioning (snapshot) or unique semantic versioned snapshots (devSnapshot).
+
+# Versioning Notes
+
+We attempt to pick up on the fact that you're on certain release branches.
+
+Examples:
+
+* On release/1.x - The plugin will default to versioning you 1.0.0-SNAPSHOT
+* On 3.x - The plugin will default to versioning you 3.0.0-SNAPSHOT
+* On 4.2.x - The plugin will default to versioning you 4.2.0-SNAPSHOT
 
 # Releasing: Bumping major or patch versions
 
@@ -84,7 +94,7 @@ provide the release.useLastTag project property, e.g.
 
 To set the version from the command line, set the release.version system property: 
 
-    ./gradlew -Prelease.version=1.2.3 release
+    ./gradlew -Prelease.version=1.2.3 final
 
 # Caveats
 

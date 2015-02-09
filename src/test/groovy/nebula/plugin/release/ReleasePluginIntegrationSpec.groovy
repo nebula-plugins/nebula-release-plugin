@@ -207,6 +207,36 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
         originGit.tag.list()*.name.contains('v2.0.0')
     }
 
+    def 'create new major_minor release branch and have version respected'() {
+        def oneThreeX = '1.3.x'
+        grgit.tag.add(name: 'v1.2.2')
+        grgit.branch.add(name: oneThreeX)
+        grgit.push(all: true)
+        grgit.branch.change(name: oneThreeX, startPoint: "origin/${oneThreeX}")
+        grgit.checkout(branch: oneThreeX)
+
+        when:
+        def results = runTasksSuccessfully('devSnapshot')
+
+        then:
+        results.standardOutput.contains '1.3.0-dev.0+'
+    }
+
+    def 'release a final from new major_minor release branch and have version respected'() {
+        def oneThreeX = 'release/1.3.x'
+        grgit.tag.add(name: 'v1.2.2')
+        grgit.branch.add(name: oneThreeX)
+        grgit.push(all: true)
+        grgit.branch.change(name: oneThreeX, startPoint: "origin/${oneThreeX}")
+        grgit.checkout(branch: oneThreeX)
+
+        when:
+        def results = runTasksSuccessfully('final')
+
+        then:
+        results.standardOutput.contains '1.3.0'
+    }
+
     def 'task dependency configuration is read from extension'() {
         buildFile << '''
             task placeholderTask
@@ -233,7 +263,7 @@ class ReleasePluginIntegrationSpec extends IntegrationSpec {
 
         then:
         result.failure != null
-        result.standardError.contains 'testexample does not match one of the included patterns: [master, (release(-|/))?\\d+\\.x]'
+        result.standardError.contains 'testexample does not match one of the included patterns: [master, (release(-|/))?\\d+(\\.\\d+)?\\.x]'
     }
 
     def 'version includes branch name on devSnapshot of non release branch'() {

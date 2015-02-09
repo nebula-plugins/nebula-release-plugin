@@ -103,6 +103,12 @@ class ReleasePlugin implements Plugin<Project> {
             } else if(hasDevSnapshot) {
                 applyReleaseStage('dev')
             }
+
+            final String disableGitChecks = 'release.disableGitChecks'
+            if (project.hasProperty(disableGitChecks) && project.property(disableGitChecks) as Boolean) {
+                project.tasks.release.deleteAllActions()
+                project.tasks.prepare.deleteAllActions()
+            }
         } else {
             releaseExtension.grgit = Grgit.open(project.rootProject.projectDir)    
         }
