@@ -8,7 +8,7 @@ class GitVersioningIntegrationSpecSpec /* tee-hee */ extends GitVersioningIntegr
 
     def 'inferred version is parsed'() {
         when:
-        def version = inferredVersion('Inferred version: 1.0.0')
+        def version = inferredVersion('Inferred project: inferred-version-is-parsed, version: 1.0.0')
 
         then:
         version == normal('1.0.0')
@@ -16,7 +16,7 @@ class GitVersioningIntegrationSpecSpec /* tee-hee */ extends GitVersioningIntegr
 
     def 'inferred version is parsed from multiline input'() {
         when:
-        def version = inferredVersion('Some\nDummy\nText\nInferred version: 1.0.0\nAfter\nText')
+        def version = inferredVersion('Some\nDummy\nText\nInferred project: inferred-version-is-parsed-from-multiline-input, version: 1.0.0\nAfter\nText')
 
         then:
         version == normal('1.0.0')

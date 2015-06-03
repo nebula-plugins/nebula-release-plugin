@@ -156,7 +156,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def oneX = '1.x'
         git.branch.add(name: oneX)
         git.push(all: true)
-        git.branch.change(name: oneX, startPoint: "origin/${oneX}")
+        git.branch.change(name: oneX, startPoint: "origin/${oneX}".toString())
         git.checkout(branch: oneX)
 
         when:
@@ -170,7 +170,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def oneX = 'release/1.x'
         git.branch.add(name: oneX)
         git.push(all: true)
-        git.branch.change(name: oneX, startPoint: "origin/${oneX}")
+        git.branch.change(name: oneX, startPoint: "origin/${oneX}".toString())
         git.checkout(branch: oneX)
 
         when:
@@ -185,7 +185,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v1.0.0')
         git.branch.add(name: twoX)
         git.push(all: true, tags: true)
-        git.branch.change(name: twoX, startPoint: "origin/${twoX}")
+        git.branch.change(name: twoX, startPoint: "origin/${twoX}".toString())
         git.checkout(branch: twoX)
 
         when:
@@ -200,7 +200,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v1.2.2')
         git.branch.add(name: oneThreeX)
         git.push(all: true)
-        git.branch.change(name: oneThreeX, startPoint: "origin/${oneThreeX}")
+        git.branch.change(name: oneThreeX, startPoint: "origin/${oneThreeX}".toString())
         git.checkout(branch: oneThreeX)
 
         when:
@@ -215,7 +215,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v1.2.2')
         git.branch.add(name: oneThreeX)
         git.push(all: true)
-        git.branch.change(name: oneThreeX, startPoint: "origin/${oneThreeX}")
+        git.branch.change(name: oneThreeX, startPoint: "origin/${oneThreeX}".toString())
         git.checkout(branch: oneThreeX)
 
         when:
