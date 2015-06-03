@@ -3,25 +3,26 @@ plugins {
   id 'idea'
 }
 
-description "Release opinions on top of gradle-git"
+description 'Release opinions on top of gradle-git'
 
 contacts {
-    "rob.spieldenner@gmail.com" {
-        moniker "Rob Spieldenner"
-        github "rspieldenner"
+    'rob.spieldenner@gmail.com' {
+        moniker 'Rob Spieldenner'
+        github 'rspieldenner'
     }
 }
 
 dependencies {
     compile "com.netflix.nebula:nebula-core:${pluginGradleVersion}.+"
-    compile "org.ajoberstar:gradle-git:0.12.0"
+    compile 'org.ajoberstar:gradle-git:0.12.0'
     testCompile("com.netflix.nebula:nebula-test:${pluginGradleVersion}.+") {
-        exclude group: "org.codehaus.groovy", module: "groovy-all"
+        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
 }
 
-test {
-    minHeapSize = "128m"
-    maxHeapSize = "512m"
-    jvmArgs "-XX:MaxPermSize=256m"
+tasks.withType(Test) {
+    minHeapSize = '128m'
+    maxHeapSize = '512m'
+    jvmArgs '-XX:MaxPermSize=256m'
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2 // Avoid saturating all of the cores
 }
