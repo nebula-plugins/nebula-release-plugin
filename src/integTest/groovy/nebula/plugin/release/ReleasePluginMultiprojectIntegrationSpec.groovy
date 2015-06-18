@@ -1,9 +1,11 @@
 package nebula.plugin.release
 
+import com.github.zafarkhaja.semver.Version
 import org.gradle.api.plugins.JavaPlugin
 
 class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationSpec {
-    @Override def setupBuild() {
+    @Override
+    def setupBuild() {
         buildFile << """\
             allprojects {
                 ${applyPlugin(ReleasePlugin)}
@@ -32,7 +34,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def results = runTasksSuccessfully('final')
 
         then:
-        results.standardOutput.contains 'Inferred version: 0.1.0\n'
+        inferredVersion(results.standardOutput, 'test-release-common') == normal('0.1.0')
         new File(projectDir, 'test-release-common/build/libs/test-release-common-0.1.0.jar').exists()
         new File(projectDir, 'test-release-client/build/libs/test-release-client-0.1.0.jar').exists()
     }
@@ -42,7 +44,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def results = runTasksSuccessfully('candidate')
 
         then:
-        results.standardOutput.contains 'Inferred version: 0.1.0-rc.1\n'
+        inferredVersion(results.standardOutput, 'test-release-common') == normal('0.1.0-rc.1')
         new File(projectDir, 'test-release-common/build/libs/test-release-common-0.1.0-rc.1.jar').exists()
         new File(projectDir, 'test-release-client/build/libs/test-release-client-0.1.0-rc.1.jar').exists()
     }
@@ -52,7 +54,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def results = runTasksSuccessfully('build')
 
         then:
-        results.standardOutput.contains 'Inferred version: 0.1.0-dev.2+'
+        inferredVersion(results.standardOutput, 'test-release-common') == dev('0.1.0-dev.2+')
         new File(projectDir, 'test-release-common/build/libs').list().find {
             it =~ /test-release-common-0\.1\.0-dev\.2\+/
         } != null
@@ -68,7 +70,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def results = runTasksSuccessfully('build')
 
         then:
-        results.standardOutput.contains 'Inferred version: 0.1.0-dev.2+'
+        inferredVersion(results.standardOutput, 'test-release-common') == dev('0.1.0-dev.2+')
         new File(projectDir, 'test-release-common/build/libs').list().find {
             it =~ /test-release-common-0\.1\.0-dev\.2\+testexample\./
         } != null

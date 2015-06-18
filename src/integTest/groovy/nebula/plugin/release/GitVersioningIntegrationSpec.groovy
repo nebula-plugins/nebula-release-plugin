@@ -57,11 +57,15 @@ abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
     }
 
     def Version inferredVersion(String standardOutput) {
+        inferredVersion(standardOutput, moduleName)
+    }
+
+    def Version inferredVersion(String standardOutput, String projectName) {
         def matcher = standardOutput =~ /Inferred project: (.*), version: (.*)/
         if (matcher.size() > 0) {
             def project = matcher[0][1] as String
             def version = matcher[0][2] as String
-            assert project == moduleName
+            assert project == projectName
             normal(version)
         } else {
             throw new IllegalArgumentException("Could not find inferred version using $matcher")
