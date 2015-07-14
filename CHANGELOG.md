@@ -1,3 +1,14 @@
+2.2.7 / 2015-07-14
+==================
+
+* Move to gradle-git 1.2.0
+* Only calculate version once for multiprojects
+
+2.2.6 / 2015-06-18
+==================
+
+* Move to gradle-git 1.1.0
+
 2.2.5 / 2015-02-09
 ==================
 

@@ -14,7 +14,7 @@ contacts {
 
 dependencies {
     compile "com.netflix.nebula:nebula-core:${pluginGradleVersion}.+"
-    compile 'org.ajoberstar:gradle-git:1.1.0'
+    compile 'org.ajoberstar:gradle-git:1.2.0'
     testCompile("com.netflix.nebula:nebula-test:${pluginGradleVersion}.+") {
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }

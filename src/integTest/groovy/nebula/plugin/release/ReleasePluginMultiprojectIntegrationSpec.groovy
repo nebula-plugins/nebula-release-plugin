@@ -34,7 +34,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def results = runTasksSuccessfully('final')
 
         then:
-        inferredVersion(results.standardOutput, 'test-release-common') == normal('0.1.0')
+        inferredVersion(results.standardOutput) == normal('0.1.0')
         new File(projectDir, 'test-release-common/build/libs/test-release-common-0.1.0.jar').exists()
         new File(projectDir, 'test-release-client/build/libs/test-release-client-0.1.0.jar').exists()
     }
@@ -44,7 +44,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def results = runTasksSuccessfully('candidate')
 
         then:
-        inferredVersion(results.standardOutput, 'test-release-common') == normal('0.1.0-rc.1')
+        inferredVersion(results.standardOutput) == normal('0.1.0-rc.1')
         new File(projectDir, 'test-release-common/build/libs/test-release-common-0.1.0-rc.1.jar').exists()
         new File(projectDir, 'test-release-client/build/libs/test-release-client-0.1.0-rc.1.jar').exists()
     }
@@ -54,7 +54,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def results = runTasksSuccessfully('build')
 
         then:
-        inferredVersion(results.standardOutput, 'test-release-common') == dev('0.1.0-dev.2+')
+        inferredVersion(results.standardOutput) == dev('0.1.0-dev.2+')
         new File(projectDir, 'test-release-common/build/libs').list().find {
             it =~ /test-release-common-0\.1\.0-dev\.2\+/
         } != null
@@ -70,7 +70,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def results = runTasksSuccessfully('build')
 
         then:
-        inferredVersion(results.standardOutput, 'test-release-common') == dev('0.1.0-dev.2+')
+        inferredVersion(results.standardOutput) == dev('0.1.0-dev.2+')
         new File(projectDir, 'test-release-common/build/libs').list().find {
             it =~ /test-release-common-0\.1\.0-dev\.2\+testexample\./
         } != null

@@ -25,19 +25,19 @@ class ReleasePlugin implements Plugin<Project> {
         this.project = project
 
         ProjectType type = new ProjectType(project)
-        project.plugins.apply(BaseReleasePlugin)
-        ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
-        releaseExtension.with {
-            versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
-            versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
-            versionStrategy NetflixOssStrategies.SNAPSHOT
-            versionStrategy NetflixOssStrategies.DEVELOPMENT
-            versionStrategy NetflixOssStrategies.PRE_RELEASE
-            versionStrategy NetflixOssStrategies.FINAL
-            defaultVersionStrategy = NetflixOssStrategies.DEVELOPMENT
-        }
 
         if (type.isRootProject) {
+            project.plugins.apply(BaseReleasePlugin)
+            ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
+            releaseExtension.with {
+                versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
+                versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
+                versionStrategy NetflixOssStrategies.SNAPSHOT
+                versionStrategy NetflixOssStrategies.DEVELOPMENT
+                versionStrategy NetflixOssStrategies.PRE_RELEASE
+                versionStrategy NetflixOssStrategies.FINAL
+                defaultVersionStrategy = NetflixOssStrategies.DEVELOPMENT
+            }
 
             releaseExtension.with {
                 grgit = Grgit.open(project.projectDir)
@@ -110,7 +110,7 @@ class ReleasePlugin implements Plugin<Project> {
                 project.tasks.prepare.deleteAllActions()
             }
         } else {
-            releaseExtension.grgit = Grgit.open(project.rootProject.projectDir)    
+            project.version = project.rootProject.version    
         }
 
         if (type.isLeafProject) {
