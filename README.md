@@ -1,12 +1,17 @@
 nebula-release-plugin
 =====================
 
+[![Build Status](https://travis-ci.org/nebula-plugins/nebula-release-plugin.svg?branch=master)](https://travis-ci.org/nebula-plugins/nebula-release-plugin)
+[![Coverage Status](https://coveralls.io/repos/nebula-plugins/nebula-release-plugin/badge.svg?branch=master&service=github)](https://coveralls.io/github/nebula-plugins/nebula-release-plugin?branch=master)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nebula-plugins/nebula-release-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Apache 2.0](https://img.shields.io/github/license/nebula-plugins/nebula-release-plugin.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+
 This plugin provides opinions and tasks for the release process provided by [gradle-git](https://github.com/ajoberstar/gradle-git).
 
 # Applying the plugin
 
     plugins {
-        id 'nebula.nebula-release' version '2.2.5'
+        id 'nebula.nebula-release' version '3.0.0'
     }
 
 -or-
@@ -14,7 +19,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
     buildscript {
         repositories { jcenter() }
         dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:2.2.5'
+            classpath 'com.netflix.nebula:nebula-release-plugin:3.0.0'
         }
     }
     apply plugin: 'nebula.nebula-release'
@@ -107,4 +112,34 @@ If this is the first time releasing with this plugin and you've released in the 
 This will create a tag `v<string>` where String is whatever you set on `release.version`. If you want the plugin to work from here on out you should choose a version that matches semantic versioning described above.
 
     ./gradlew -Prelease.version=42.5.0 final
+    
+Gradle Compatibility Tested
+---------------------------
 
+Built with Oracle JDK7
+Tested with Oracle JDK8
+
+| Gradle Version | Works |
+| :------------: | :---: |
+| 2.2.1          | yes   |
+| 2.3            | yes   |
+| 2.4            | yes   |
+| 2.5            | yes   |
+| 2.6            | yes   |
+
+LICENSE
+=======
+
+Copyright 2014-2015 Netflix, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+<http://www.apache.org/licenses/LICENSE-2.0>
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

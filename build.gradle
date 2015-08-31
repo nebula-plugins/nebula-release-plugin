@@ -1,9 +1,31 @@
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath 'com.netflix.nebula:nebula-plugin-plugin:3.1.1'
+    }
+}
+
 plugins {
-  id 'nebula.nebula-plugin' version '2.2.0'
-  id 'idea'
+    id 'groovy'
+    id 'idea'
+    id 'jacoco'
+    id 'nebula.maven-publish' version '4.0.1'
+    id 'nebula.javadoc-jar' version '4.0.1'
+    id 'nebula.source-jar' version '4.0.1'
+    id 'nebula.maven-apache-license' version '4.0.1'
+    id 'nebula.dependency-lock' version '3.0.0'
+    id 'nebula.info' version '2.2.4'
+    id 'nebula.contacts' version '2.2.0'
+    id 'nebula.nebula-integtest' version '2.2.1'
+    id 'com.gradle.plugin-publish' version '0.9.1'
+    id 'com.github.kt3k.coveralls' version '2.4.0'
+    id 'org.ysb33r.gradletest' version '0.5.4'
 }
 
 description 'Release opinions on top of gradle-git'
+apply plugin: 'nebula.plugin-plugin'
+
+group = 'com.netflix.nebula'
 
 contacts {
     'rob.spieldenner@gmail.com' {
@@ -12,17 +34,61 @@ contacts {
     }
 }
 
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+repositories {
+    jcenter()
+}
+
 dependencies {
-    compile "com.netflix.nebula:nebula-core:${pluginGradleVersion}.+"
-    compile 'org.ajoberstar:gradle-git:1.2.0'
-    testCompile("com.netflix.nebula:nebula-test:${pluginGradleVersion}.+") {
+    compile localGroovy()
+    compile gradleApi()
+    compile "com.netflix.nebula:nebula-core:2.+"
+    compile 'org.ajoberstar:gradle-git:1.3.0'
+    testCompile("com.netflix.nebula:nebula-test:3.+") {
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
 }
 
 tasks.withType(Test) {
-    minHeapSize = '128m'
     maxHeapSize = '512m'
-    jvmArgs '-XX:MaxPermSize=256m'
     maxParallelForks = Runtime.runtime.availableProcessors() / 2 // Avoid saturating all of the cores
+}
+
+tasks.check.dependsOn 'integrationTest'
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/nebula-plugins/nebula-release-plugin'
+    vcsUrl = 'https://github.com/nebula-plugins/nebula-release-plugin.git'
+    description = 'Release opinions on top of gradle-git'
+
+    plugins {
+        nebulaRelease {
+            id = 'nebula.nebula-release'
+            displayName = 'Nebula Release plugin'
+            tags = ['nebula', 'release', 'versioning']
+        }
+    }
+
+    mavenCoordinates {
+        groupId = 'com.netflix.nebula'
+        artifactId = 'nebula-release-plugin'
+    }
+}
+
+gradleTest {
+    versions '2.2.1', '2.3', '2.4', '2.5', '2.6', '2.7-rc-1'
+}
+
+gradleTest.dependsOn(jar)
+gradleTest.doFirst {
+    project.version = project.version.toString()
 }
