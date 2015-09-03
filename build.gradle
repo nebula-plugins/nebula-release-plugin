@@ -56,7 +56,6 @@ dependencies {
 
 tasks.withType(Test) {
     maxHeapSize = '512m'
-    maxParallelForks = Runtime.runtime.availableProcessors() / 2 // Avoid saturating all of the cores
 }
 
 tasks.check.dependsOn 'integrationTest'
@@ -66,6 +65,7 @@ jacocoTestReport {
         xml.enabled = true // coveralls plugin depends on xml format report
         html.enabled = true
     }
+    executionData = files('build/jacoco/test.exec', 'build/jacoco/integrationTest.exec')
 }
 
 pluginBundle {
