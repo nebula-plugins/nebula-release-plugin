@@ -45,6 +45,7 @@ class NetflixOssStrategies {
                 }
             }
             def shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
+            shortenedBranch = shortenedBranch.replaceAll('_', '.')
             def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
             state.copyWith(inferredBuildMetadata: metadata)
         }

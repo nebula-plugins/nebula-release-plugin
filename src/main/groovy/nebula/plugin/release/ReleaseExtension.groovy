@@ -16,7 +16,7 @@
 package nebula.plugin.release
 
 class ReleaseExtension {
-    Set<String> releaseBranchPatterns = [/master/, /(release(-|\/))?\d+(\.\d+)?\.x/] as Set
+    Set<String> releaseBranchPatterns = [/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/] as Set
     Set<String> excludeBranchPatterns = [] as Set
 
     /**
