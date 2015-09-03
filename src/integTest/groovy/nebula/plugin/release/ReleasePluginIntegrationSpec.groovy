@@ -1,3 +1,18 @@
+/*
+ * Copyright 2014-2015 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package nebula.plugin.release
 
 import org.gradle.api.plugins.JavaPlugin
@@ -163,7 +178,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('devSnapshot')
 
         then:
-        version == dev('1.0.0-dev.2+')
+        version.toString() == dev('1.0.0-dev.2+').toString()
     }
 
     def 'create new major release branch in git-flow style and have branch name respected on version'() {
@@ -177,7 +192,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('devSnapshot')
 
         then:
-        version == dev('1.0.0-dev.2+')
+        version.toString() == dev('1.0.0-dev.2+').toString()
     }
 
     def 'create release on git-flow style branch'() {
@@ -207,7 +222,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('devSnapshot')
 
         then:
-        version == dev('1.3.0-dev.0+')
+        version.toString() == dev('1.3.0-dev.0+').toString()
     }
 
     def 'release a final from new major_minor release branch and have version respected'() {
@@ -251,7 +266,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         result.failure != null
-        result.standardError.contains 'testexample does not match one of the included patterns: [master, (release(-|/))?\\d+(\\.\\d+)?\\.x]'
+        result.standardError.contains 'testexample does not match one of the included patterns: [master, HEAD, (release(-|/))?\\d+(\\.\\d+)?\\.x, v?\\d+\\.\\d+\\.\\d+]'
     }
 
     def 'version includes branch name on devSnapshot of non release branch'() {
@@ -264,7 +279,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('devSnapshot')
 
         then:
-        version == dev('0.1.0-dev.2+testexample.')
+        version.toString() == dev('0.1.0-dev.2+testexample.').toString()
     }
 
     def 'version includes branch name with stripped off patterns on devSnapshot of non release branch'() {
@@ -277,7 +292,20 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('devSnapshot')
 
         then:
-        version == dev('0.1.0-dev.2+testexample.')
+        version.toString() == dev('0.1.0-dev.2+testexample.').toString()
+    }
+
+    def 'version includes branch name with underscores on devSnapshot of non release branch'() {
+        git.branch.add(name: 'feature/test_example')
+        git.push(all: true)
+        git.branch.change(name: 'feature/test_example', startPoint: 'origin/feature/test_example')
+        git.checkout(branch: 'feature/test_example')
+
+        when:
+        def version = inferredVersionForTask('devSnapshot')
+
+        then:
+        version.toString() == dev('0.1.0-dev.2+test.example.').toString()
     }
 
     def 'fail build on excluded master branch'() {
@@ -340,6 +368,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('devSnapshot')
 
         then:
-        version == dev('0.1.0-dev.3+')
+        version.toString() == dev('0.1.0-dev.3+').toString()
     }
 }

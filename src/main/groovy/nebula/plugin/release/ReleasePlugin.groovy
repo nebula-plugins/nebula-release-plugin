@@ -1,5 +1,21 @@
+/*
+ * Copyright 2014-2015 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package nebula.plugin.release
 
+import com.jfrog.bintray.gradle.BintrayUploadTask
 import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
@@ -7,10 +23,17 @@ import org.ajoberstar.grgit.Grgit
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.execution.TaskExecutionGraph
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
+import org.jfrog.gradle.plugin.artifactory.task.BuildInfoPublicationsTask
 
 class ReleasePlugin implements Plugin<Project> {
+    public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
     Project project
+    static Logger logger = Logging.getLogger(ReleasePlugin)
 
     static final String SNAPSHOT_TASK_NAME = 'snapshot'
     static final String DEV_SNAPSHOT_TASK_NAME = 'devSnapshot'
@@ -40,7 +63,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             releaseExtension.with {
-                grgit = Grgit.open(project.projectDir)
+                grgit = Grgit.open(dir: project.projectDir)
                 tagStrategy {
                     generateMessage = { version ->
                         StringBuilder builder = new StringBuilder()
@@ -104,8 +127,7 @@ class ReleasePlugin implements Plugin<Project> {
                 applyReleaseStage('dev')
             }
 
-            final String disableGitChecks = 'release.disableGitChecks'
-            if (project.hasProperty(disableGitChecks) && project.property(disableGitChecks) as Boolean) {
+            if (shouldSkipGitChecks()) {
                 project.tasks.release.deleteAllActions()
                 project.tasks.prepare.deleteAllActions()
             }
@@ -118,6 +140,13 @@ class ReleasePlugin implements Plugin<Project> {
                 project.rootProject.tasks.release.dependsOn project.tasks.build
             }
         }
+
+        configureBintrayTasksIfPresent()
+    }
+
+    private boolean shouldSkipGitChecks() {
+        (project.hasProperty(DISABLE_GIT_CHECKS) && project.property(DISABLE_GIT_CHECKS) as Boolean) ||
+                (project.hasProperty('release.travisci') && project.property('release.travisci').toBoolean())
     }
 
     void applyReleaseStage(String stage) {
@@ -125,11 +154,54 @@ class ReleasePlugin implements Plugin<Project> {
         project.allprojects.each { it.ext.set(releaseStage, stage) }
     }
 
+    void configureBintrayTasksIfPresent() {
+        if (!isClassPresent('com.jfrog.bintray.gradle.BintrayUploadTask') ||
+                !isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoPublicationsTask')) {
+            logger.info('Skipping configuring bintray and artifactory tasks since they are not present')
+            return
+        }
+
+        project.tasks.withType(BintrayUploadTask) { Task task ->
+            project.plugins.withType(JavaPlugin) {
+                task.mustRunAfter project.tasks.build
+            }
+            project.rootProject.tasks.release.dependsOn(task)
+
+            project.gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+                task.onlyIf {
+                    graph.hasTask(':final') || graph.hasTask(':candidate')
+                }
+            }
+        }
+        project.tasks.withType(BuildInfoPublicationsTask) { Task task ->
+            project.plugins.withType(JavaPlugin) {
+                task.mustRunAfter project.tasks.build
+            }
+            project.rootProject.tasks.release.dependsOn(task)
+
+            project.gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+                task.onlyIf {
+                    graph.hasTask(':snapshot')
+                }
+            }
+        }
+    }
+
     private boolean tagExists(Grgit grgit, String revStr) {
         try {
             grgit.resolve.toCommit(revStr)
             return true
         } catch (e) {
+            return false
+        }
+    }
+
+    boolean isClassPresent(String name) {
+        try {
+            Class.forName(name)
+            return true
+        } catch (Throwable ex) {
+            logger.debug("Class $name is not present")
             return false
         }
     }
