@@ -33,6 +33,9 @@ If you want the release plugin to trigger or finalize a publishing task you will
 -or-
 
     tasks.release.finalizedBy tasks.<publish task name>
+    
+This plugin also detects the presence of the [nebula-bintray-plugin](https://github.com/nebula-plugins/nebula-bintray-plugin)
+and wires itself to depend on the task types used by `bintrayUpload` and `artifactoryUpload`.
 
 # Opinions
 
@@ -43,7 +46,7 @@ All tasks default to bumping the minor version.
 # Extension Provided
 
     nebulaRelease {
-      Set<String> releaseBranchPatterns = [/master/, /(release(-|\/))?\d+(\.\d+)?\.x/] as Set
+      Set<String> releaseBranchPatterns = [/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/] as Set
       Set<String> excludeBranchPatterns = [] as Set
       String shortenedBranchPattern = /(?:feature(?:-|\/))?(.+)/
 
