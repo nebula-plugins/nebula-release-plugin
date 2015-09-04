@@ -1,3 +1,10 @@
+3.0.0 / 2015-09-04
+==================
+
+* Move to gradle-git 1.3.0
+* Plugin built against gradle 2.6
+* New travis release process
+
 2.2.7 / 2015-07-14
 ==================
 

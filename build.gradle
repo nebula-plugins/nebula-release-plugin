@@ -1,10 +1,3 @@
-buildscript {
-    repositories { jcenter() }
-    dependencies {
-        classpath 'com.netflix.nebula:nebula-plugin-plugin:3.1.1'
-    }
-}
-
 plugins {
     id 'groovy'
     id 'idea'
@@ -20,11 +13,9 @@ plugins {
     id 'nebula.nebula-integtest' version '2.2.1'
     id 'com.gradle.plugin-publish' version '0.9.1'
     id 'com.github.kt3k.coveralls' version '2.4.0'
-    id 'org.ysb33r.gradletest' version '0.5.4'
 }
 
 description 'Release opinions on top of gradle-git'
-apply plugin: 'nebula.plugin-plugin'
 
 group = 'com.netflix.nebula'
 
@@ -35,44 +26,25 @@ contacts {
     }
 }
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+apply from: 'https://raw.githubusercontent.com/nebula-plugins/nebula-core/d60b3a0325a861be8082ae8c92cd403aecbc8580/common.gradle'
 
-repositories {
-    jcenter()
-}
 
 dependencies {
-    compile localGroovy()
-    compile gradleApi()
     compile 'com.netflix.nebula:nebula-core:2.+'
     compile 'com.netflix.nebula:nebula-bintray-plugin:3.+', optional
     compile 'com.jfrog.bintray.gradle:gradle-bintray-plugin', optional
     compile 'org.ajoberstar:gradle-git:1.3.0'
-    testCompile('com.netflix.nebula:nebula-test:3.+') {
-        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
-    }
 }
 
 tasks.withType(Test) {
     maxHeapSize = '512m'
 }
 
-tasks.check.dependsOn 'integrationTest'
-
 jacocoTestReport {
-    reports {
-        xml.enabled = true // coveralls plugin depends on xml format report
-        html.enabled = true
-    }
     executionData = files('build/jacoco/test.exec', 'build/jacoco/integrationTest.exec')
 }
 
 pluginBundle {
-    website = 'https://github.com/nebula-plugins/nebula-release-plugin'
-    vcsUrl = 'https://github.com/nebula-plugins/nebula-release-plugin.git'
-    description = 'Release opinions on top of gradle-git'
-
     plugins {
         nebulaRelease {
             id = 'nebula.nebula-release'
@@ -80,18 +52,4 @@ pluginBundle {
             tags = ['nebula', 'release', 'versioning']
         }
     }
-
-    mavenCoordinates {
-        groupId = 'com.netflix.nebula'
-        artifactId = 'nebula-release-plugin'
-    }
-}
-
-gradleTest {
-    versions '2.2.1', '2.3', '2.4', '2.5', '2.6', '2.7-rc-1'
-}
-
-gradleTest.dependsOn(jar)
-gradleTest.doFirst {
-    project.version = project.version.toString()
 }
