@@ -1,3 +1,10 @@
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath 'com.netflix.nebula:nebula-plugin-plugin:3.1.1'
+    }
+}
+
 plugins {
     id 'groovy'
     id 'idea'
@@ -8,7 +15,7 @@ plugins {
     id 'nebula.maven-apache-license' version '4.0.1'
     id 'nebula.optional-base' version '2.2.2'
     id 'nebula.dependency-lock' version '3.0.0'
-    id 'nebula.nebula-release' version '2.2.7'
+    //id 'nebula.nebula-release' version '3.0.0'
     id 'nebula.info' version '2.2.4'
     id 'nebula.contacts' version '2.2.0'
     id 'nebula.nebula-integtest' version '2.2.1'
@@ -17,6 +24,7 @@ plugins {
 }
 
 description 'Release opinions on top of gradle-git'
+apply plugin: 'nebula.plugin-plugin'
 
 group = 'com.netflix.nebula'
 
