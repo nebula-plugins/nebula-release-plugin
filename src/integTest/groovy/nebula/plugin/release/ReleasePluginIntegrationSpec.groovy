@@ -371,6 +371,14 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         originGit.tag.list()*.name.contains('v42.5.0')
     }
 
+    def 'error if release.version is set to an empty string'() {
+        when:
+        def result = runTasksWithFailure('build', '-Prelease.version=')
+
+        then:
+        result.failure.message == 'Supplied release.version is empty'
+    }
+
     def 'devSnapshot works if default is changed'() {
         buildFile << '''\
             release {

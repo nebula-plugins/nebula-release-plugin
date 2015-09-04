@@ -15,10 +15,13 @@
  */
 package nebula.plugin.release
 
+import com.github.zafarkhaja.semver.Version
+import com.github.zafarkhaja.semver.VersionParser
 import org.ajoberstar.gradle.git.release.base.ReleaseVersion
 import org.ajoberstar.gradle.git.release.base.VersionStrategy
 import org.ajoberstar.gradle.git.release.semver.NearestVersionLocator
 import org.ajoberstar.grgit.Grgit
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 
 /**
@@ -82,7 +85,11 @@ class OverrideStrategies {
 
         @Override
         ReleaseVersion infer(Project project, Grgit grgit) {
-            new ReleaseVersion(project.property(propertyName), null, true)
+            def requestedVersion = project.property(propertyName)
+            if (requestedVersion == null || requestedVersion.isEmpty()) {
+                throw new GradleException('Supplied release.version is empty')
+            }
+            new ReleaseVersion(requestedVersion, null, true)
         }
     }
 }
