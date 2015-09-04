@@ -222,7 +222,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('devSnapshot')
 
         then:
-        version.toString() == dev('1.3.0-dev.0+').toString()
+        version == dev('1.3.0-dev.0+')
     }
 
     def 'release a final from new major_minor release branch and have version respected'() {
@@ -238,6 +238,23 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         version == normal('1.3.0')
+    }
+
+    def 'release a final existing new major_minor release branch and bump patch as expected'() {
+        def oneThreeX = 'release/1.3.x'
+        git.tag.add(name: 'v1.2.2')
+        git.branch.add(name: oneThreeX)
+        git.push(all: true)
+        git.branch.change(name: oneThreeX, startPoint: "origin/${oneThreeX}".toString())
+        git.checkout(branch: oneThreeX)
+        git.tag.add(name: 'v1.3.0')
+        git.push(all: true)
+
+        when:
+        def version = inferredVersionForTask('final')
+
+        then:
+        version == normal('1.3.1')
     }
 
     def 'task dependency configuration is read from extension'() {
@@ -354,6 +371,14 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         originGit.tag.list()*.name.contains('v42.5.0')
     }
 
+    def 'error if release.version is set to an empty string'() {
+        when:
+        def result = runTasksWithFailure('build', '-Prelease.version=')
+
+        then:
+        result.failure.message == 'Supplied release.version is empty'
+    }
+
     def 'devSnapshot works if default is changed'() {
         buildFile << '''\
             release {
@@ -369,5 +394,26 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         version.toString() == dev('0.1.0-dev.3+').toString()
+    }
+
+    def 'bintray tasks are wired in'() {
+        buildFile << '''\
+            buildscript {
+                repositories { jcenter() }
+                dependencies {
+                    classpath 'com.netflix.nebula:nebula-bintray-plugin:3.1.0'
+                    classpath 'com.netflix.nebula:nebula-publishing-plugin:4.0.1'
+                }
+            }
+            apply plugin: 'nebula.maven-publish'
+            apply plugin: 'nebula.nebula-bintray'
+        '''.stripIndent()
+
+        when:
+        def results = runTasksSuccessfully('devSnapshot', '-m')
+
+        then:
+        results.standardOutput.contains 'bintrayUpload'
+        results.standardOutput.contains 'artifactoryPublish'
     }
 }
