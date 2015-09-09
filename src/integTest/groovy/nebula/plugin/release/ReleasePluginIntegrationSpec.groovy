@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release
 
+import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
 import org.gradle.api.plugins.JavaPlugin
 
 class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
@@ -154,6 +155,29 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         originGit.tag.list()*.name.contains('v0.1.0')
+    }
+
+    def 'release does not run if tests fail'() {
+        buildFile << """
+            ${applyPlugin(NebulaBintrayPublishingPlugin)}
+
+            repositories { jcenter() }
+            dependencies {
+                testCompile 'junit:junit:4.12'
+            }
+        """.stripIndent()
+
+        writeUnitTest(true)
+
+        git.add(patterns: ['build.gradle', 'src/test/java/nebula/HelloWorldTest.java'])
+        git.commit(message: 'Add breaking test')
+
+        when:
+        def results = runTasksWithFailure('final')
+
+        then:
+        results.wasExecuted('test')
+        !results.wasExecuted('release')
     }
 
     def 'final release log'() {

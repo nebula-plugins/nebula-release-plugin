@@ -1,3 +1,8 @@
+3.0.1 / 2015-09-09
+==================
+
+* BUGFIX: fix ordering so we don't release if tests are broken
+
 3.0.0 / 2015-09-04
 ==================
 
