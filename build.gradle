@@ -13,6 +13,7 @@ plugins {
     id 'nebula.optional-base' version '2.2.2'
     id 'nebula.dependency-lock' version '3.0.0'
     id 'nebula.nebula-release' version '3.0.0'
+    id 'nebula.nebula-bintray' version '3.1.0'
     id 'nebula.info' version '2.2.4'
     id 'nebula.contacts' version '2.2.0'
     id 'nebula.nebula-integtest' version '2.2.1'
