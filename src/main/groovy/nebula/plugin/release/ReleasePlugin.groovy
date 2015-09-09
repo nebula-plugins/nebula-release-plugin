@@ -163,7 +163,7 @@ class ReleasePlugin implements Plugin<Project> {
 
         project.tasks.withType(BintrayUploadTask) { Task task ->
             project.plugins.withType(JavaPlugin) {
-                task.mustRunAfter project.tasks.build
+                task.dependsOn(project.tasks.build)
             }
             project.rootProject.tasks.release.dependsOn(task)
 
@@ -175,7 +175,7 @@ class ReleasePlugin implements Plugin<Project> {
         }
         project.tasks.withType(BuildInfoPublicationsTask) { Task task ->
             project.plugins.withType(JavaPlugin) {
-                task.mustRunAfter project.tasks.build
+                task.dependsOn(project.tasks.build)
             }
             project.rootProject.tasks.release.dependsOn(task)
 
