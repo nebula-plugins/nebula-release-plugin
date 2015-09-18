@@ -378,6 +378,16 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
     }
 
+    def 'use last tag for rc'() {
+        git.tag.add(name: 'v3.1.2-rc.1')
+
+        when:
+        runTasksSuccessfully('candidate', '-Prelease.useLastTag=true')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
+    }
+
     def 'skip useLastTag if false'() {
         when:
         runTasksSuccessfully('final', '-Prelease.useLastTag=345')
