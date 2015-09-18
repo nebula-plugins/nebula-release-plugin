@@ -59,7 +59,7 @@ class OverrideStrategies {
         @Override
         ReleaseVersion infer(Project project, Grgit grgit) {
             def locate = new NearestVersionLocator().locate(grgit)
-            return new ReleaseVersion(locate.getNormal().normalVersion, null, false)
+            return new ReleaseVersion(locate.any.toString(), null, false)
         }
     }
 

@@ -15,7 +15,9 @@
  */
 package nebula.plugin.release
 
+import nebula.plugin.bintray.BintrayPlugin
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.publish.plugins.PublishingPlugin
 
 class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationSpec {
     @Override
@@ -91,5 +93,20 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         new File(projectDir, 'test-release-client/build/libs').list().find {
             it =~ /test-release-client-0\.1\.0-dev\.2\+testexample\./
         } != null
+    }
+
+    def 'tasks does not fail'() {
+        given:
+        buildFile << """\
+            allprojects {
+                ${applyPlugin(PublishingPlugin)}
+                ${applyPlugin(BintrayPlugin)}
+            }
+        """.stripIndent()
+        when:
+        runTasksSuccessfully('tasks', '--all')
+
+        then:
+        noExceptionThrown()
     }
 }
