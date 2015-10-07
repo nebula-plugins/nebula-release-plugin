@@ -38,7 +38,7 @@ dependencies {
     compile 'com.netflix.nebula:nebula-core:2.+'
     compile 'com.netflix.nebula:nebula-bintray-plugin:3.+', optional
     compile 'com.jfrog.bintray.gradle:gradle-bintray-plugin', optional
-    compile 'org.ajoberstar:gradle-git:1.3.0'
+    compile 'org.ajoberstar:gradle-git:1.3.1'
 }
 
 tasks.withType(Test) {
