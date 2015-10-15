@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 package nebula.plugin.release
-
 import com.jfrog.bintray.gradle.BintrayUploadTask
 import nebula.core.ProjectType
-import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
+import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -28,6 +27,8 @@ import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.publish.ivy.IvyPublication
+import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
 import org.jfrog.gradle.plugin.artifactory.task.BuildInfoPublicationsTask
 
 class ReleasePlugin implements Plugin<Project> {
@@ -118,8 +119,11 @@ class ReleasePlugin implements Plugin<Project> {
             releaseCheck.isSnapshotRelease = hasSnapshot || hasDevSnapshot || (!hasCandidate && !hasFinal)
 
             if (hasFinal) {
+                setupStatus('release')
                 applyReleaseStage('final')
             } else if (hasCandidate) {
+                project.allprojects.each { it.status = 'candidate' }
+                setupStatus('candidate')
                 applyReleaseStage('rc')
             } else if (hasSnapshot) {
                 applyReleaseStage('SNAPSHOT')
@@ -147,6 +151,16 @@ class ReleasePlugin implements Plugin<Project> {
     private boolean shouldSkipGitChecks() {
         (project.hasProperty(DISABLE_GIT_CHECKS) && project.property(DISABLE_GIT_CHECKS) as Boolean) ||
                 (project.hasProperty('release.travisci') && project.property('release.travisci').toBoolean())
+    }
+
+    void setupStatus(String status) {
+        project.plugins.withType(IvyPublishPlugin) {
+            project.publishing {
+                publications.withType(IvyPublication) {
+                    descriptor.status = status
+                }
+            }
+        }
     }
 
     void applyReleaseStage(String stage) {
@@ -181,7 +195,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             project.gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
                 task.onlyIf {
-                    graph.hasTask(':snapshot')
+                    graph.hasTask(':snapshot') || graph.hasTask(':devSnapshot')
                 }
             }
         }

@@ -1,3 +1,12 @@
+3.1.0 / 2015-10-15
+==================
+
+* Update ivy status on publish
+    * `devSnapshot` and `snapshot` will leave status at integration
+    * `candidate` will set ivy status to candidate
+    * `final` will set ivy status to release
+* Also depend on artifactory tasks if creating devSnapshot
+
 3.0.2 / 2015-09-18
 ==================
 
