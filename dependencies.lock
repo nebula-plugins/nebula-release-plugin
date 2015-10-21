@@ -2,6 +2,6 @@
   "com.jfrog.bintray.gradle:gradle-bintray-plugin": { "locked": "1.3.1" },
   "com.netflix.nebula:nebula-bintray-plugin": { "locked": "3.1.0", "requested": "3.+" },
   "com.netflix.nebula:nebula-core": { "locked": "2.2.0", "requested": "2.+" },
-  "com.netflix.nebula:nebula-test": { "locked": "3.0.0", "requested": "3.0.0" },
+  "com.netflix.nebula:nebula-test": { "locked": "4.0.0", "requested": "4.0.0" },
   "org.ajoberstar:gradle-git": { "locked": "1.3.2", "requested": "1.3.2" }
 }
