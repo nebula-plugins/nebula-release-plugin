@@ -19,6 +19,7 @@ import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
+import org.eclipse.jgit.errors.RepositoryNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -49,6 +50,14 @@ class ReleasePlugin implements Plugin<Project> {
         this.project = project
 
         ProjectType type = new ProjectType(project)
+
+        try {
+            Grgit.open(dir: project.rootProject.projectDir)
+        }
+        catch(RepositoryNotFoundException e) {
+            logger.warn("This project does not have a fully initialized git repository yet -- nebula-release tasks will not be available")
+            return
+        }
 
         if (type.isRootProject) {
             project.plugins.apply(BaseReleasePlugin)
