@@ -108,7 +108,13 @@ class ReleasePlugin implements Plugin<Project> {
             def snapshotTask = project.task(SNAPSHOT_TASK_NAME)
             def devSnapshotTask = project.task(DEV_SNAPSHOT_TASK_NAME)
             def candidateTask = project.task(CANDIDATE_TASK_NAME)
+            candidateTask.doLast {
+                project.allprojects.each { it.status = 'candidate' }
+            }
             def finalTask = project.task(FINAL_TASK_NAME)
+            finalTask.doLast {
+                project.allprojects.each { it.status = 'release' }
+            }
 
             [snapshotTask, devSnapshotTask, candidateTask, finalTask].each {
                 it.group = GROUP
@@ -117,28 +123,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             def cliTasks = project.gradle.startParameter.taskNames
-            def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME)
-            def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME)
-            def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME)
-            def hasFinal = cliTasks.contains(FINAL_TASK_NAME)
-            if ([hasSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
-                throw new GradleException('Only one of snapshot, devSnapshot, candidate, or final can be specified.')
-            }
-
-            releaseCheck.isSnapshotRelease = hasSnapshot || hasDevSnapshot || (!hasCandidate && !hasFinal)
-
-            if (hasFinal) {
-                setupStatus('release')
-                applyReleaseStage('final')
-            } else if (hasCandidate) {
-                project.allprojects.each { it.status = 'candidate' }
-                setupStatus('candidate')
-                applyReleaseStage('rc')
-            } else if (hasSnapshot) {
-                applyReleaseStage('SNAPSHOT')
-            } else if(hasDevSnapshot) {
-                applyReleaseStage('dev')
-            }
+            determineStage(cliTasks, releaseCheck)
 
             if (shouldSkipGitChecks()) {
                 project.tasks.release.deleteAllActions()
@@ -155,6 +140,30 @@ class ReleasePlugin implements Plugin<Project> {
         }
 
         configureBintrayTasksIfPresent()
+    }
+
+    private void determineStage(List<String> cliTasks, ReleaseCheck releaseCheck) {
+        def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME)
+        def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME)
+        def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME)
+        def hasFinal = cliTasks.contains(FINAL_TASK_NAME)
+        if ([hasSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
+            throw new GradleException('Only one of snapshot, devSnapshot, candidate, or final can be specified.')
+        }
+
+        releaseCheck.isSnapshotRelease = hasSnapshot || hasDevSnapshot || (!hasCandidate && !hasFinal)
+
+        if (hasFinal) {
+            setupStatus('release')
+            applyReleaseStage('final')
+        } else if (hasCandidate) {
+            setupStatus('candidate')
+            applyReleaseStage('rc')
+        } else if (hasSnapshot) {
+            applyReleaseStage('SNAPSHOT')
+        } else if (hasDevSnapshot) {
+            applyReleaseStage('dev')
+        }
     }
 
     private boolean shouldSkipGitChecks() {
