@@ -6,6 +6,7 @@
     * `candidate` will set ivy status to candidate
     * `final` will set ivy status to release
 * Also depend on artifactory tasks if creating devSnapshot
+* Warn rather than fail when the project contains no git repository or the git repository has no commits.
 
 3.0.2 / 2015-09-18
 ==================
