@@ -46,6 +46,12 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
             }
 
             tasks.release.dependsOn 'publishIvyPublicationToIvytestRepository'
+
+            task printStatus {
+                doLast {
+                    logger.lifecycle("Project Status: \${project.status}")
+                }
+            }
         """.stripIndent()
 
         settingsFile << '''\
@@ -72,6 +78,14 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
         xml.info.@status == 'integration'
     }
 
+    def 'snapshot leaves project.status as integration'() {
+        when:
+        def result = runTasksSuccessfully('snapshot', 'printStatus')
+
+        then:
+        result.standardOutput.contains 'Project Status: integration'
+    }
+
     def 'devSnapshot leaves integration status'() {
         when:
         def result = runTasksSuccessfully('devSnapshot')
@@ -90,6 +104,14 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
         xml.info.@status == 'candidate'
     }
 
+    def 'candidate sets project.status to candidate'() {
+        when:
+        def result = runTasksSuccessfully('candidate', 'printStatus')
+
+        then:
+        result.standardOutput.contains 'Project Status: candidate'
+    }
+
     def 'final sets release status'() {
         when:
         def result = runTasksSuccessfully('final')
@@ -97,5 +119,13 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
         then:
         def xml = loadIvyFileViaVersionLookup(result)
         xml.info.@status == 'release'
+    }
+
+    def 'final sets project.status to release'() {
+        when:
+        def result = runTasksSuccessfully('final', 'printStatus')
+
+        then:
+        result.standardOutput.contains 'Project Status: release'
     }
 }

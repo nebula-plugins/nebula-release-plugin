@@ -1,12 +1,27 @@
-3.1.0 / 2015-10-15
+3.1.0 / 2015-10-26
 ==================
 
-* Update ivy status on publish
+* Update ivy status and project.status on publish
     * `devSnapshot` and `snapshot` will leave status at integration
-    * `candidate` will set ivy status to candidate
-    * `final` will set ivy status to release
+    * `candidate` will set ivy and project status to candidate
+    * `final` will set ivy and project status to release
 * Also depend on artifactory tasks if creating devSnapshot
 * Warn rather than fail when the project contains no git repository or the git repository has no commits.
+
+3.0.5 / 2015-10-19
+==================
+
+* Republish correctly
+
+3.0.4 / 2015-10-19
+==================
+
+* gradle-git to 1.3.2 // publishing issue
+
+3.0.3 / 2015-10-06
+==================
+
+* gradle-git to 1.3.1
 
 3.0.2 / 2015-09-18
 ==================
