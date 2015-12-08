@@ -49,16 +49,17 @@ class ReleasePlugin implements Plugin<Project> {
     void apply(Project project) {
         this.project = project
 
-        ProjectType type = new ProjectType(project)
+        def gitRoot = project.hasProperty('git.root') ? project.property('git.root') : project.rootProject.projectDir
 
         try {
-            Grgit.open(dir: project.rootProject.projectDir)
+            Grgit.open(dir: gitRoot)
         }
         catch(RepositoryNotFoundException e) {
-            logger.warn("This project does not have a fully initialized git repository yet -- nebula-release tasks will not be available")
+            logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
             return
         }
 
+        ProjectType type = new ProjectType(project)
         if (type.isRootProject) {
             project.plugins.apply(BaseReleasePlugin)
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
@@ -73,7 +74,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             releaseExtension.with {
-                grgit = Grgit.open(dir: project.projectDir)
+                grgit = Grgit.open(dir: gitRoot)
                 tagStrategy {
                     generateMessage = { version ->
                         StringBuilder builder = new StringBuilder()
