@@ -11,7 +11,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 # Applying the plugin
 
     plugins {
-        id 'nebula.nebula-release' version '3.1.0'
+        id 'nebula.nebula-release' version '3.1.1'
     }
 
 -or-
@@ -19,7 +19,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
     buildscript {
         repositories { jcenter() }
         dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:3.1.0'
+            classpath 'com.netflix.nebula:nebula-release-plugin:3.1.1'
         }
     }
     apply plugin: 'nebula.nebula-release'
@@ -115,6 +115,12 @@ If this is the first time releasing with this plugin and you've released in the 
 This will create a tag `v<string>` where String is whatever you set on `release.version`. If you want the plugin to work from here on out you should choose a version that matches semantic versioning described above.
 
     ./gradlew -Prelease.version=42.5.0 final
+    
+### Git root is in a different location from Gradle root
+
+The plugin assumes Git root is in the same location as Gradle root. If this isn't the case, you may specify a different path for Git root via the `gitRoot` Gradle property. For example:
+
+    ./gradlew -Pgit.root=<git root path> final
     
 Gradle Compatibility Tested
 ---------------------------
