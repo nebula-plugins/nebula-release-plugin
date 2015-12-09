@@ -118,7 +118,7 @@ This will create a tag `v<string>` where String is whatever you set on `release.
     
 ### Git root is in a different location from Gradle root
 
-The plugin assumes Git root is in the same location as Gradle root. If this isn't the case, you may specify a different path for Git root via the `gitRoot` Gradle property. For example:
+The plugin assumes Git root is in the same location as Gradle root. If this isn't the case, you may specify a different path for Git root via the `git.root` Gradle property. For example:
 
     ./gradlew -Pgit.root=<git root path> final
     
