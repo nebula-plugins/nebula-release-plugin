@@ -58,6 +58,7 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
             rootProject.name='statuscheck'
         '''.stripIndent()
 
+        git.tag.add(name: 'v0.0.1')
         git.add(patterns: ['build.gradle', '.gitignore', 'settings.gradle'] as Set)
     }
 
