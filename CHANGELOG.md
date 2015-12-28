@@ -1,3 +1,8 @@
+3.1.2 / 2015-12-9
+=================
+
+* Better error reporting for missing init tag and uncommitted changes
+
 3.1.1 / 2015-12-8
 =================
 

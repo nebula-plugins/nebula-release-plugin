@@ -19,6 +19,7 @@ import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.Tag
 import org.eclipse.jgit.errors.RepositoryNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -35,6 +36,7 @@ import org.jfrog.gradle.plugin.artifactory.task.BuildInfoPublicationsTask
 class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
     Project project
+    Grgit git
     static Logger logger = Logging.getLogger(ReleasePlugin)
 
     static final String SNAPSHOT_TASK_NAME = 'snapshot'
@@ -52,7 +54,7 @@ class ReleasePlugin implements Plugin<Project> {
         def gitRoot = project.hasProperty('git.root') ? project.property('git.root') : project.rootProject.projectDir
 
         try {
-            Grgit.open(dir: gitRoot)
+            git = Grgit.open(dir: gitRoot)
         }
         catch(RepositoryNotFoundException e) {
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
@@ -74,7 +76,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             releaseExtension.with {
-                grgit = Grgit.open(dir: gitRoot)
+                grgit = git
                 tagStrategy {
                     generateMessage = { version ->
                         StringBuilder builder = new StringBuilder()
@@ -125,6 +127,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             def cliTasks = project.gradle.startParameter.taskNames
             determineStage(cliTasks, releaseCheck)
+            checkStateForStage()
 
             if (shouldSkipGitChecks()) {
                 project.tasks.release.deleteAllActions()
@@ -164,6 +167,21 @@ class ReleasePlugin implements Plugin<Project> {
             applyReleaseStage('SNAPSHOT')
         } else if (hasDevSnapshot) {
             applyReleaseStage('dev')
+        }
+    }
+
+    private void checkStateForStage() {
+        if (!project.tasks.releaseCheck.isSnapshotRelease) {
+            def status = git.status()
+            def uncommittedChangesFound = [status.staged, status.unstaged].any { it.getAllChanges().size() > 0 }
+            if (uncommittedChangesFound) {
+                throw new GradleException('Final and candidate builds require all changes to be committed into Git.')
+            }
+        }
+
+        List<Tag> tags = git.tag.list()
+        if (!tags.any { it.fullName.split('/')[-1] ==~ /v[\d]+.[\d+].[\d]+/ }) {
+            throw new GradleException('The nebula-release-plugin requires a Git tag to indicate initial version. Use "git tag v1.0.0" to start from version 1.0.0.')
         }
     }
 

@@ -31,6 +31,8 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
             }
         """.stripIndent()
 
+        git.tag.add(name: 'v0.0.1')
+        git.commit(message: 'Another commit')
         git.add(patterns: ['build.gradle', '.gitignore'] as Set)
     }
 
@@ -128,7 +130,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('final', '-Prelease.scope=patch')
 
         then:
-        version == normal('0.0.1')
+        version == normal('0.0.2')
     }
 
     def 'choose release version, update major'() {
@@ -188,7 +190,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         String message = originGit.tag.list().find { it.name == 'v0.1.0' }.fullMessage
         message.contains 'Release of 0.1.0'
         message.find(/- [a-f0-9]{40}: Setup/)
-        message.find(/- [a-f0-9]{40}: Initial checkout/)
+        message.find(/- [a-f0-9]{40}: Another commit/)
     }
 
     def 'create new major release branch have branch name respected on version'() {

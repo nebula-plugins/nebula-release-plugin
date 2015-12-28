@@ -27,6 +27,7 @@ class ReleasePluginOptionalDepsSpec extends ProjectSpec {
     def setup() {
         git = Grgit.init(dir: projectDir)
         git.commit(message: 'initial commit')
+        git.tag.add(name: 'v0.0.1')
     }
 
     @ConfineMetaClassChanges(value = [ReleasePlugin])

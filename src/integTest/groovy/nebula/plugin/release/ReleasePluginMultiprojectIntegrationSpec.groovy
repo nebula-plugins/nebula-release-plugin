@@ -41,6 +41,8 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
             }
         '''.stripIndent())
 
+        git.tag.add(name: 'v0.0.1')
+        git.commit(message: 'Another commit')
         git.add(patterns: ['build.gradle', '.gitignore', 'settings.gradle',
                            'test-release-common/build.gradle', 'test-release-client/build.gradle'] as Set)
     }

@@ -7,18 +7,6 @@ import org.gradle.api.plugins.JavaPlugin
  * initial commit)
  */
 class ReleasePluginNewProjectIntegrationSpec extends IntegrationSpec {
-    def 'release tasks unavailable when no git repository has been initialized'() {
-        when:
-        buildFile << """
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
-        """
-
-        then:
-        runTasksSuccessfully('build')
-        runTasksWithFailure('snapshot')
-    }
-
     def 'release tasks unavailable when git repository has no commits'() {
         setup: // equivalent of having completed `git init` but no initial commit
         def origin = new File(projectDir.parent, "${projectDir.name}.git")
