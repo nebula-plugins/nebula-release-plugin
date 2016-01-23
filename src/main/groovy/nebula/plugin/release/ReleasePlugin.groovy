@@ -180,8 +180,8 @@ class ReleasePlugin implements Plugin<Project> {
         }
 
         List<Tag> tags = git.tag.list()
-        if (!tags.any { it.fullName.split('/')[-1] ==~ /v[\d]+.[\d+].[\d]+/ }) {
-            throw new GradleException('The nebula-release-plugin requires a Git tag to indicate initial version. Use "git tag v1.0.0" to start from version 1.0.0.')
+        if (!tags.any { it.fullName.split('/')[-1] ==~ /v[\d]+\.[\d]+\.[\d]+/ }) {
+            throw new GradleException('The nebula.release-plugin requires a Git tag to indicate initial version. Use "git tag v1.0.0" to start from version 1.0.0.')
         }
     }
 
