@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Netflix, Inc.
+ * Copyright 2014-2016 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Tag
 import org.eclipse.jgit.errors.RepositoryNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -31,6 +30,9 @@ import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.publish.ivy.IvyPublication
 import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
+import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
+import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.jfrog.gradle.plugin.artifactory.task.BuildInfoPublicationsTask
 
 class ReleasePlugin implements Plugin<Project> {
@@ -60,6 +62,7 @@ class ReleasePlugin implements Plugin<Project> {
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
             return
         }
+        checkForBadBranchNames()
 
         ProjectType type = new ProjectType(project)
         if (type.isRootProject) {
@@ -178,11 +181,6 @@ class ReleasePlugin implements Plugin<Project> {
                 throw new GradleException('Final and candidate builds require all changes to be committed into Git.')
             }
         }
-
-        List<Tag> tags = git.tag.list()
-        if (!tags.any { it.fullName.split('/')[-1] ==~ /v[\d]+.[\d+].[\d]+/ }) {
-            throw new GradleException('The nebula-release-plugin requires a Git tag to indicate initial version. Use "git tag v1.0.0" to start from version 1.0.0.')
-        }
     }
 
     private boolean shouldSkipGitChecks() {
@@ -203,6 +201,20 @@ class ReleasePlugin implements Plugin<Project> {
     void applyReleaseStage(String stage) {
         final String releaseStage = 'release.stage'
         project.allprojects.each { it.ext.set(releaseStage, stage) }
+    }
+
+    void configurePublishingIfPresent() {
+        project.plugins.withType(MavenPublishPlugin) {
+            project.tasks.withType(GenerateMavenPom) { task ->
+                project.rootProject.tasks.release.dependsOn(task)
+            }
+        }
+
+        project.plugins.withType(IvyPublishPlugin) {
+            project.tasks.withType(GenerateIvyDescriptor) { task ->
+                project.rootProject.tasks.release.dependsOn(task)
+            }
+        }
     }
 
     void configureBintrayTasksIfPresent() {
@@ -254,6 +266,12 @@ class ReleasePlugin implements Plugin<Project> {
         } catch (Throwable ex) {
             logger.debug("Class $name is not present")
             return false
+        }
+    }
+
+    void checkForBadBranchNames() {
+        if (git.branch.current.name ==~ /release\/\d+(\.\d+)?/) {
+            throw new GradleException('Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>')
         }
     }
 }

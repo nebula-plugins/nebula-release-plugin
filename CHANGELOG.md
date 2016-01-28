@@ -1,10 +1,16 @@
-3.1.2 / 2015-12-9
-=================
+3.1.3 / 2016-01-28
+==================
+
+* Remove need for initial tag
+* Better error message for release/[invalid semver pattern]
+
+3.1.2 / 2015-12-09
+==================
 
 * Better error reporting for missing init tag and uncommitted changes
 
-3.1.1 / 2015-12-8
-=================
+3.1.1 / 2015-12-08
+==================
 
 * Allow to customize the location of Git root 
 

@@ -31,17 +31,6 @@ class ReleasePluginGitStateIntegrationSpec extends GitVersioningIntegrationSpec 
         extractRootCause(candidateFail.failure).message.contains('require all changes to be committed into Git')
     }
 
-    def 'ensure plugin throws error regarding missing tag'() {
-        setup:
-        ['v1', '1.0.0', 'v0.0'].each { git.tag.add(name: it) }
-
-        when:
-        def failure = runTasksWithFailure("devSnapshot")
-
-        then:
-        extractRootCause(failure.failure).message.contains('requires a Git tag to indicate initial version')
-    }
-
     def 'ensure plugin does NOT throw an error when a good init tag is present'() {
         setup:
         ['my-feature-branch', 'super-duper', 'v1.0', 'v0.1.0'].each { git.tag.add(name: it) }
