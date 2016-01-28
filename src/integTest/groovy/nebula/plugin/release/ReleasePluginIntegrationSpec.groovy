@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Netflix, Inc.
+ * Copyright 2014-2016 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
             }
         """.stripIndent()
 
-        git.tag.add(name: 'v0.0.1')
-        git.commit(message: 'Another commit')
         git.add(patterns: ['build.gradle', '.gitignore'] as Set)
     }
 
@@ -130,7 +128,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('final', '-Prelease.scope=patch')
 
         then:
-        version == normal('0.0.2')
+        version == normal('0.0.1')
     }
 
     def 'choose release version, update major'() {
@@ -190,7 +188,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         String message = originGit.tag.list().find { it.name == 'v0.1.0' }.fullMessage
         message.contains 'Release of 0.1.0'
         message.find(/- [a-f0-9]{40}: Setup/)
-        message.find(/- [a-f0-9]{40}: Another commit/)
     }
 
     def 'create new major release branch have branch name respected on version'() {
@@ -282,6 +279,22 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         then:
         version == normal('1.3.1')
     }
+
+    def 'have a good error message for specific non-semantic versions'() {
+        def oneThree = 'release/1.3'
+        git.tag.add(name: 'v1.2.2')
+        git.branch.add(name: oneThree)
+        git.push(all: true)
+        git.branch.change(name: oneThree, startPoint: "origin/${oneThree}".toString())
+        git.checkout(branch: oneThree)
+
+        when:
+        def results = runTasksWithFailure('build')
+
+        then:
+        results.standardError.contains 'Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>'
+    }
+
 
     def 'task dependency configuration is read from extension'() {
         buildFile << '''

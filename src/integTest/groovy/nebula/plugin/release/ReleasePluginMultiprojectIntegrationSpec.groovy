@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Netflix, Inc.
+ * Copyright 2014-2016 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,5 +110,49 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
 
         then:
         noExceptionThrown()
+    }
+
+    def 'tasks task does not fail with our publishing plugin'() {
+        buildFile << """
+            buildscript {
+                repositories { jcenter() }
+                dependencies {
+                    classpath 'com.netflix.nebula:nebula-publishing-plugin:4.4.4'
+                }
+            }
+
+            subprojects { sub ->
+                ${applyPlugin(BintrayPlugin)}
+                apply plugin: 'nebula.ivy-publish'
+                apply plugin: 'nebula.javadoc-jar'
+                apply plugin: 'nebula.source-jar'
+
+
+                publishing {
+                    repositories {
+                        ivy {
+                            name 'localIvy'
+                            url 'build/localivy'
+                        }
+                    }
+                }
+
+                sub.tasks.artifactoryPublish.dependsOn ":\${sub.name}:generateDescriptorFileForNebulaIvyPublication"
+            }
+        """.stripIndent()
+
+        when:
+        def results = runTasksSuccessfully('tasks', '--all')
+
+        then:
+        noExceptionThrown()
+
+        when:
+        def r = runTasksSuccessfully('snapshot', '-m')
+
+        then:
+        noExceptionThrown()
+        r.wasExecuted(':release')
+        r.wasExecuted(':test-release-common:generateDescriptorFileForNebulaIvyPublication')
     }
 }

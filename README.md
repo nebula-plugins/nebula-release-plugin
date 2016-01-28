@@ -11,7 +11,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 # Applying the plugin
 
     plugins {
-        id 'nebula.nebula-release' version '3.1.2'
+        id 'nebula.nebula-release' version '3.1.3'
     }
 
 -or-
@@ -19,7 +19,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
     buildscript {
         repositories { jcenter() }
         dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:3.1.2'
+            classpath 'com.netflix.nebula:nebula-release-plugin:3.1.3'
         }
     }
     apply plugin: 'nebula.nebula-release'
@@ -44,7 +44,6 @@ Project using this plugin will use [semantic versions](http://semver.org/) style
 All tasks default to bumping the minor version.
 
 # Extension Provided
-
     nebulaRelease {
       Set<String> releaseBranchPatterns = [/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/] as Set
       Set<String> excludeBranchPatterns = [] as Set
@@ -54,11 +53,17 @@ All tasks default to bumping the minor version.
       void addExcludeBranchPattern(String pattern)
     }
 
-* releaseBranchPatterns - is a field which takes a `Set<String>` it defaults to including master and any branch that matches the release pattern `(release(-|\/))?\d+(\.\d+)?\.x` e.g. `1.x` or `release/2.x` or `release-42.x` or 1.2.x, if this is set to the empty set it will accept any branch name not in the `excludeBranchPatterns` set
-* excludeBranchPatterns - is a field which takes a `Set<String>`, if the current branch matches a pattern in this set a release will fail, this defaults to the empty Set,
-* shortenedBranchPattern - is a field which takes a `String`, it defaults to `/(?:feature(?:-|\/))?(.+)/` e.g. branch `widget1` will append `widget1` to snapshot version numbers, and `feature/widget2` will append `widget2` to snapshot version numbers. You may configure this field, the regex is expected to have exactly one capture group.
-* addReleaseBranchPattern - is a method which takes a `String`, calling this method will add a pattern to the set of acceptable releaseBranchPatterns, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)`
-* addExcludeBranchPattern - is a method which takes a `String`, calling this method will add a pattern to the set of unacceptable excludeBranchPatterns, usage: `nebulaRelease { addExcludeBranchPattern(/myregex/)`
+| Property                | Type          | Default                                                                   | Description                                                                                                                                                                                                                                                           |
+| ----------------------- | ------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| releaseBranchPatterns   | `Set<String>` | `[/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/]` | Branch patterns that are acceptable to release from. The default pattern will match things like `master`, `1.2.x`, `release-42.x`, `release/2.x`, `v1.2.3`. If the set is empty releases will be possible from any branch that doesn't match `excludeBranchPatterns`. |
+| excludeBranchPatterns   | `Set<String>` | `[]`                                                                      | Branch patterns that you cannot release from. If a branch matches both `releaseBranchPatterns` and `excludeBranchPatterns` it will be excluded.                                                                                                                       |
+| shortenedBranchPattern  | `String`      | `/(?:feature(?:-|\/))?(.+)/`                                              | Branch `widget1` will append `widget1` to snapshot version numbers, and branch `feature/widget2` will append `widget2` to snapshot version numbers. You may configure this field, the regex is expected to have exactly one capture group.                            |
+
+
+| Method                  | Arguments        | Description                                                                                                                               |
+| ----------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| addReleaseBranchPattern | `String pattern` | Calling this method will add a pattern to the set of `releaseBranchPatterns`, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)` |
+| addExcludeBranchPattern | `String pattern` | Calling this method will add a pattern to the set of `excludeBranchPatterns`, usage: `nebulaRelease { addExcludeBranchPattern(/myregex/)` |
 
 # Tasks Provided
 
@@ -137,11 +142,13 @@ Tested with Oracle JDK8
 | 2.6            | yes   |
 | 2.7            | yes   |
 | 2.8            | yes   |
+| 2.9            | yes   |
+| 2.10           | yes   |
 
 LICENSE
 =======
 
-Copyright 2014-2015 Netflix, Inc.
+Copyright 2014-2016 Netflix, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
