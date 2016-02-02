@@ -17,8 +17,8 @@ plugins {
     id 'nebula.info' version '3.0.3'
     id 'nebula.contacts' version '3.0.1'
     id 'nebula.integtest' version '3.0.3'
-    id 'com.gradle.plugin-publish' version '0.9.1'
-    id 'com.github.kt3k.coveralls' version '2.4.0'
+    id 'com.gradle.plugin-publish' version '0.9.3'
+    id 'com.github.kt3k.coveralls' version '2.6.3'
 }
 
 description 'Release opinions on top of gradle-git'
@@ -35,10 +35,10 @@ contacts {
 apply from: 'https://raw.githubusercontent.com/nebula-plugins/nebula-core/b676bbc026d0053494b5439ba8ef147c16adabba/common.gradle'
 
 dependencies {
-    compile 'com.netflix.nebula:nebula-core:3.+'
-    compile 'com.netflix.nebula:nebula-bintray-plugin:3.+', optional
-    compile 'com.jfrog.bintray.gradle:gradle-bintray-plugin', optional
-    compile 'org.ajoberstar:gradle-git:1.3.2'
+    compile 'com.netflix.nebula:nebula-core:3.0.1'
+    compile 'com.netflix.nebula:nebula-bintray-plugin:3.3.1', optional
+    compile 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.5', optional
+    compile 'org.ajoberstar:gradle-git:1.4.1'
 }
 
 tasks.withType(Test) {

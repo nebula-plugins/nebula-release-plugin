@@ -47,12 +47,12 @@ class ReleasePluginOptionalDepsSpec extends ProjectSpec {
     }
 
     @ConfineMetaClassChanges(value = [ReleasePlugin])
-    def 'log info for missing BuildInfoPublicationsTask task'() {
+    def 'log info for missing BuildInfoBaseTask task'() {
         given:
         Logger myLogger = Mock()
         ReleasePlugin.logger = myLogger
         ReleasePlugin.metaClass.isClassPresent = { String name ->
-            name != 'org.jfrog.gradle.plugin.artifactory.task.BuildInfoPublicationsTask'
+            name != 'org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask'
         }
 
         when:

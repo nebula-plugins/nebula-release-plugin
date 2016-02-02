@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Netflix, Inc.
+ * Copyright 2014-2016 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  */
 package nebula.plugin.release
 
-import com.github.zafarkhaja.semver.Version
-import com.github.zafarkhaja.semver.VersionParser
 import org.ajoberstar.gradle.git.release.base.ReleaseVersion
+import org.ajoberstar.gradle.git.release.base.TagStrategy
 import org.ajoberstar.gradle.git.release.base.VersionStrategy
 import org.ajoberstar.gradle.git.release.semver.NearestVersionLocator
 import org.ajoberstar.grgit.Grgit
@@ -58,7 +57,7 @@ class OverrideStrategies {
 
         @Override
         ReleaseVersion infer(Project project, Grgit grgit) {
-            def locate = new NearestVersionLocator().locate(grgit)
+            def locate = new NearestVersionLocator(new TagStrategy()).locate(grgit)
             return new ReleaseVersion(locate.any.toString(), null, false)
         }
     }

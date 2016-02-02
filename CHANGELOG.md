@@ -1,3 +1,10 @@
+3.2.0 / 2016-02-01
+==================
+
+* Use specific versions of dependencies to prevent dynamic versions in the gradle plugin portal
+* upgrade nebula-bintray-plugin 3.2.0 -> 3.3.1
+* upgrade gradle-gt plugin 1.3.2 -> 1.4.1
+
 3.1.3 / 2016-01-28
 ==================
 
