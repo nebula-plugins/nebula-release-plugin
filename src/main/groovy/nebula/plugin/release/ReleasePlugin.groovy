@@ -33,7 +33,7 @@ import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
-import org.jfrog.gradle.plugin.artifactory.task.BuildInfoPublicationsTask
+import org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask
 
 class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
@@ -219,7 +219,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     void configureBintrayTasksIfPresent() {
         if (!isClassPresent('com.jfrog.bintray.gradle.BintrayUploadTask') ||
-                !isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoPublicationsTask')) {
+                !isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) {
             logger.info('Skipping configuring bintray and artifactory tasks since they are not present')
             return
         }
@@ -236,7 +236,7 @@ class ReleasePlugin implements Plugin<Project> {
                 }
             }
         }
-        project.tasks.withType(BuildInfoPublicationsTask) { Task task ->
+        project.tasks.withType(BuildInfoBaseTask) { Task task ->
             project.plugins.withType(JavaPlugin) {
                 task.dependsOn(project.tasks.build)
             }
