@@ -218,35 +218,26 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void configureBintrayTasksIfPresent() {
-        if (!isClassPresent('com.jfrog.bintray.gradle.BintrayUploadTask') ||
-                !isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) {
-            logger.info('Skipping configuring bintray and artifactory tasks since they are not present')
-            return
+        if (isClassPresent('com.jfrog.bintray.gradle.BintrayUploadTask')) {
+            project.tasks.withType(BintrayUploadTask) { Task task ->
+                project.plugins.withType(JavaPlugin) {
+                    task.dependsOn(project.tasks.build)
+                }
+                project.rootProject.tasks.release.dependsOn(task)
+            }
+        } else {
+            logger.info('Skipping configuration of bintray task since it is not present')
         }
 
-        project.tasks.withType(BintrayUploadTask) { Task task ->
-            project.plugins.withType(JavaPlugin) {
-                task.dependsOn(project.tasks.build)
-            }
-            project.rootProject.tasks.release.dependsOn(task)
-
-            project.gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
-                task.onlyIf {
-                    graph.hasTask(':final') || graph.hasTask(':candidate')
+        if (isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) {
+            project.tasks.withType(BuildInfoBaseTask) { Task task ->
+                project.plugins.withType(JavaPlugin) {
+                    task.dependsOn(project.tasks.build)
                 }
+                project.rootProject.tasks.release.dependsOn(task)
             }
-        }
-        project.tasks.withType(BuildInfoBaseTask) { Task task ->
-            project.plugins.withType(JavaPlugin) {
-                task.dependsOn(project.tasks.build)
-            }
-            project.rootProject.tasks.release.dependsOn(task)
-
-            project.gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
-                task.onlyIf {
-                    graph.hasTask(':snapshot') || graph.hasTask(':devSnapshot')
-                }
-            }
+        } else {
+            logger.info('Skipping configuration of artifactoryPublish task since it is not present')
         }
     }
 

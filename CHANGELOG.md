@@ -1,3 +1,8 @@
+4.0.0 / 2016-02-04
+==================
+
+* Potential BREAKING change: Removing assumptions on whether to enable bintray and artifactory publishes based on whether a user uses the `devSnapshot`, `snapshot`, `candidate`, or `final` tasks. These should be on more opinionated plugins.
+
 3.2.0 / 2016-02-01
 ==================
 
