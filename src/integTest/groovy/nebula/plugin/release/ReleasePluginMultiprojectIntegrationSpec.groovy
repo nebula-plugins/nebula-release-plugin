@@ -121,6 +121,11 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
                 }
             }
 
+            allprojects {
+                ${applyPlugin(PublishingPlugin)}
+                ${applyPlugin(BintrayPlugin)}
+            }
+
             subprojects { sub ->
                 ${applyPlugin(BintrayPlugin)}
                 apply plugin: 'nebula.ivy-publish'

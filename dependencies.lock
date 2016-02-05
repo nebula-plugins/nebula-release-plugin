@@ -5,8 +5,8 @@
             "requested": "1.5"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.3.1",
-            "requested": "3.3.1"
+            "locked": "3.3.2",
+            "requested": "3.3.2"
         },
         "com.netflix.nebula:nebula-core": {
             "locked": "3.0.1",
@@ -23,8 +23,8 @@
             "requested": "1.5"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.3.1",
-            "requested": "3.3.1"
+            "locked": "3.3.2",
+            "requested": "3.3.2"
         },
         "com.netflix.nebula:nebula-core": {
             "locked": "3.0.1",
@@ -41,8 +41,8 @@
             "requested": "1.5"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.3.1",
-            "requested": "3.3.1"
+            "locked": "3.3.2",
+            "requested": "3.3.2"
         },
         "com.netflix.nebula:nebula-core": {
             "locked": "3.0.1",
@@ -63,8 +63,8 @@
             "requested": "1.5"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.3.1",
-            "requested": "3.3.1"
+            "locked": "3.3.2",
+            "requested": "3.3.2"
         },
         "com.netflix.nebula:nebula-core": {
             "locked": "3.0.1",
@@ -95,8 +95,8 @@
             "requested": "1.5"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.3.1",
-            "requested": "3.3.1"
+            "locked": "3.3.2",
+            "requested": "3.3.2"
         },
         "com.netflix.nebula:nebula-core": {
             "locked": "3.0.1",
@@ -113,8 +113,8 @@
             "requested": "1.5"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.3.1",
-            "requested": "3.3.1"
+            "locked": "3.3.2",
+            "requested": "3.3.2"
         },
         "com.netflix.nebula:nebula-core": {
             "locked": "3.0.1",
@@ -135,8 +135,8 @@
             "requested": "1.5"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.3.1",
-            "requested": "3.3.1"
+            "locked": "3.3.2",
+            "requested": "3.3.2"
         },
         "com.netflix.nebula:nebula-core": {
             "locked": "3.0.1",
