@@ -51,19 +51,33 @@ All tasks default to bumping the minor version.
 
       void addReleaseBranchPattern(String pattern)
       void addExcludeBranchPattern(String pattern)
+
+      branchNameInSnapshot {
+        boolean enabled = false
+        Set<String> includeBranchPatterns = [/feature(-|\/).*/] as Set
+        Set<String> excludeBranchPatterns = [] as Set
+
+        void addIncludeBranchPattern(String pattern)
+        void addExcludeBranchPattern(String pattern)
+      }
     }
 
-| Property                | Type          | Default                                                                   | Description                                                                                                                                                                                                                                                           |
-| ----------------------- | ------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| releaseBranchPatterns   | `Set<String>` | `[/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/]` | Branch patterns that are acceptable to release from. The default pattern will match things like `master`, `1.2.x`, `release-42.x`, `release/2.x`, `v1.2.3`. If the set is empty releases will be possible from any branch that doesn't match `excludeBranchPatterns`. |
-| excludeBranchPatterns   | `Set<String>` | `[]`                                                                      | Branch patterns that you cannot release from. If a branch matches both `releaseBranchPatterns` and `excludeBranchPatterns` it will be excluded.                                                                                                                       |
-| shortenedBranchPattern  | `String`      | `/(?:feature(?:-|\/))?(.+)/`                                              | Branch `widget1` will append `widget1` to snapshot version numbers, and branch `feature/widget2` will append `widget2` to snapshot version numbers. You may configure this field, the regex is expected to have exactly one capture group.                            |
+| Property                                    | Type                        | Default                                                                   | Description                                                                                                                                                                                                                                                               |
+| ------------------------------------------- | --------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| releaseBranchPatterns                       | `Set<String>`               | `[/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/]` | Branch patterns that are acceptable to release from. The default pattern will match things like `master`, `1.2.x`, `release-42.x`, `release/2.x`, `v1.2.3`. If the set is empty releases will be possible from any branch that doesn't match `excludeBranchPatterns`.     |
+| excludeBranchPatterns                       | `Set<String>`               | `[]`                                                                      | Branch patterns that you cannot release from. If a branch matches both `releaseBranchPatterns` and `excludeBranchPatterns` it will be excluded.                                                                                                                           |
+| shortenedBranchPattern                      | `String`                    | `/(?:feature(?:-|\/))?(.+)/`                                              | Branch `widget1` will append `widget1` to snapshot version numbers, and branch `feature/widget2` will append `widget2` to snapshot version numbers. You may configure this field, the regex is expected to have exactly one capture group.                                |
+| branchNameInSnapshot.enabled                | `boolean`                   | `false`                                                                   | If enabled, branch `feature/widget` will append `widget2` to maven-style snapshot version numbers, e.g. `0.1.0-widget2-SNAPSHOT`. This will allow concurrent features to be published/consumed from Maven independently. Otherwise all branches will use `0.1.0-SNAPSHOT` |
+| branchNameInSnapshot.includeBranchPatterns  | `Set<String>`               | `[/feature(-|\/).*/]`                                                     | Branch patterns that need the branch name in the version for maven-style snapshots. The default pattern will match feature branches only (the `develop` branch for git-flow users will not use the branch name for maven-style snapshots).                                |
+| branchNameInSnapshot.excludeBranchPatterns  | `Set<String>`               | `[]`                                                                      | Branch patterns that should not have the branch name in the version for maven-style snapshots (overrides patterns defined in `includeBranchPatterns`).                                                                                                                    |
 
 
-| Method                  | Arguments        | Description                                                                                                                               |
-| ----------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| addReleaseBranchPattern | `String pattern` | Calling this method will add a pattern to the set of `releaseBranchPatterns`, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)` |
-| addExcludeBranchPattern | `String pattern` | Calling this method will add a pattern to the set of `excludeBranchPatterns`, usage: `nebulaRelease { addExcludeBranchPattern(/myregex/)` |
+| Method                                       | Arguments        | Description                                                                                                                                                                           |
+| -------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| addReleaseBranchPattern                      | `String pattern` | Calling this method will add a pattern to the set of `releaseBranchPatterns`, usage: `nebulaRelease { addReleaseBranchPattern(/myregex/)`                                             |
+| addExcludeBranchPattern                      | `String pattern` | Calling this method will add a pattern to the set of `excludeBranchPatterns`, usage: `nebulaRelease { addExcludeBranchPattern(/myregex/)`                                             |
+| branchNameInSnapshot.addIncludeBranchPattern | `String pattern` | Calling this method will add a pattern to the set of `branchNameInSnapshot.includeBranchPatterns`, usage: `nebulaRelease { branchNameInSnapshot { addIncludeBranchPattern(/myregex/)` |
+| branchNameInSnapshot.addExcludeBranchPattern | `String pattern` | Calling this method will add a pattern to the set of `branchNameInSnapshot.excludeBranchPatterns`, usage: `nebulaRelease { branchNameInSnapshot { addExcludeBranchPattern(/myregex/)` |
 
 # Tasks Provided
 
