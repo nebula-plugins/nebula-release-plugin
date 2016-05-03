@@ -39,15 +39,6 @@ dependencies {
     compile 'org.ajoberstar:gradle-git:1.4.1'
 }
 
-tasks.withType(Test) {
-    maxHeapSize = '1024m'
-    jvmArgs "-XX:MaxPermSize=512m"
-}
-
-jacocoTestReport {
-    executionData = files('build/jacoco/test.exec', 'build/jacoco/integrationTest.exec')
-}
-
 pluginBundle {
     plugins {
         nebulaRelease {
