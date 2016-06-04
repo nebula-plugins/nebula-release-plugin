@@ -32,7 +32,7 @@ contacts {
 }
 
 dependencies {
-    compile 'com.netflix.nebula:nebula-core:latest.release'
+    compile 'com.netflix.nebula.core:nebula-core:latest.release'
     compile 'com.netflix.nebula:nebula-bintray-plugin:latest.release', optional
     compile 'com.jfrog.bintray.gradle:gradle-bintray-plugin:latest.release', optional
     compile 'org.ajoberstar:gradle-git:1.4.+'
