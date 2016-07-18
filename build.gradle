@@ -41,7 +41,7 @@ dependencies {
 pluginBundle {
     plugins {
         nebulaRelease {
-            id = 'nebula.nebula-release'
+            id = 'nebula.release'
             displayName = 'Nebula Release plugin'
             tags = ['nebula', 'release', 'versioning']
         }
