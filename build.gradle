@@ -43,6 +43,7 @@ pluginBundle {
         nebulaRelease {
             id = 'nebula.release'
             displayName = 'Nebula Release plugin'
+            description = project.description
             tags = ['nebula', 'release', 'versioning']
         }
     }
