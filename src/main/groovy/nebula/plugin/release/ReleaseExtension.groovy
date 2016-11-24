@@ -15,9 +15,13 @@
  */
 package nebula.plugin.release
 
+import org.ajoberstar.grgit.util.ConfigureUtil
+
 class ReleaseExtension {
     Set<String> releaseBranchPatterns = [/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/] as Set
     Set<String> excludeBranchPatterns = [] as Set
+
+    BranchNameInSnapshot branchNameInSnapshot = new BranchNameInSnapshot()
 
     /**
      * This should be a regex pattern with one(1) capture group
@@ -30,5 +34,31 @@ class ReleaseExtension {
 
     void addExcludeBranchPattern(String pattern) {
         excludeBranchPatterns.add(pattern)
+    }
+
+    void branchNameInSnapshot(Closure closure){
+        ConfigureUtil.configure(branchNameInSnapshot, closure)
+    }
+
+    /**
+     * Whether to include the branch name in the version for maven style snapshots
+     */
+    class BranchNameInSnapshot {
+        boolean enabled = false
+        Set<String> includeBranchPatterns = [/feature(-|\/).*/] as Set
+        Set<String> excludeBranchPatterns = [] as Set
+
+        void enabled(boolean value){
+            enabled = value
+        }
+
+        void addIncludeBranchPattern(String pattern) {
+            includeBranchPatterns.add(pattern)
+        }
+
+        void addExcludeBranchPattern(String pattern) {
+            excludeBranchPatterns.add(pattern)
+        }
+
     }
 }
