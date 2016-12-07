@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release
 
+import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.gradle.git.release.base.ReleaseVersion
 import org.ajoberstar.gradle.git.release.base.TagStrategy
 import org.ajoberstar.gradle.git.release.base.VersionStrategy
@@ -57,7 +58,8 @@ class OverrideStrategies {
 
         @Override
         ReleaseVersion infer(Project project, Grgit grgit) {
-            def locate = new NearestVersionLocator(new TagStrategy()).locate(grgit)
+            def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
+            def locate = new NearestVersionLocator(tagStrategy).locate(grgit)
             return new ReleaseVersion(locate.any.toString(), null, false)
         }
     }
