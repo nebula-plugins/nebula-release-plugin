@@ -48,7 +48,7 @@ All tasks default to bumping the minor version.
     nebulaRelease {
       Set<String> releaseBranchPatterns = [/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/] as Set
       Set<String> excludeBranchPatterns = [] as Set
-      String shortenedBranchPattern = /(?:feature(?:-|\/))?(.+)/
+      String shortenedBranchPattern = /(?:(?:bugfix|feature|hotfix|release)(?:-|\/))?(.+)/
 
       void addReleaseBranchPattern(String pattern)
       void addExcludeBranchPattern(String pattern)
@@ -58,7 +58,7 @@ All tasks default to bumping the minor version.
 | ----------------------- | ------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | releaseBranchPatterns   | `Set<String>` | `[/master/, /HEAD/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/]` | Branch patterns that are acceptable to release from. The default pattern will match things like `master`, `1.2.x`, `release-42.x`, `release/2.x`, `v1.2.3`. If the set is empty releases will be possible from any branch that doesn't match `excludeBranchPatterns`. |
 | excludeBranchPatterns   | `Set<String>` | `[]`                                                                      | Branch patterns that you cannot release from. If a branch matches both `releaseBranchPatterns` and `excludeBranchPatterns` it will be excluded.                                                                                                                       |
-| shortenedBranchPattern  | `String`      | `/(?:feature(?:-|\/))?(.+)/`                                              | Branch `widget1` will append `widget1` to snapshot version numbers, and branch `feature/widget2` will append `widget2` to snapshot version numbers. You may configure this field, the regex is expected to have exactly one capture group.                            |
+| shortenedBranchPattern  | `String`      | `/(?:(?:bugfix|feature|hotfix|release)(?:-|\/))?(.+)/`                    | Branch `widget1` will append `widget1` to snapshot version numbers, and branch `(feature|bugfix|release|hotfix)/widget2` will append `widget2` to snapshot version numbers. You may configure this field, the regex is expected to have exactly one capture group.    |
 
 
 | Method                  | Arguments        | Description                                                                                                                               |
