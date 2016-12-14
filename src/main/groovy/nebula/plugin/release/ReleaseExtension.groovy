@@ -20,9 +20,11 @@ class ReleaseExtension {
     Set<String> excludeBranchPatterns = [] as Set
 
     /**
-     * This should be a regex pattern with one(1) capture group
+     * This should be a regex pattern with one(1) capture group. By default shortens the typical
+     * {bugfix|feature|hotfix|release}/branch-name to branch-name. The prefix is optional and a
+     * dash may be used instead of the forward slash.
      */
-    String shortenedBranchPattern = /(?:feature(?:-|\/))?(.+)/
+    String shortenedBranchPattern = /(?:(?:bugfix|feature|hotfix|release)(?:-|\/))?(.+)/
 
     void addReleaseBranchPattern(String pattern) {
         releaseBranchPatterns.add(pattern)
