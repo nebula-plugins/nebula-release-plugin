@@ -17,6 +17,7 @@ package nebula.plugin.release
 
 import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 
 class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
     @Override def setupBuild() {
@@ -425,7 +426,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('build', '-Prelease.version=')
 
         then:
-        result.failure.message == 'Supplied release.version is empty'
+        Throwables.getRootCause(result.failure).message == 'Supplied release.version is empty'
     }
 
     def 'devSnapshot works if default is changed'() {
