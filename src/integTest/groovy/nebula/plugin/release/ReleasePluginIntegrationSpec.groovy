@@ -412,6 +412,29 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         new File(projectDir, "build/libs/${moduleName}-0.1.0.jar").exists()
     }
 
+    def 'use last tag with custom tag strategy'() {
+        buildFile << '''\
+            release {
+              tagStrategy {
+                toTagString = { vs -> "version${vs}" }
+                parseTag = { tag ->
+                  try { com.github.zafarkhaja.semver.Version.valueOf(tag.name[7..-1]) } catch (Exception e) { null }
+                }
+              }
+            }
+        '''.stripIndent()
+        git.add(patterns: ['build.gradle'] as Set)
+        git.commit(message: 'setting tag strategy')
+
+        git.tag.add(name: 'version19.71.1')
+
+        when:
+        runTasksSuccessfully('final', '-Prelease.useLastTag=true')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-19.71.1.jar").exists()
+    }
+
     def 'able to release with the override of version calculation'() {
         when:
         runTasksSuccessfully('final', '-Prelease.version=42.5.0')
