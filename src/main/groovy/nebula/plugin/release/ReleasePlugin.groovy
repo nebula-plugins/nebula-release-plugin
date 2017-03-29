@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 Netflix, Inc.
+ * Copyright 2014-2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package nebula.plugin.release
+
 import com.jfrog.bintray.gradle.BintrayUploadTask
 import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
@@ -24,7 +25,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
@@ -59,6 +59,7 @@ class ReleasePlugin implements Plugin<Project> {
             git = Grgit.open(dir: gitRoot)
         }
         catch(RepositoryNotFoundException e) {
+            this.project.version = '0.1.0-dev.0.uncommitted'
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
             return
         }
@@ -69,6 +70,7 @@ class ReleasePlugin implements Plugin<Project> {
             project.plugins.apply(BaseReleasePlugin)
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
             releaseExtension.with {
+                versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
                 versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
                 versionStrategy NetflixOssStrategies.SNAPSHOT
