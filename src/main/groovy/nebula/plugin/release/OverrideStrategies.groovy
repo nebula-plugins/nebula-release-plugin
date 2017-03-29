@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 Netflix, Inc.
+ * Copyright 2014-2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package nebula.plugin.release
 
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.gradle.git.release.base.ReleaseVersion
-import org.ajoberstar.gradle.git.release.base.TagStrategy
 import org.ajoberstar.gradle.git.release.base.VersionStrategy
 import org.ajoberstar.gradle.git.release.semver.NearestVersionLocator
 import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.exception.GrgitException
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
@@ -91,6 +91,29 @@ class OverrideStrategies {
                 throw new GradleException('Supplied release.version is empty')
             }
             new ReleaseVersion(requestedVersion, null, true)
+        }
+    }
+
+    static class NoCommitStrategy implements VersionStrategy {
+        @Override
+        String getName() {
+            'no-commit'
+        }
+
+        @Override
+        boolean selector(Project project, Grgit grgit) {
+            try {
+                grgit.head()
+            } catch (GrgitException ex) {
+                return true
+            }
+
+            return false
+        }
+
+        @Override
+        ReleaseVersion infer(Project project, Grgit grgit) {
+            new ReleaseVersion('0.1.0-dev.0.uncommitted', null, false)
         }
     }
 }

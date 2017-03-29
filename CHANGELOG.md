@@ -1,3 +1,8 @@
+4.2.0 / 2017-03-29
+==================
+
+* Calculate version in repository with no commits
+
 4.0.1 / 2016-02-05
 ==================
 
