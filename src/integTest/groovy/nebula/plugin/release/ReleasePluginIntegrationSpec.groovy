@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 Netflix, Inc.
+ * Copyright 2014-2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 package nebula.plugin.release
 
 import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
+import org.ajoberstar.grgit.Tag
+import org.ajoberstar.grgit.operation.BranchAddOp
+import org.ajoberstar.grgit.operation.BranchChangeOp
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 
@@ -27,8 +30,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
             ${applyPlugin(ReleasePlugin)}
             ${applyPlugin(JavaPlugin)}
 
-            task showVersion << {
-                logger.lifecycle "Version in task: \${version.toString()}"
+            task showVersion {
+                doLast {
+                    logger.lifecycle "Version in task: \${version.toString()}"
+                }
             }
         """.stripIndent()
 
@@ -488,5 +493,36 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         then:
         results.standardOutput.contains 'bintrayUpload'
         results.standardOutput.contains 'artifactoryPublish'
+    }
+
+    def 'able to release from hash and push tag'() {
+        given:
+        buildFile << '''\
+            nebulaRelease {
+                allowReleaseFromDetached = true    
+            }
+            '''.stripIndent()
+        git.add(patterns: ['build.gradle'])
+        git.commit(message: 'configure skip branch checks')
+        git.tag.add(name: 'v0.1.0')
+        new File(projectDir, 'test.txt').text = 'test'
+        git.add(patterns: ['test.txt'])
+        git.commit(message: 'Add file')
+        git.push(all: true)
+
+        def commit = git.head()
+        git.checkout(branch: 'HEAD', startPoint: commit, createBranch: true)
+
+        when:
+        def version = inferredVersionForTask('final')
+
+        then:
+        version == normal('0.2.0')
+        originGit.tag.list()*.name.contains('v0.2.0')
+
+        Tag tag = originGit.tag.list().find { it.commit == commit }
+        tag.commit.abbreviatedId == commit.abbreviatedId
+
+        originGit.branch.list().size() == 1
     }
 }
