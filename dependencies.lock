@@ -35,24 +35,6 @@
             "requested": "1.4.+"
         }
     },
-    "compileOnly": {
-        "com.jfrog.bintray.gradle:gradle-bintray-plugin": {
-            "locked": "1.7.3",
-            "requested": "latest.release"
-        },
-        "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
-            "requested": "latest.release"
-        },
-        "com.netflix.nebula:nebula-core": {
-            "locked": "4.0.0",
-            "requested": "4.0.0"
-        },
-        "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
-        }
-    },
     "default": {
         "com.jfrog.bintray.gradle:gradle-bintray-plugin": {
             "locked": "1.7.3",
@@ -85,8 +67,8 @@
             "requested": "4.0.0"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "5.0.0",
-            "requested": "5.0.0"
+            "locked": "6.0.0",
+            "requested": "6.0.0"
         },
         "org.ajoberstar:gradle-git": {
             "locked": "1.4.2",
@@ -107,30 +89,8 @@
             "requested": "4.0.0"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "5.0.0",
-            "requested": "5.0.0"
-        },
-        "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
-        }
-    },
-    "integTestCompileOnly": {
-        "com.jfrog.bintray.gradle:gradle-bintray-plugin": {
-            "locked": "1.7.3",
-            "requested": "latest.release"
-        },
-        "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
-            "requested": "latest.release"
-        },
-        "com.netflix.nebula:nebula-core": {
-            "locked": "4.0.0",
-            "requested": "4.0.0"
-        },
-        "com.netflix.nebula:nebula-test": {
-            "locked": "5.0.0",
-            "requested": "5.0.0"
+            "locked": "6.0.0",
+            "requested": "6.0.0"
         },
         "org.ajoberstar:gradle-git": {
             "locked": "1.4.2",
@@ -151,8 +111,30 @@
             "requested": "4.0.0"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "5.0.0",
-            "requested": "5.0.0"
+            "locked": "6.0.0",
+            "requested": "6.0.0"
+        },
+        "org.ajoberstar:gradle-git": {
+            "locked": "1.4.2",
+            "requested": "1.4.+"
+        }
+    },
+    "integTestRuntimeClasspath": {
+        "com.jfrog.bintray.gradle:gradle-bintray-plugin": {
+            "locked": "1.7.3",
+            "requested": "latest.release"
+        },
+        "com.netflix.nebula:nebula-bintray-plugin": {
+            "locked": "3.5.2",
+            "requested": "latest.release"
+        },
+        "com.netflix.nebula:nebula-core": {
+            "locked": "4.0.0",
+            "requested": "4.0.0"
+        },
+        "com.netflix.nebula:nebula-test": {
+            "locked": "6.0.0",
+            "requested": "6.0.0"
         },
         "org.ajoberstar:gradle-git": {
             "locked": "1.4.2",
@@ -161,15 +143,33 @@
     },
     "jacocoAgent": {
         "org.jacoco:org.jacoco.agent": {
-            "locked": "0.7.7.201606060606"
+            "locked": "0.7.8"
         }
     },
     "jacocoAnt": {
         "org.jacoco:org.jacoco.ant": {
-            "locked": "0.7.7.201606060606"
+            "locked": "0.7.8"
         }
     },
     "runtime": {
+        "com.jfrog.bintray.gradle:gradle-bintray-plugin": {
+            "locked": "1.7.3",
+            "requested": "latest.release"
+        },
+        "com.netflix.nebula:nebula-bintray-plugin": {
+            "locked": "3.5.2",
+            "requested": "latest.release"
+        },
+        "com.netflix.nebula:nebula-core": {
+            "locked": "4.0.0",
+            "requested": "4.0.0"
+        },
+        "org.ajoberstar:gradle-git": {
+            "locked": "1.4.2",
+            "requested": "1.4.+"
+        }
+    },
+    "runtimeClasspath": {
         "com.jfrog.bintray.gradle:gradle-bintray-plugin": {
             "locked": "1.7.3",
             "requested": "latest.release"
@@ -201,8 +201,8 @@
             "requested": "4.0.0"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "5.0.0",
-            "requested": "5.0.0"
+            "locked": "6.0.0",
+            "requested": "6.0.0"
         },
         "org.ajoberstar:gradle-git": {
             "locked": "1.4.2",
@@ -223,30 +223,8 @@
             "requested": "4.0.0"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "5.0.0",
-            "requested": "5.0.0"
-        },
-        "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
-        }
-    },
-    "testCompileOnly": {
-        "com.jfrog.bintray.gradle:gradle-bintray-plugin": {
-            "locked": "1.7.3",
-            "requested": "latest.release"
-        },
-        "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
-            "requested": "latest.release"
-        },
-        "com.netflix.nebula:nebula-core": {
-            "locked": "4.0.0",
-            "requested": "4.0.0"
-        },
-        "com.netflix.nebula:nebula-test": {
-            "locked": "5.0.0",
-            "requested": "5.0.0"
+            "locked": "6.0.0",
+            "requested": "6.0.0"
         },
         "org.ajoberstar:gradle-git": {
             "locked": "1.4.2",
@@ -267,8 +245,30 @@
             "requested": "4.0.0"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "5.0.0",
-            "requested": "5.0.0"
+            "locked": "6.0.0",
+            "requested": "6.0.0"
+        },
+        "org.ajoberstar:gradle-git": {
+            "locked": "1.4.2",
+            "requested": "1.4.+"
+        }
+    },
+    "testRuntimeClasspath": {
+        "com.jfrog.bintray.gradle:gradle-bintray-plugin": {
+            "locked": "1.7.3",
+            "requested": "latest.release"
+        },
+        "com.netflix.nebula:nebula-bintray-plugin": {
+            "locked": "3.5.2",
+            "requested": "latest.release"
+        },
+        "com.netflix.nebula:nebula-core": {
+            "locked": "4.0.0",
+            "requested": "4.0.0"
+        },
+        "com.netflix.nebula:nebula-test": {
+            "locked": "6.0.0",
+            "requested": "6.0.0"
         },
         "org.ajoberstar:gradle-git": {
             "locked": "1.4.2",
