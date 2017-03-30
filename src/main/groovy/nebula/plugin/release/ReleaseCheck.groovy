@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Netflix, Inc.
+ * Copyright 2014-2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ class ReleaseCheck extends DefaultTask {
 
     @TaskAction
     void check() {
+        if (patterns.allowReleaseFromDetached) {
+            return
+        }
         String branchName = grgit.branch.current.name
 
         boolean includeMatch = patterns.releaseBranchPatterns.isEmpty()

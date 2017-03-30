@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Netflix, Inc.
+ * Copyright 2014-2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ class ReleaseExtension {
      * dash may be used instead of the forward slash.
      */
     String shortenedBranchPattern = /(?:(?:bugfix|feature|hotfix|release)(?:-|\/))?(.+)/
+
+    Boolean allowReleaseFromDetached = false
 
     void addReleaseBranchPattern(String pattern) {
         releaseBranchPatterns.add(pattern)
