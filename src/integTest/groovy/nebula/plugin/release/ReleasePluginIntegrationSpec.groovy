@@ -17,8 +17,6 @@ package nebula.plugin.release
 
 import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
 import org.ajoberstar.grgit.Tag
-import org.ajoberstar.grgit.operation.BranchAddOp
-import org.ajoberstar.grgit.operation.BranchChangeOp
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 
@@ -524,5 +522,25 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         tag.commit.abbreviatedId == commit.abbreviatedId
 
         originGit.branch.list().size() == 1
+    }
+
+    def 'branches with slashes that do not match specified patterns do not fail builds'() {
+        git.checkout(branch: 'dev/robtest', createBranch: true)
+
+        when:
+        def version = inferredVersionForTask('devSnapshot')
+
+        then:
+        version == dev('0.1.0-dev.2+dev.robtest.')
+    }
+
+    def 'branches with dashes that do not match specified patterns do not fail builds'() {
+        git.checkout(branch: 'dev-robtest', createBranch: true)
+
+        when:
+        def version = inferredVersionForTask('devSnapshot')
+
+        then:
+        version == dev('0.1.0-dev.2+dev.robtest.')
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Netflix, Inc.
+ * Copyright 2014-2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ class NetflixOssStrategies {
                     needsBranchMetadata = false
                 }
             }
-            def shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
-            shortenedBranch = shortenedBranch.replaceAll('_', '.')
+            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
+            shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
             def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
             state.copyWith(inferredBuildMetadata: metadata)
         }

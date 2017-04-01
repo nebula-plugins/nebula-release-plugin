@@ -12,7 +12,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 # Applying the plugin
 
     plugins {
-        id 'nebula.release' version '4.1.1'
+        id 'nebula.release' version '4.2.0'
     }
 
 -or-
@@ -20,7 +20,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
     buildscript {
         repositories { jcenter() }
         dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:4.1.1'
+            classpath 'com.netflix.nebula:nebula-release-plugin:4.2.0'
         }
     }
     apply plugin: 'nebula.nebula-release'
@@ -133,20 +133,14 @@ Tested with Oracle JDK8
 
 | Gradle Version | Works |
 | :------------: | :---: |
-| 2.2.1          | yes   |
-| 2.3            | yes   |
-| 2.4            | yes   |
-| 2.5            | yes   |
-| 2.6            | yes   |
-| 2.7            | yes   |
-| 2.8            | yes   |
-| 2.9            | yes   |
-| 2.10           | yes   |
+| 2.13           | yes   |
+| 3.3            | yes   |
+| 3.4.1          | yes   |
 
 LICENSE
 =======
 
-Copyright 2014-2016 Netflix, Inc.
+Copyright 2014-2017 Netflix, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
