@@ -27,6 +27,9 @@ abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
 
     def setup() {
         def origin = new File(projectDir.parent, "${projectDir.name}.git")
+        if (origin.exists()) {
+            origin.deleteDir()
+        }
         origin.mkdirs()
 
         ['build.gradle', 'settings.gradle'].each {

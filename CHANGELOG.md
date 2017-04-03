@@ -1,7 +1,9 @@
-4.2.0 / 2017-03-29
+4.2.0 / 2017-03-31
 ==================
 
 * Calculate version in repository with no commits
+* Allow pushing tags from detached branch
+* Better handle branch patterns that would error out semver when put in dev version
 
 4.0.1 / 2016-02-05
 ==================
