@@ -1,3 +1,11 @@
+5.0.0 / 2017-04-19
+==================
+
+* Add some tasks and rework task ordering
+    * BREAKING: `snapshot`, `devSnapshot`, `candidate`, `final` are no longer finalized by release, they now depend on `release`
+    * Added `snapshotSetup`, `devSnapshotSetup`, `candidateSetup`, `finalSetup` added if you need to run specific things early in the process
+    * Added `postRelease` task for tasks you want to happen after release (which tags the repo), we have moved publishing to be called by this step
+
 4.2.0 / 2017-03-31
 ==================
 
