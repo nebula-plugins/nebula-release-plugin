@@ -42,11 +42,16 @@ class ReleasePlugin implements Plugin<Project> {
     static Logger logger = Logging.getLogger(ReleasePlugin)
 
     static final String SNAPSHOT_TASK_NAME = 'snapshot'
+    static final String SNAPSHOT_SETUP_TASK_NAME = 'snapshotSetup'
     static final String DEV_SNAPSHOT_TASK_NAME = 'devSnapshot'
+    static final String DEV_SNAPSHOT_SETUP_TASK_NAME = 'devSnapshotSetup'
     static final String CANDIDATE_TASK_NAME = 'candidate'
+    static final String CANDIDATE_SETUP_TASK_NAME = 'candidateSetup'
     static final String FINAL_TASK_NAME = 'final'
+    static final String FINAL_SETUP_TASK_NAME = 'finalSetup'
     static final String RELEASE_CHECK_TASK_NAME = 'releaseCheck'
     static final String NEBULA_RELEASE_EXTENSION_NAME = 'nebulaRelease'
+    static final String POST_RELEASE_TASK_NAME = 'postRelease'
     static final String GROUP = 'Nebula Release'
 
     @Override
@@ -113,21 +118,38 @@ class ReleasePlugin implements Plugin<Project> {
             releaseCheck.grgit = releaseExtension.grgit
             releaseCheck.patterns = nebulaReleaseExtension
 
-            def snapshotTask = project.task(SNAPSHOT_TASK_NAME)
-            def devSnapshotTask = project.task(DEV_SNAPSHOT_TASK_NAME)
-            def candidateTask = project.task(CANDIDATE_TASK_NAME)
-            candidateTask.doLast {
+            def postReleaseTask = project.task(POST_RELEASE_TASK_NAME)
+            postReleaseTask.group = GROUP
+            postReleaseTask.dependsOn project.tasks.release
+
+            def snapshotSetupTask = project.task(SNAPSHOT_SETUP_TASK_NAME)
+            def devSnapshotSetupTask = project.task(DEV_SNAPSHOT_SETUP_TASK_NAME)
+            def candidateSetupTask = project.task(CANDIDATE_SETUP_TASK_NAME)
+            candidateSetupTask.doLast {
                 project.allprojects.each { it.status = 'candidate' }
             }
-            def finalTask = project.task(FINAL_TASK_NAME)
-            finalTask.doLast {
+            def finalSetupTask = project.task(FINAL_SETUP_TASK_NAME)
+            finalSetupTask.doLast {
                 project.allprojects.each { it.status = 'release' }
             }
 
+            [snapshotSetupTask, devSnapshotSetupTask, candidateSetupTask, finalSetupTask].each {
+                it.group = GROUP
+                it.dependsOn releaseCheck
+            }
+
+            def snapshotTask = project.task(SNAPSHOT_TASK_NAME)
+            snapshotTask.dependsOn snapshotSetupTask
+            def devSnapshotTask = project.task(DEV_SNAPSHOT_TASK_NAME)
+            devSnapshotTask.dependsOn devSnapshotSetupTask
+            def candidateTask = project.task(CANDIDATE_TASK_NAME)
+            candidateTask.dependsOn candidateSetupTask
+            def finalTask = project.task(FINAL_TASK_NAME)
+            finalTask.dependsOn finalSetupTask
+
             [snapshotTask, devSnapshotTask, candidateTask, finalTask].each {
                 it.group = GROUP
-                it.finalizedBy project.tasks.release
-                it.dependsOn releaseCheck
+                it.dependsOn postReleaseTask
             }
 
             def cliTasks = project.gradle.startParameter.taskNames
@@ -148,6 +170,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
         }
 
+        configurePublishingIfPresent()
         configureBintrayTasksIfPresent()
     }
 
@@ -208,13 +231,13 @@ class ReleasePlugin implements Plugin<Project> {
     void configurePublishingIfPresent() {
         project.plugins.withType(MavenPublishPlugin) {
             project.tasks.withType(GenerateMavenPom) { task ->
-                project.rootProject.tasks.release.dependsOn(task)
+                project.rootProject.tasks.postRelease.dependsOn(task)
             }
         }
 
         project.plugins.withType(IvyPublishPlugin) {
             project.tasks.withType(GenerateIvyDescriptor) { task ->
-                project.rootProject.tasks.release.dependsOn(task)
+                project.rootProject.tasks.postRelease.dependsOn(task)
             }
         }
     }
@@ -225,7 +248,7 @@ class ReleasePlugin implements Plugin<Project> {
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
-                project.rootProject.tasks.release.dependsOn(task)
+                project.rootProject.tasks.postRelease.dependsOn(task)
             }
         } else {
             logger.info('Skipping configuration of bintray task since it is not present')
@@ -236,7 +259,7 @@ class ReleasePlugin implements Plugin<Project> {
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
-                project.rootProject.tasks.release.dependsOn(task)
+                project.rootProject.tasks.postRelease.dependsOn(task)
             }
         } else {
             logger.info('Skipping configuration of artifactoryPublish task since it is not present')

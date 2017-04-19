@@ -128,6 +128,39 @@ The plugin assumes Git root is in the same location as Gradle root. If this isn'
 
     ./gradlew -Pgit.root=<git root path> final
 
+# Lifecycle Hooks
+
+### For `devSnapshot`
+
+* `devSnapshotSetup` - any kind of setup is good to live around here, e.g. setting status, various checks
+* `release` - probably have `release` dependOn any `assemble` and `check` tasks, dependsOn `devSnapshotSetup`
+* `postRelease` - any steps you want to happen after the repo tag, in our case this is where publishing happens since if the publish partially fails we don't want to fix the tags, dependsOn `release`
+* `devSnapshot` - command line task to kick off devSnapshot workflow, dependsOn `postRelease`
+
+### For `snapshot`
+
+* `snapshotSetup` - any kind of setup is good to live around here, e.g. setting status, various checks
+* `release` - probably have `release` dependOn any `assemble` and `check` tasks, dependsOn `snapshotSetup`
+* `postRelease` - any steps you want to happen after the repo tag, in our case this is where publishing happens since if the publish partially fails we don't want to fix the tags, dependsOn `release`
+* `snapshot` - command line task to kick off snapshot workflow, dependsOn `postRelease`
+
+### For `candidate`
+
+* `candidateSetup` - any kind of setup is good to live around here, e.g. setting status, various checks
+* `release` - this is where the tag is pushed to the repo, so probably have `release` dependOn any `assemble` and `check` tasks, dependsOn `candidateSetup`
+* `postRelease` - any steps you want to happen after the repo tag, in our case this is where publishing happens since if the publish partially fails we don't want to fix the tags, dependsOn `release`
+* `candidate` - command line task to kick off devSnapshot workflow, dependsOn `postRelease`
+
+### For `final`
+
+* `finalSetup` - any kind of setup is good to live around here, e.g. setting status, various checks
+* `release` - this is where the tag is pushed to the repo, so probably have `release` dependOn any `assemble` and `check` tasks, dependsOn `finalSetup`
+* `postRelease` - any steps you want to happen after the repo tag, in our case this is where publishing happens since if the publish partially fails we don't want to fix the tags, dependsOn `release`
+* `final` - command line task to kick off devSnapshot workflow, dependsOn `postRelease`
+
+Gradle and Java Compatibility
+=============================
+
 Built with Oracle JDK7
 Tested with Oracle JDK8
 
@@ -136,6 +169,7 @@ Tested with Oracle JDK8
 | 2.13           | yes   |
 | 3.3            | yes   |
 | 3.4.1          | yes   |
+| 3.5            | yes   |
 
 LICENSE
 =======
