@@ -114,7 +114,11 @@ To set the version from the command line, set the release.version system propert
 
 ### First release with this plugin
 
-If this is the first time releasing with this plugin and you've released in the past you may need to create a tag in your repository. You should find the hash of your latest release and create a tag of the format `v<major>.<minor>.<patch>` e.g. `v1.4.2`
+If this is the first time releasing with this plugin and you've released in the past you may need to create a tag in your repository. You should find the hash of your latest release and create a tag of the format `v<major>.<minor>.<patch>` e.g. `v1.4.2`. For example, if the hash of your last release was `da5d4f9`:
+
+    git tag v1.4.2 da5d4f9
+    git push --tags
+    ./gradlew final
 
 ### Initial version not 0.1.0 or 1.0.0
 
