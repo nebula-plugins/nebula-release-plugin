@@ -13,8 +13,8 @@
             "requested": "4.0.0"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "compileClasspath": {
@@ -31,8 +31,8 @@
             "requested": "4.0.0"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "default": {
@@ -49,8 +49,8 @@
             "requested": "4.0.0"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "integTestCompile": {
@@ -71,8 +71,8 @@
             "requested": "6.0.1"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "integTestCompileClasspath": {
@@ -93,8 +93,8 @@
             "requested": "6.0.1"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "integTestRuntime": {
@@ -115,8 +115,8 @@
             "requested": "6.0.1"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "integTestRuntimeClasspath": {
@@ -137,8 +137,8 @@
             "requested": "6.0.1"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "jacocoAgent": {
@@ -165,8 +165,8 @@
             "requested": "4.0.0"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "runtimeClasspath": {
@@ -183,8 +183,8 @@
             "requested": "4.0.0"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "testCompile": {
@@ -205,8 +205,8 @@
             "requested": "6.0.1"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "testCompileClasspath": {
@@ -227,8 +227,8 @@
             "requested": "6.0.1"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "testRuntime": {
@@ -249,8 +249,8 @@
             "requested": "6.0.1"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     },
     "testRuntimeClasspath": {
@@ -271,8 +271,8 @@
             "requested": "6.0.1"
         },
         "org.ajoberstar:gradle-git": {
-            "locked": "1.4.2",
-            "requested": "1.4.+"
+            "locked": "1.7.1",
+            "requested": "1.7.+"
         }
     }
 }
