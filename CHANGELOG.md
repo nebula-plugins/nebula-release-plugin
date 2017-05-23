@@ -1,3 +1,10 @@
+6.0.0 / 2017-05-23
+==================
+
+* BREAKING: Java 8 is now required
+* gradle-git upgraded to 1.7.1
+* jgit transitively upgraded to 4.6.1.201703071140-r to address [Bug 498759: jgit shows submodule as modified path](https://bugs.eclipse.org/bugs/show_bug.cgi?id=498759)
+
 5.0.0 / 2017-04-19
 ==================
 
