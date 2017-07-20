@@ -147,7 +147,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         """.stripIndent()
 
         when:
-        def results = runTasksSuccessfully('tasks', '--all')
+        runTasksSuccessfully('tasks', '--all')
 
         then:
         noExceptionThrown()
@@ -157,7 +157,8 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
 
         then:
         noExceptionThrown()
-        r.wasExecuted(':release')
-        r.wasExecuted(':test-release-common:generateDescriptorFileForNebulaIvyPublication')
+        def output = r.standardOutput
+        output.contains(':release SKIPPED')
+        output.contains(':test-release-common:generateDescriptorFileForNebulaIvyPublication SKIPPED')
     }
 }
