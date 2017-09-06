@@ -20,6 +20,7 @@ import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.Status
 import org.eclipse.jgit.errors.RepositoryNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -200,10 +201,10 @@ class ReleasePlugin implements Plugin<Project> {
 
     private void checkStateForStage() {
         if (!project.tasks.releaseCheck.isSnapshotRelease) {
-            def status = git.status()
-            def uncommittedChangesFound = [status.staged, status.unstaged].any { it.getAllChanges().size() > 0 }
-            if (uncommittedChangesFound) {
-                throw new GradleException('Final and candidate builds require all changes to be committed into Git.')
+            Status status = git.status()
+            if (!status.isClean()) {
+                String message = new ErrorMessageFormatter().format(status)
+                throw new GradleException(message)
             }
         }
     }
