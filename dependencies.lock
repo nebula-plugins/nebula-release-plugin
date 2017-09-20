@@ -28,6 +28,10 @@
         }
     },
     "integTestCompile": {
+        "com.netflix.nebula:nebula-bintray-plugin": {
+            "locked": "3.5.2",
+            "requested": "latest.release"
+        },
         "com.netflix.nebula:nebula-test": {
             "locked": "6.1.2",
             "requested": "6.+"
@@ -38,6 +42,10 @@
         }
     },
     "integTestCompileClasspath": {
+        "com.netflix.nebula:nebula-bintray-plugin": {
+            "locked": "3.5.2",
+            "requested": "latest.release"
+        },
         "com.netflix.nebula:nebula-test": {
             "locked": "6.1.2",
             "requested": "6.+"
@@ -98,6 +106,10 @@
         }
     },
     "testCompile": {
+        "com.netflix.nebula:nebula-bintray-plugin": {
+            "locked": "3.5.2",
+            "requested": "latest.release"
+        },
         "com.netflix.nebula:nebula-test": {
             "locked": "6.1.2",
             "requested": "6.+"
@@ -108,6 +120,10 @@
         }
     },
     "testCompileClasspath": {
+        "com.netflix.nebula:nebula-bintray-plugin": {
+            "locked": "3.5.2",
+            "requested": "latest.release"
+        },
         "com.netflix.nebula:nebula-test": {
             "locked": "6.1.2",
             "requested": "6.+"

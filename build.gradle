@@ -33,7 +33,7 @@ contacts {
 dependencies {
     compile 'org.ajoberstar:gradle-git:1.7.+'
     compileOnly 'com.netflix.nebula:nebula-bintray-plugin:latest.release'
-    testRuntime 'com.netflix.nebula:nebula-bintray-plugin:latest.release'
+    testCompile 'com.netflix.nebula:nebula-bintray-plugin:latest.release'
 }
 
 pluginBundle {
