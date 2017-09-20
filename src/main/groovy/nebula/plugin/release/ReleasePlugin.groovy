@@ -16,7 +16,6 @@
 package nebula.plugin.release
 
 import com.jfrog.bintray.gradle.BintrayUploadTask
-import nebula.core.ProjectType
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
@@ -70,9 +69,7 @@ class ReleasePlugin implements Plugin<Project> {
             return
         }
         checkForBadBranchNames()
-
-        ProjectType type = new ProjectType(project)
-        if (type.isRootProject) {
+        if (project == project.rootProject) {
             project.plugins.apply(BaseReleasePlugin)
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
             releaseExtension.with {
@@ -162,10 +159,7 @@ class ReleasePlugin implements Plugin<Project> {
                 project.tasks.prepare.deleteAllActions()
             }
         } else {
-            project.version = project.rootProject.version    
-        }
-
-        if (type.isLeafProject) {
+            project.version = project.rootProject.version
             project.plugins.withType(JavaPlugin) {
                 project.rootProject.tasks.release.dependsOn project.tasks.build
             }
