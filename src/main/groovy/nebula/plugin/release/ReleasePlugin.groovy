@@ -160,6 +160,10 @@ class ReleasePlugin implements Plugin<Project> {
             }
         } else {
             project.version = project.rootProject.version
+        }
+
+        def isParent = project.rootProject.subprojects.any { it.parent == project }
+        if (!isParent) {
             project.plugins.withType(JavaPlugin) {
                 project.rootProject.tasks.release.dependsOn project.tasks.build
             }
