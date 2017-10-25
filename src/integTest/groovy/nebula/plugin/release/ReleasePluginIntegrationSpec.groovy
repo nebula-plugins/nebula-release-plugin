@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release
 
+import com.github.zafarkhaja.semver.Version
 import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
 import org.ajoberstar.grgit.Tag
 import org.gradle.api.plugins.JavaPlugin
@@ -235,6 +236,23 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         originGit.tag.list()*.name.contains('v2.0.0')
+    }
+
+    def 'create release on git-flow style branch from within travis context'() {
+        def twoX = 'release/2.x'
+        git.tag.add(name: 'v1.0.0')
+        git.branch.add(name: twoX)
+        git.push(all: true, tags: true)
+        git.branch.change(name: twoX, startPoint: "origin/${twoX}".toString())
+        git.checkout(branch: twoX)
+        def commit = git.head()
+        git.checkout(branch: 'HEAD'/*commit.abbreviatedId*/, startPoint: commit.id, createBranch: true)
+
+        when:
+        Version version= inferredVersionForTask('snapshot', '-Prelease.travisci=true', '-Prelease.travisBranch=2.x')
+
+        then:
+        version.toString() == '2.0.0-SNAPSHOT'
     }
 
     def 'create new major_minor release branch and have version respected'() {

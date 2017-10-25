@@ -57,6 +57,7 @@ class ReleasePlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         this.project = project
+        NetflixOssStrategies.project = project
 
         def gitRoot = project.hasProperty('git.root') ? project.property('git.root') : project.rootProject.projectDir
 
