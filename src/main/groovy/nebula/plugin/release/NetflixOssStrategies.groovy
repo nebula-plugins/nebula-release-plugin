@@ -67,7 +67,6 @@ class NetflixOssStrategies {
 
     static PartialSemVerStrategy fromTravisPropertyPattern(Pattern pattern) {
         return StrategyUtil.closure { state ->
-            println state
             if (project.hasProperty(TRAVIS_BRANCH_PROP)) {
                 def branch = project.property(TRAVIS_BRANCH_PROP)
                 def m = branch =~ pattern
