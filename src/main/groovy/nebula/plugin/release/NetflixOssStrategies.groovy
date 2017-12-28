@@ -25,6 +25,7 @@ import org.gradle.api.Project
 
 import java.util.regex.Pattern
 
+import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.all
 import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.incrementNormalFromScope
 import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.parseIntOrZero
 
@@ -47,18 +48,36 @@ class NetflixOssStrategies {
     static final class BuildMetadata {
         static ReleaseExtension nebulaReleaseExtension
 
-        static final PartialSemVerStrategy DEVELOPMENT_METADATA_STRATEGY = { state ->
+        static final PartialSemVerStrategy BRANCH_METADATA_STRATEGY = { state ->
             boolean needsBranchMetadata = true
             nebulaReleaseExtension.releaseBranchPatterns.each {
                 if (state.currentBranch.name =~ it) {
                     needsBranchMetadata = false
                 }
             }
-            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
+
+            if (!needsBranchMetadata) {
+                return state
+            }
+
+            def match = state.currentBranch.name =~
+                    nebulaReleaseExtension.shortenedBranchPattern
+            if (!match) {
+                return state
+            }
+            String shortenedBranch = match[0][1]
             shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
-            def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
-            state.copyWith(inferredBuildMetadata: metadata)
+
+            def inferred = state.inferredBuildMetadata ?
+                    "${shortenedBranch}.${state.inferredBuildMetadata}" :
+                    shortenedBranch
+            state.copyWith(inferredBuildMetadata: inferred)
         }
+
+        static final PartialSemVerStrategy DEVELOPMENT_METADATA_STRATEGY = all(
+                Strategies.BuildMetadata.COMMIT_ABBREVIATED_ID,
+                BRANCH_METADATA_STRATEGY
+        )
     }
 
     static Project project
