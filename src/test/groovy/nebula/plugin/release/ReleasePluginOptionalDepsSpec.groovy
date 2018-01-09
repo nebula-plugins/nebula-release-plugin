@@ -52,7 +52,8 @@ class ReleasePluginOptionalDepsSpec extends ProjectSpec {
         Logger myLogger = Mock()
         ReleasePlugin.logger = myLogger
         ReleasePlugin.metaClass.isClassPresent = { String name ->
-            name != 'org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask'
+            name != 'org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask' &&
+                name != 'org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask'
         }
 
         when:

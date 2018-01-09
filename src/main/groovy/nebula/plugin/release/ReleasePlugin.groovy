@@ -33,6 +33,7 @@ import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
+import org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask
 import org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask
 
 class ReleasePlugin implements Plugin<Project> {
@@ -255,7 +256,16 @@ class ReleasePlugin implements Plugin<Project> {
         }
 
         if (isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) {
+            project.logger.warn 'Please upgrade com.jfrog.artifactory (org.jfrog.buildinfo:build-info-extractor-gradle:) to version 4.6.0 or above'
             project.tasks.withType(BuildInfoBaseTask) { Task task ->
+                project.plugins.withType(JavaPlugin) {
+                    task.dependsOn(project.tasks.build)
+                }
+                project.rootProject.tasks.postRelease.dependsOn(task)
+            }
+        } else if(isClassPresent('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) {
+            // JFrog remove BuildInfoBaseTask see https://www.jfrog.com/jira/browse/GAP-281
+            project.tasks.withType(ArtifactoryTask) { Task task ->
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
