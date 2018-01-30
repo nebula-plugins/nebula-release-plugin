@@ -209,6 +209,36 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         version.toString() == dev('1.0.0-dev.2+').toString()
     }
 
+    def 'allow create final from a commit when some of its candidates are before the commit'() {
+        given:
+        def file = new File(projectDir, "test_file.txt")
+        file.text = "DUMMY"
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Add file")
+        git.push(all: true)
+        runTasksSuccessfully('candidate')
+        git.branch.add(name: "0.1.x")
+        file.text = "Updated dummy"
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Update file")
+        git.push(all: true)
+        runTasksSuccessfully('candidate')
+
+        when:
+        git.checkout(branch: '0.1.x')
+        def version = inferredVersionForTask('final')
+
+        then:
+        version.toString() == normal('0.1.0').toString()
+
+        when:
+        git.checkout(branch: 'master')
+        version = inferredVersionForTask('candidate')
+
+        then:
+        version.toString() == normal('0.2.0-rc.1').toString()
+    }
+
     def 'create new major release branch in git-flow style and have branch name respected on version'() {
         def oneX = 'release/1.x'
         git.branch.add(name: oneX)
