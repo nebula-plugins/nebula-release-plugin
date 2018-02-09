@@ -25,17 +25,19 @@ import org.gradle.api.Project
 
 import java.util.regex.Pattern
 
+import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.closure
 import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.incrementNormalFromScope
 import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.parseIntOrZero
 
 class NetflixOssStrategies {
     static final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(~/^(\d+)\.x$/)
     static final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(~/^(\d+)\.(\d+)\.x$/)
+    static final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
     private static final scopes = StrategyUtil.one(Strategies.Normal.USE_SCOPE_PROP,
             TRAVIS_BRANCH_MAJOR_X, TRAVIS_BRANCH_MAJOR_MINOR_X,
             Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
             Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
-            Strategies.Normal.USE_NEAREST_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
+            NEAREST_HIGHER_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
 
     static final SemVerStrategy SNAPSHOT = Strategies.SNAPSHOT.copyWith(normalStrategy: scopes)
     static final SemVerStrategy DEVELOPMENT = Strategies.DEVELOPMENT.copyWith(
@@ -97,6 +99,28 @@ class NetflixOssStrategies {
             }
 
             return state
+        }
+    }
+
+    /**
+     * If the nearest any is higher from the nearest normal, sets the
+     * normal component to the nearest any's normal component. Otherwise
+     * do nothing.
+     *
+     * <p>
+     * For example, if the nearest any is {@code 1.2.3-alpha.1} and the
+     * nearest normal is {@code 1.2.2}, this will infer the normal
+     * component as {@code 1.2.3}.
+     * </p>
+     */
+    static PartialSemVerStrategy nearestHigherAny() {
+        return closure { state ->
+            def nearest = state.nearestVersion
+            if (nearest.any.lessThanOrEqualTo(nearest.normal)) {
+                return state
+            } else {
+                return state.copyWith(inferredNormal: nearest.any.normalVersion)
+            }
         }
     }
 }
