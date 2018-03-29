@@ -1,3 +1,33 @@
+6.3.0 / 2018-02-08
+==================
+
+* Allow releasing a final release from older commits within a master branch even when there are newer commits tagged as candidates
+
+6.2.0 / 2018-01-09
+==================
+
+* Handle ArtifactoryTask if using build-info-extractor 4.6.0 via @lavcraft (Kirill Tolkachev)
+
+6.1.1 / 2017-12-12
+==================
+
+* Cleanup a stray println
+
+6.1.0 / 2017-10-25
+==================
+
+* Add in capability for travis to specify a special branch e.g. 2.x or 3.2.x and produce properly versioned snapshots
+
+6.0.2 / 2017-09-20
+==================
+
+* Remove optional dependencies so they don't leak onto the classpath when resolved from the plugin portal. It was causing bintray to be upgraded to a version that cannot be compiled against on Gradle 3 and later (only affects the plugin at compile time, not at runtime)
+
+6.0.1 / 2017-09-06
+==================
+
+* Builds that fail with Final and candidate builds require all changes to be committed into Git. will now list the files that have not been committed.
+
 6.0.0 / 2017-05-23
 ==================
 

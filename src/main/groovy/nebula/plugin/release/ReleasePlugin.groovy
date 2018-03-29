@@ -157,8 +157,7 @@ class ReleasePlugin implements Plugin<Project> {
             checkStateForStage()
 
             if (shouldSkipGitChecks()) {
-                project.tasks.release.deleteAllActions()
-                project.tasks.prepare.deleteAllActions()
+                removeReleaseAndPrepLogic(project)
             }
         } else {
             project.version = project.rootProject.version
@@ -171,8 +170,20 @@ class ReleasePlugin implements Plugin<Project> {
             }
         }
 
+        project.gradle.taskGraph.whenReady { g ->
+            def tasks = [DEV_SNAPSHOT_TASK_NAME, SNAPSHOT_TASK_NAME].collect { project.getPath() + it }
+            if(tasks.any { g.hasTask(it) }) {
+                removeReleaseAndPrepLogic(project)
+            }
+        }
+
         configurePublishingIfPresent()
         configureBintrayTasksIfPresent()
+    }
+
+    private void removeReleaseAndPrepLogic(Project project) {
+        project.tasks.release.deleteAllActions()
+        project.tasks.prepare.deleteAllActions()
     }
 
     private void determineStage(List<String> cliTasks, ReleaseCheck releaseCheck) {
@@ -210,8 +221,9 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private boolean shouldSkipGitChecks() {
-        (project.hasProperty(DISABLE_GIT_CHECKS) && project.property(DISABLE_GIT_CHECKS) as Boolean) ||
-                (project.hasProperty('release.travisci') && project.property('release.travisci').toBoolean())
+        def disableGit = project.hasProperty(DISABLE_GIT_CHECKS) && project.property(DISABLE_GIT_CHECKS) as Boolean
+        def travis = project.hasProperty('release.travisci') && project.property('release.travisci').toBoolean()
+        disableGit || travis
     }
 
     void setupStatus(String status) {
