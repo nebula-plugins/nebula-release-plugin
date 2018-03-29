@@ -20,6 +20,7 @@ import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
 import org.ajoberstar.grgit.Tag
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
+import spock.lang.Unroll
 
 class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
     @Override def setupBuild() {
@@ -590,5 +591,24 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         version == dev('0.1.0-dev.2+dev.robtest.')
+    }
+
+    @Unroll('release task does not push for #task')
+    def 'release task does not push'() {
+        given:
+        String originalRemoteHeadCommit = originGit.head().abbreviatedId
+
+        buildFile << '// add a comment'
+        git.add(patterns: ['build.gradle'])
+        git.commit(message: 'commenting build.gradle')
+
+        when:
+        def results = runTasksSuccessfully(task)
+
+        then:
+        originalRemoteHeadCommit == originGit.head().abbreviatedId
+
+        where:
+        task << ['devSnapshot', 'snapshot']
     }
 }

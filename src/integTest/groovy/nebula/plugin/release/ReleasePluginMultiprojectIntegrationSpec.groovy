@@ -18,6 +18,7 @@ package nebula.plugin.release
 import nebula.plugin.bintray.BintrayPlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.publish.plugins.PublishingPlugin
+import spock.lang.Unroll
 
 class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationSpec {
     @Override
@@ -160,5 +161,24 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         def output = r.standardOutput
         output.contains(':release SKIPPED')
         output.contains(':test-release-common:generateDescriptorFileForNebulaIvyPublication SKIPPED')
+    }
+
+    @Unroll('multiproject release task does not push for #task')
+    def 'multiproject release task does not push'() {
+        given:
+        String originalRemoteHeadCommit = originGit.head().abbreviatedId
+
+        buildFile << '// add a comment'
+        git.add(patterns: ['build.gradle'])
+        git.commit(message: 'commenting build.gradle')
+
+        when:
+        def results = runTasksSuccessfully(task)
+
+        then:
+        originalRemoteHeadCommit == originGit.head().abbreviatedId
+
+        where:
+        task << ['devSnapshot', 'snapshot']
     }
 }
