@@ -38,12 +38,6 @@ abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
 
         originGit = Grgit.init(dir: origin)
 
-        // Generate gradle.properties so we can commit it and avoid a dirty workspace
-        def originalProjectDir = projectDir
-        projectDir = origin
-        calculateArguments()
-        projectDir = originalProjectDir
-
         originGit.add(patterns: ['build.gradle', 'settings.gradle', '.gitignore', 'gradle.properties'] as Set)
         originGit.commit(message: 'Initial checkout')
 
@@ -53,6 +47,7 @@ abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
             .gradle-test-kit
             .gradle
             build/
+            gradle.properties
         '''.stripIndent()
 
         setupBuild()
