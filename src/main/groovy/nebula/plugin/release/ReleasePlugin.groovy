@@ -21,6 +21,7 @@ import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Status
 import org.eclipse.jgit.errors.RepositoryNotFoundException
+import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -182,8 +183,8 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private void removeReleaseAndPrepLogic(Project project) {
-        project.tasks.release.deleteAllActions()
-        project.tasks.prepare.deleteAllActions()
+        project.tasks.release.enabled = false
+        project.tasks.prepare.enabled = false
     }
 
     private void determineStage(List<String> cliTasks, ReleaseCheck releaseCheck) {

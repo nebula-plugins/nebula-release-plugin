@@ -37,7 +37,14 @@ abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
         }
 
         originGit = Grgit.init(dir: origin)
-        originGit.add(patterns: ['build.gradle', 'settings.gradle', '.gitignore'] as Set)
+
+        // Generate gradle.properties so we can commit it and avoid a dirty workspace
+        def originalProjectDir = projectDir
+        projectDir = origin
+        calculateArguments()
+        projectDir = originalProjectDir
+
+        originGit.add(patterns: ['build.gradle', 'settings.gradle', '.gitignore', 'gradle.properties'] as Set)
         originGit.commit(message: 'Initial checkout')
 
         git = Grgit.clone(dir: projectDir, uri: origin.absolutePath) as Grgit
