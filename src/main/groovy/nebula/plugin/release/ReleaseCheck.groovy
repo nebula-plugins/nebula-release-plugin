@@ -44,13 +44,13 @@ class ReleaseCheck extends DefaultTask {
         }
 
         if (!includeMatch && !isSnapshotRelease) {
-            String message = "${branchName} does not match one of the included patterns: ${patterns.releaseBranchPatterns}"
+            String message = "Branch ${branchName} does not match one of the included patterns: ${patterns.releaseBranchPatterns}"
             logger.error(message)
             throw new GradleException(message)
         }
 
         if (excludeMatch) {
-            String message = "${branchName} matched an excluded pattern: ${patterns.excludeBranchPatterns}"
+            String message = "Branch ${branchName} matched an excluded pattern: ${patterns.excludeBranchPatterns}"
             logger.error(message)
             throw new GradleException(message)
         }
