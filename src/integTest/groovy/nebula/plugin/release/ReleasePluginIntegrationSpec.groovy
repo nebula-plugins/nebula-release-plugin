@@ -17,6 +17,7 @@ package nebula.plugin.release
 
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
+import nebula.test.functional.ExecutionResult
 import org.ajoberstar.grgit.Tag
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
@@ -345,7 +346,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def results = runTasksWithFailure('build')
 
         then:
-        results.standardError.contains 'Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>'
+        outputContains(results, 'Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>')
     }
 
 
@@ -375,7 +376,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         result.failure != null
-        result.standardError.contains 'testexample does not match one of the included patterns: [master, HEAD, (release(-|/))?\\d+(\\.\\d+)?\\.x, v?\\d+\\.\\d+\\.\\d+]'
+        outputContains(result, 'testexample does not match one of the included patterns: [master, HEAD, (release(-|/))?\\d+(\\.\\d+)?\\.x, v?\\d+\\.\\d+\\.\\d+]')
     }
 
     def 'version includes branch name on devSnapshot of non release branch'() {
@@ -433,7 +434,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         result.failure != null
-        result.standardError.contains 'master matched an excluded pattern: [^master\$]'
+        outputContains(result, 'master matched an excluded pattern: [^master\$]')
     }
 
     def 'use last tag'() {
@@ -538,8 +539,8 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def results = runTasksSuccessfully('devSnapshot', '-m')
 
         then:
-        results.standardOutput.contains 'bintrayUpload'
-        results.standardOutput.contains 'artifactoryPublish'
+        outputContains(results, 'bintrayUpload')
+        outputContains(results, 'artifactoryPublish')
     }
 
     def 'able to release from hash and push tag'() {
@@ -610,5 +611,9 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         where:
         task << ['devSnapshot', 'snapshot']
+    }
+
+    static outputContains(ExecutionResult result, String substring) {
+        return result.standardError.contains(substring) || result.standardOutput.contains(substring)
     }
 }
