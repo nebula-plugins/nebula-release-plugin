@@ -21,7 +21,6 @@ import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Status
 import org.eclipse.jgit.errors.RepositoryNotFoundException
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -257,7 +256,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void configureBintrayTasksIfPresent() {
-        if (isClassPresent('com.jfrog.bintray.gradle.BintrayUploadTask')) {
+        if (isClassPresent('com.jfrog.bintray.gradle.tasks.BintrayUploadTask')) {
             project.tasks.withType(BintrayUploadTask) { Task task ->
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)

@@ -36,7 +36,7 @@ class ReleasePluginOptionalDepsSpec extends ProjectSpec {
         Logger myLogger = Mock()
         ReleasePlugin.logger = myLogger
         ReleasePlugin.metaClass.isClassPresent = { String name ->
-            name != 'com.jfrog.bintray.gradle.BintrayUploadTask'
+            name != 'com.jfrog.bintray.gradle.tasks.BintrayUploadTask'
         }
 
         when:

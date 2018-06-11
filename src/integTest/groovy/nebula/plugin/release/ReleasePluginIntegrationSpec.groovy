@@ -527,8 +527,8 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
             buildscript {
                 repositories { jcenter() }
                 dependencies {
-                    classpath 'com.netflix.nebula:nebula-bintray-plugin:3.1.0'
-                    classpath 'com.netflix.nebula:nebula-publishing-plugin:4.0.1'
+                    classpath 'com.netflix.nebula:nebula-bintray-plugin:3.5.4'
+                    classpath 'com.netflix.nebula:nebula-publishing-plugin:7.2.2'
                 }
             }
             apply plugin: 'nebula.maven-publish'
