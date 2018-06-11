@@ -15,7 +15,7 @@
  */
 package nebula.plugin.release
 
-import com.jfrog.bintray.gradle.BintrayUploadTask
+import com.jfrog.bintray.gradle.tasks.BintrayUploadTask
 import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
 import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
@@ -34,7 +34,6 @@ import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask
-import org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask
 
 class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
@@ -269,7 +268,7 @@ class ReleasePlugin implements Plugin<Project> {
 
         if (isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) {
             project.logger.warn 'Please upgrade com.jfrog.artifactory (org.jfrog.buildinfo:build-info-extractor-gradle:) to version 4.6.0 or above'
-            project.tasks.withType(BuildInfoBaseTask) { Task task ->
+            project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) { Task task ->
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }

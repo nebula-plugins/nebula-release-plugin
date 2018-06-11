@@ -7,7 +7,7 @@
     },
     "compileClasspath": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "org.ajoberstar:gradle-git": {
@@ -17,7 +17,7 @@
     },
     "compileOnly": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         }
     },
@@ -29,7 +29,7 @@
     },
     "integTestCompile": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
@@ -43,7 +43,7 @@
     },
     "integTestCompileClasspath": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
@@ -57,7 +57,7 @@
     },
     "integTestRuntime": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
@@ -71,7 +71,7 @@
     },
     "integTestRuntimeClasspath": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
@@ -107,7 +107,7 @@
     },
     "testCompile": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
@@ -121,7 +121,7 @@
     },
     "testCompileClasspath": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
@@ -135,7 +135,7 @@
     },
     "testRuntime": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
@@ -149,7 +149,7 @@
     },
     "testRuntimeClasspath": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "3.5.2",
+            "locked": "3.5.4",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
