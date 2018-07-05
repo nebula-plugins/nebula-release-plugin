@@ -33,7 +33,7 @@
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "6.4.1",
+            "locked": "6.7.1",
             "requested": "6.+"
         },
         "org.ajoberstar:gradle-git": {
@@ -47,7 +47,7 @@
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "6.4.1",
+            "locked": "6.7.1",
             "requested": "6.+"
         },
         "org.ajoberstar:gradle-git": {
@@ -61,7 +61,7 @@
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "6.4.1",
+            "locked": "6.7.1",
             "requested": "6.+"
         },
         "org.ajoberstar:gradle-git": {
@@ -75,7 +75,7 @@
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "6.4.1",
+            "locked": "6.7.1",
             "requested": "6.+"
         },
         "org.ajoberstar:gradle-git": {
@@ -111,7 +111,7 @@
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "6.4.1",
+            "locked": "6.7.1",
             "requested": "6.+"
         },
         "org.ajoberstar:gradle-git": {
@@ -125,7 +125,7 @@
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "6.4.1",
+            "locked": "6.7.1",
             "requested": "6.+"
         },
         "org.ajoberstar:gradle-git": {
@@ -139,7 +139,7 @@
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "6.4.1",
+            "locked": "6.7.1",
             "requested": "6.+"
         },
         "org.ajoberstar:gradle-git": {
@@ -153,7 +153,7 @@
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "6.4.1",
+            "locked": "6.7.1",
             "requested": "6.+"
         },
         "org.ajoberstar:gradle-git": {
