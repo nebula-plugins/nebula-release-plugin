@@ -16,7 +16,7 @@
 
 
 plugins {
-    id 'nebula.plugin-plugin' version '7.1.8'
+    id 'nebula.plugin-plugin' version '7.1.10'
 }
 
 description 'Release opinions on top of gradle-git'
