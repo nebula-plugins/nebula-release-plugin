@@ -39,7 +39,7 @@ class BaseReleasePluginSpec extends Specification {
         Grgit repo = GroovyMock()
         BranchService branch = GroovyMock()
         repo.branch >> branch
-        branch.current >> new Branch(fullName: 'refs/heads/master')
+        branch.current() >> new Branch(fullName: 'refs/heads/master')
         branch.status([branch: 'refs/heads/master']) >> new BranchStatus(behindCount: 0)
 
         project.release {
