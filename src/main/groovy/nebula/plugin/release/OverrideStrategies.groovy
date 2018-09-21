@@ -15,12 +15,12 @@
  */
 package nebula.plugin.release
 
-import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
-import org.ajoberstar.gradle.git.release.base.ReleaseVersion
-import org.ajoberstar.gradle.git.release.base.VersionStrategy
-import org.ajoberstar.gradle.git.release.semver.NearestVersionLocator
+import nebula.plugin.release.git.base.ReleasePluginExtension
+import nebula.plugin.release.git.base.ReleaseVersion
+import nebula.plugin.release.git.base.VersionStrategy
+import nebula.plugin.release.git.semver.NearestVersionLocator
 import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.exception.GrgitException
+import org.eclipse.jgit.api.errors.RefNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
@@ -103,8 +103,8 @@ class OverrideStrategies {
         @Override
         boolean selector(Project project, Grgit grgit) {
             try {
-                grgit.head()
-            } catch (GrgitException ex) {
+                grgit.describe()
+            } catch (RefNotFoundException ignore) {
                 return true
             }
 

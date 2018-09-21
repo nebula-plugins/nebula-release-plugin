@@ -15,25 +15,22 @@
  */
 package nebula.plugin.release
 
-import org.ajoberstar.gradle.git.release.opinion.Strategies
-import org.ajoberstar.gradle.git.release.semver.ChangeScope
-import org.ajoberstar.gradle.git.release.semver.PartialSemVerStrategy
-import org.ajoberstar.gradle.git.release.semver.SemVerStrategy
-import org.ajoberstar.gradle.git.release.semver.StrategyUtil
+import nebula.plugin.release.git.opinion.Strategies
+import nebula.plugin.release.git.semver.ChangeScope
+import nebula.plugin.release.git.semver.PartialSemVerStrategy
+import nebula.plugin.release.git.semver.SemVerStrategy
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
 import java.util.regex.Pattern
 
-import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.closure
-import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.incrementNormalFromScope
-import static org.ajoberstar.gradle.git.release.semver.StrategyUtil.parseIntOrZero
+import static nebula.plugin.release.git.semver.StrategyUtil.*
 
 class NetflixOssStrategies {
     static final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(~/^(\d+)\.x$/)
     static final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(~/^(\d+)\.(\d+)\.x$/)
     static final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
-    private static final scopes = StrategyUtil.one(Strategies.Normal.USE_SCOPE_PROP,
+    private static final scopes = one(Strategies.Normal.USE_SCOPE_PROP,
             TRAVIS_BRANCH_MAJOR_X, TRAVIS_BRANCH_MAJOR_MINOR_X,
             Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
             Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
@@ -42,7 +39,7 @@ class NetflixOssStrategies {
     static final SemVerStrategy SNAPSHOT = Strategies.SNAPSHOT.copyWith(normalStrategy: scopes)
     static final SemVerStrategy DEVELOPMENT = Strategies.DEVELOPMENT.copyWith(
             normalStrategy: scopes,
-            buildMetadataStrategy: NetflixOssStrategies.BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
+            buildMetadataStrategy: BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
     static final SemVerStrategy PRE_RELEASE = Strategies.PRE_RELEASE.copyWith(normalStrategy: scopes)
     static final SemVerStrategy FINAL = Strategies.FINAL.copyWith(normalStrategy: scopes)
 
@@ -68,7 +65,7 @@ class NetflixOssStrategies {
     static final String TRAVIS_BRANCH_PROP = 'release.travisBranch'
 
     static PartialSemVerStrategy fromTravisPropertyPattern(Pattern pattern) {
-        return StrategyUtil.closure { state ->
+        return closure { state ->
             if (project.hasProperty(TRAVIS_BRANCH_PROP)) {
                 def branch = project.property(TRAVIS_BRANCH_PROP)
                 def m = branch =~ pattern

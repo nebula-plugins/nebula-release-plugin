@@ -16,8 +16,8 @@
 package nebula.plugin.release
 
 import com.jfrog.bintray.gradle.tasks.BintrayUploadTask
-import org.ajoberstar.gradle.git.release.base.BaseReleasePlugin
-import org.ajoberstar.gradle.git.release.base.ReleasePluginExtension
+import nebula.plugin.release.git.base.BaseReleasePlugin
+import nebula.plugin.release.git.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Status
 import org.eclipse.jgit.errors.RepositoryNotFoundException

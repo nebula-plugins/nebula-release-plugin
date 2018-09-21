@@ -278,7 +278,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.branch.change(name: twoX, startPoint: "origin/${twoX}".toString())
         git.checkout(branch: twoX)
         def commit = git.head()
-        git.checkout(branch: 'HEAD'/*commit.abbreviatedId*/, startPoint: commit.id, createBranch: true)
+        git.checkout(branch: '2.x', startPoint: commit.id, createBranch: true)
 
         when:
         Version version= inferredVersionForTask('snapshot', '-Prelease.travisci=true', '-Prelease.travisBranch=2.x')
@@ -559,7 +559,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.push(all: true)
 
         def commit = git.head()
-        git.checkout(branch: 'HEAD', startPoint: commit, createBranch: true)
+        git.checkout(branch: 'release', startPoint: commit, createBranch: true)
 
         when:
         def version = inferredVersionForTask('final')
@@ -571,7 +571,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         Tag tag = originGit.tag.list().find { it.commit == commit }
         tag.commit.abbreviatedId == commit.abbreviatedId
 
-        originGit.branch.list().size() == 1
+        originGit.branch.list().size() == 2
     }
 
     def 'branches with slashes that do not match specified patterns do not fail builds'() {
