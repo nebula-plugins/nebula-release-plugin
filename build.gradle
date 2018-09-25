@@ -16,7 +16,7 @@
 
 
 plugins {
-    id 'nebula.plugin-plugin' version '8.1.0'
+    id 'nebula.plugin-plugin' version '8.1.2'
 }
 
 description 'Release opinions on top of gradle-git'
@@ -31,7 +31,7 @@ contacts {
 }
 
 dependencies {
-    compile ('org.ajoberstar.grgit:grgit-gradle:3.0.0-beta.1') {
+    compile ('org.ajoberstar.grgit:grgit-core:3.0.0-beta.1') {
         exclude group: 'org.codehaus.groovy', module: 'groovy'
     }
     compile 'com.github.zafarkhaja:java-semver:0.9.0'

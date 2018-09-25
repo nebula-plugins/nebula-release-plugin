@@ -113,12 +113,12 @@ class StrategiesSpec extends Specification {
         given:
         def initialState = new SemVerStrategyState(
             nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branch}"))
+            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         expect:
         Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X.infer(initialState) ==
             initialState.copyWith(inferredNormal: inferred)
         where:
-        branch        | nearest | inferred
+        branchName        | nearest | inferred
         'release/3.x' | '2.0.0' | '3.0.0'
         'release-3.x' | '2.3.4' | '3.0.0'
         'release-3.x' | '3.0.0' | null
@@ -142,12 +142,12 @@ class StrategiesSpec extends Specification {
         given:
         def initialState = new SemVerStrategyState(
             nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branch}"))
+            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         expect:
         Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X.infer(initialState) ==
             initialState.copyWith(inferredNormal: inferred)
         where:
-        branch  | nearest | inferred
+        branchName  | nearest | inferred
         '3.0.x' | '2.0.0' | '3.0.0'
         '3.0.x' | '2.1.0' | '3.0.0'
         '3.0.x' | '2.1.2' | '3.0.0'
@@ -163,12 +163,12 @@ class StrategiesSpec extends Specification {
         given:
         def initialState = new SemVerStrategyState(
             nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branch}"))
+            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         expect:
         Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X.infer(initialState) ==
             initialState.copyWith(inferredNormal: inferred)
         where:
-        branch          | nearest | inferred
+        branchName          | nearest | inferred
         'release/3.0.x' | '2.0.0' | '3.0.0'
         'release-3.0.x' | '3.0.0' | '3.0.1'
         'release-3.2.x' | '3.1.2' | '3.2.0'
@@ -179,12 +179,12 @@ class StrategiesSpec extends Specification {
         given:
         def initialState = new SemVerStrategyState(
             nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branch}"))
+            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         def strategy = StrategyUtil.one(Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X, Strategies.Normal.useScope(ChangeScope.MINOR))
         expect:
         strategy.infer(initialState) == initialState.copyWith(inferredNormal: inferred)
         where:
-        branch  | nearest | inferred
+        branchName  | nearest | inferred
         '3.0.x' | '2.0.0' | '3.0.0'
         '3.0.x' | '2.1.0' | '3.0.0'
         '3.0.x' | '2.1.2' | '3.0.0'
@@ -200,12 +200,12 @@ class StrategiesSpec extends Specification {
         given:
         def initialState = new SemVerStrategyState(
             nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branch}"))
+            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         def strategy = StrategyUtil.one(Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.useScope(ChangeScope.MINOR))
         expect:
         strategy.infer(initialState) == initialState.copyWith(inferredNormal: inferred)
         where:
-        branch          | nearest | inferred
+        branchName          | nearest | inferred
         'release/3.0.x' | '2.0.0' | '3.0.0'
         'release-3.0.x' | '3.0.0' | '3.0.1'
         'release-3.2.x' | '3.1.2' | '3.2.0'
@@ -469,7 +469,7 @@ class StrategiesSpec extends Specification {
         grgit.head() >> new Commit(id: '5e9b2a1e98b5670a90a9ed382a35f0d706d5736c', abbreviatedId: '5e9b2a1')
 
         BranchService branch = GroovyMock()
-        branch.current >> new Branch(fullName: "refs/heads/${branchName}")
+        branch.current() >> new Branch(fullName: "refs/heads/${branchName}")
         grgit.branch >> branch
 
         return grgit
