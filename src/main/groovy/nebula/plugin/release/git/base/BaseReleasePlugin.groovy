@@ -76,7 +76,7 @@ class BaseReleasePlugin implements Plugin<Project> {
         }
     }
 
-    protected void prepare(ReleasePluginExtension extension) {
+    protected static void prepare(ReleasePluginExtension extension) {
         logger.info('Fetching changes from remote: {}', extension.remote)
         Grgit grgit = extension.grgit
         grgit.fetch(remote: extension.remote)
@@ -88,7 +88,7 @@ class BaseReleasePlugin implements Plugin<Project> {
         }
     }
 
-    protected void release(Project project, ext, ReleasePluginExtension extension) {
+    protected static void release(Project project, ext, ReleasePluginExtension extension) {
         // force version inference if it hasn't happened already
         project.version.toString()
 
