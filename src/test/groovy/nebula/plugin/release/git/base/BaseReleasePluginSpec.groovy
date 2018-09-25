@@ -15,6 +15,9 @@
  */
 package nebula.plugin.release.git.base
 
+import nebula.plugin.release.ReleasePlugin
+import nebula.test.IntegrationSpec
+import nebula.test.ProjectSpec
 import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.BranchStatus
 import org.ajoberstar.grgit.Grgit
@@ -23,12 +26,16 @@ import org.ajoberstar.grgit.service.TagService
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.internal.tasks.TaskExecuter
+import org.gradle.api.internal.tasks.execution.DefaultTaskExecutionContext
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.testfixtures.ProjectBuilder
+import org.gradle.util.DeprecationLogger
 import spock.lang.Ignore
 import spock.lang.Specification
 
-@Ignore("Task.execute() is not present anymore and this code should be refactored")
-class BaseReleasePluginSpec extends Specification {
+//@Ignore("Task.execute() is not present anymore and this code should be refactored")
+class BaseReleasePluginSpec extends IntegrationSpec {
     Project project = ProjectBuilder.builder().build()
 
     def setup() {

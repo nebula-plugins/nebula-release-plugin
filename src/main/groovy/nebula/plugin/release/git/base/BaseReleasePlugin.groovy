@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
+import org.ajoberstar.grgit.Grgit
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -53,15 +54,7 @@ class BaseReleasePlugin implements Plugin<Project> {
             description = 'Verifies that the project could be released.'
             doLast {
                 ext.grgit = extension.grgit
-
-                logger.info('Fetching changes from remote: {}', extension.remote)
-                grgit.fetch(remote: extension.remote)
-
-                // if branch is tracking another, make sure it's not behind
-                def currentBranch = grgit.branch.current()
-                if (currentBranch.trackingBranch && grgit.branch.status(name: currentBranch.fullName).behindCount > 0) {
-                    throw new GradleException('Current branch is behind the tracked branch. Cannot release.')
-                }
+                prepare(extension)
             }
         }
 
@@ -72,34 +65,52 @@ class BaseReleasePlugin implements Plugin<Project> {
         }
     }
 
+
     private void addReleaseTask(Project project, ReleasePluginExtension extension) {
         project.tasks.create(RELEASE_TASK_NAME) {
             description = 'Releases this project.'
             dependsOn PREPARE_TASK_NAME
             doLast {
-                // force version inference if it hasn't happened already
-                project.version.toString()
-
-                ext.grgit = extension.grgit
-                ext.toPush = []
-
-                // if not on detached HEAD, push branch
-                if (grgit.branch.current.fullName != 'HEAD') {
-                    ext.toPush << grgit.branch.current.fullName
-                }
-
-                ext.tagName = extension.tagStrategy.maybeCreateTag(grgit, project.version.inferredVersion)
-                if (tagName) {
-                    toPush << tagName
-                }
-
-                if (toPush) {
-                    logger.warn('Pushing changes in {} to {}', toPush, extension.remote)
-                    grgit.push(remote: extension.remote, refsOrSpecs: toPush)
-                } else {
-                    logger.warn('Nothing to push.')
-                }
+                release(project, ext, extension)
             }
+        }
+    }
+
+    protected void prepare(ReleasePluginExtension extension) {
+        logger.info('Fetching changes from remote: {}', extension.remote)
+        Grgit grgit = extension.grgit
+        grgit.fetch(remote: extension.remote)
+
+        // if branch is tracking another, make sure it's not behind
+        def currentBranch = grgit.branch.current()
+        if (currentBranch.trackingBranch && grgit.branch.status(name: currentBranch.fullName).behindCount > 0) {
+            throw new GradleException('Current branch is behind the tracked branch. Cannot release.')
+        }
+    }
+
+    protected void release(Project project, ext, ReleasePluginExtension extension) {
+        // force version inference if it hasn't happened already
+        project.version.toString()
+
+        Grgit grgit = extension.grgit
+        ext.grgit = grgit
+        ext.toPush = []
+
+        // if not on detached HEAD, push branch
+        if (grgit.branch.current.fullName != 'HEAD') {
+            ext.toPush << grgit.branch.current.fullName
+        }
+
+        ext.tagName = extension.tagStrategy.maybeCreateTag(grgit, project.version.inferredVersion)
+        if (ext.tagName) {
+            ext.toPush << ext.tagName
+        }
+
+        if (ext.toPush) {
+            logger.warn('Pushing changes in {} to {}', ext.toPush, extension.remote)
+            grgit.push(remote: extension.remote, refsOrSpecs: ext.toPush)
+        } else {
+            logger.warn('Nothing to push.')
         }
     }
 }
