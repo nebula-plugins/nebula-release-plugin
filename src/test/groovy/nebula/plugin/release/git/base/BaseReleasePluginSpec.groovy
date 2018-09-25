@@ -20,14 +20,11 @@ import org.ajoberstar.grgit.BranchStatus
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.service.BranchService
 import org.ajoberstar.grgit.service.TagService
-
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
-import spock.lang.Ignore
 import spock.lang.Specification
 
-@Ignore("Task.execute() is not present anymore and this code should be refactored")
 class BaseReleasePluginSpec extends Specification {
     Project project = ProjectBuilder.builder().build()
 
@@ -39,98 +36,111 @@ class BaseReleasePluginSpec extends Specification {
         given:
         Grgit repo = GroovyMock()
         BranchService branch = GroovyMock()
-        repo.branch >> branch
         branch.current() >> new Branch(fullName: 'refs/heads/master')
         branch.status([branch: 'refs/heads/master']) >> new BranchStatus(behindCount: 0)
+        ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
+        releaseExtension.grgit = repo
 
-        project.release {
-            grgit = repo
-        }
         when:
-        project.tasks.prepare.execute()
+        BaseReleasePlugin.prepare(releaseExtension)
+
         then:
         notThrown(GradleException)
+        1 * repo.branch >> branch
         1 * repo.fetch([remote: 'origin'])
+
     }
 
     def 'prepare task fails if branch is behind'() {
         given:
         Grgit repo = GroovyMock()
         BranchService branch = GroovyMock()
-        repo.branch >> branch
-        branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
-        branch.status([branch: 'refs/heads/master']) >> new BranchStatus(behindCount: 2)
+        ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
+        releaseExtension.grgit = repo
 
-        project.release {
-            grgit = repo
-        }
         when:
-        project.tasks.prepare.execute()
+        BaseReleasePlugin.prepare(releaseExtension)
+
         then:
         thrown(GradleException)
         1 * repo.fetch([remote: 'origin'])
+        _ * repo.branch >> branch
+        1 * branch.status([name: 'refs/heads/master']) >> new BranchStatus(behindCount: 2)
+        1 * branch.current() >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
+
     }
 
     def 'release task pushes branch and tag if created'() {
         given:
+        VersionStrategy strategy = [
+                getName: { 'a' },
+                selector: {proj, repo2 -> true },
+                infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, true)}] as VersionStrategy
         Grgit repo = GroovyMock()
         BranchService branch = GroovyMock()
         repo.branch >> branch
         TagService tag = GroovyMock()
-        repo.tag >> tag
-        branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
-        project.release {
-            versionStrategy([
-                getName: { 'a' },
-                selector: {proj, repo2 -> true },
-                infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, true)}] as VersionStrategy)
-            grgit = repo
-        }
+
+        ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
+        releaseExtension.grgit = repo
+        releaseExtension.versionStrategy(strategy)
+
         when:
-        project.tasks.release.execute()
+        BaseReleasePlugin.release(project, project.ext, releaseExtension)
+
         then:
         1 * repo.push([remote: 'origin', refsOrSpecs: ['refs/heads/master', 'v1.2.3']])
+        _ * repo.branch >> branch
+        _ * branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
+        1 * repo.tag >> tag
     }
 
     def 'release task pushes branch but not tag if it was not created'() {
         given:
-        Grgit repo = GroovyMock()
-        BranchService branch = GroovyMock()
-        repo.branch >> branch
-        TagService tag = GroovyMock()
-        repo.tag >> tag
-        branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
-        project.release {
-            versionStrategy([
+        VersionStrategy strategy = [
                 getName: { 'a' },
                 selector: {proj, repo2 -> true },
-                infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, false)}] as VersionStrategy)
-            grgit = repo
-        }
+                infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, false)}] as VersionStrategy
+        Grgit repo = GroovyMock()
+        BranchService branch = GroovyMock()
+
+        ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
+        releaseExtension.grgit = repo
+        releaseExtension.versionStrategy(strategy)
+
         when:
-        project.tasks.release.execute()
+        BaseReleasePlugin.release(project, project.ext, releaseExtension)
+
         then:
         1 * repo.push([remote: 'origin', refsOrSpecs: ['refs/heads/master']])
+        _ * repo.branch >> branch
+        _ * branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
+        0 * repo.tag
+
     }
 
     def 'release task skips push if on detached head'() {
         given:
+        VersionStrategy strategy = [
+                getName: { 'a' },
+                selector: {proj, repo2 -> true },
+                infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, false)}] as VersionStrategy
         Grgit repo = GroovyMock()
         BranchService branch = GroovyMock()
         repo.branch >> branch
-        TagService tag = GroovyMock()
-        repo.tag >> tag
-        branch.current >> new Branch(fullName: 'HEAD')
-        project.release {
-            versionStrategy([
-                getName: { 'a' },
-                selector: {proj, repo2 -> true },
-                infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, false)}] as VersionStrategy)
-            grgit = repo
-        }
+
+
+        ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
+        releaseExtension.grgit = repo
+        releaseExtension.versionStrategy(strategy)
+
         when:
-        project.tasks.release.execute()
+        BaseReleasePlugin.release(project, project.ext, releaseExtension)
+
         then:
+        1 * branch.current >> new Branch(fullName: 'HEAD')
         0 * repo.push(_)
+        0 * repo.tag
+
     }
 }
