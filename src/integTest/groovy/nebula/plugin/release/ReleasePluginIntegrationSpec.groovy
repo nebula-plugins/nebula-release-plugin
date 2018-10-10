@@ -24,7 +24,8 @@ import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 import spock.lang.Unroll
 
 class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
-    @Override def setupBuild() {
+    @Override
+    def setupBuild() {
         buildFile << """
             ext.dryRun = true
             group = 'test'
@@ -281,7 +282,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.checkout(branch: 'HEAD'/*commit.abbreviatedId*/, startPoint: commit.id, createBranch: true)
 
         when:
-        Version version= inferredVersionForTask('snapshot', '-Prelease.travisci=true', '-Prelease.travisBranch=2.x')
+        Version version = inferredVersionForTask('snapshot', '-Prelease.travisci=true', '-Prelease.travisBranch=2.x')
 
         then:
         version.toString() == '2.0.0-SNAPSHOT'
@@ -445,6 +446,20 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
+    }
+
+    def 'useLastTag errors out if there is another commit since tag'() {
+        git.tag.add(name: 'v42.5.3')
+        new File(projectDir, "foo").text = "Hi"
+        git.add(patterns: ['foo'] as Set)
+        git.commit(message: 'Something got committed')
+
+        when:
+        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardOutput.contains 'Current commit does not have a tag'
+        !new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
     }
 
     def 'use last tag for rc'() {
