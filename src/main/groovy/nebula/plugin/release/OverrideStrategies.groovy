@@ -60,7 +60,11 @@ class OverrideStrategies {
         ReleaseVersion infer(Project project, Grgit grgit) {
             def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
             def locate = new NearestVersionLocator(tagStrategy).locate(grgit)
-            return new ReleaseVersion(locate.any.toString(), null, false)
+            if (locate.distanceFromAny == 0) {
+                return new ReleaseVersion(locate.any.toString(), null, false)
+            } else {
+                throw new GradleException("Current commit does not have a tag")
+            }
         }
     }
 
