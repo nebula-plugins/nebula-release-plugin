@@ -472,6 +472,28 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
+    def 'using tag v3.1.2-rc.1 fails when running final'() {
+        git.tag.add(name: "v3.1.2-rc.1")
+
+        when:
+        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardOutput.contains "Current tag does not appear to be a final version"
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
+    }
+
+    def 'using tag v3.1.2 fails when running candidate'() {
+        git.tag.add(name: "v3.1.2")
+
+        when:
+        def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardOutput.contains "Current tag does not appear to be a prerelease version"
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
+    }
+
     def 'skip useLastTag if false'() {
         when:
         runTasksSuccessfully('final', '-Prelease.useLastTag=345')
