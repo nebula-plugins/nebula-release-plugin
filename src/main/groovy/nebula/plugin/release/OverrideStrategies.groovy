@@ -60,7 +60,20 @@ class OverrideStrategies {
         ReleaseVersion infer(Project project, Grgit grgit) {
             def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
             def locate = new NearestVersionLocator(tagStrategy).locate(grgit)
+            String releaseStage = project.ext['release.stage']
+
             if (locate.distanceFromAny == 0) {
+                def preReleaseVersion = locate.any.preReleaseVersion
+                if (releaseStage == 'rc') {
+                    if (!(preReleaseVersion ==~ /rc\.\d+/)) {
+                        throw new GradleException("Current tag does not appear to be a prerelease version")
+                    }
+                }
+                if (releaseStage == 'final') {
+                    if (preReleaseVersion) {
+                        throw new GradleException("Current tag does not appear to be a final version")
+                    }
+                }
                 return new ReleaseVersion(locate.any.toString(), null, false)
             } else {
                 throw new GradleException("Current commit does not have a tag")
