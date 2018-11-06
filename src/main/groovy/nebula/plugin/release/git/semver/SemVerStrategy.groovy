@@ -148,7 +148,7 @@ final class SemVerStrategy implements nebula.plugin.release.git.base.DefaultVers
     @PackageScope
     ReleaseVersion doInfer(Project project, Grgit grgit, NearestVersionLocator locator) {
         ChangeScope scope = getPropertyOrNull(project, SCOPE_PROP).with { scope ->
-            scope == null ? null : ChangeScope.valueOf(scope.toUpperCase())
+            scope == null ? null : ChangeScope.valueOf(scope.trim().toUpperCase())
         }
         String stage = getPropertyOrNull(project, STAGE_PROP) ?: stages.first()
         if (!stages.contains(stage)) {
