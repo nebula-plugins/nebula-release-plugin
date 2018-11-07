@@ -27,44 +27,34 @@ import java.util.regex.Pattern
 import static nebula.plugin.release.git.semver.StrategyUtil.*
 
 class NetflixOssStrategies {
-    static final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(~/^(\d+)\.x$/)
-    static final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(~/^(\d+)\.(\d+)\.x$/)
-    static final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
-    private static final scopes = one(Strategies.Normal.USE_SCOPE_PROP,
-            TRAVIS_BRANCH_MAJOR_X, TRAVIS_BRANCH_MAJOR_MINOR_X,
-            Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
-            Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
-            NEAREST_HIGHER_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
 
-    static final SemVerStrategy SNAPSHOT = Strategies.SNAPSHOT.copyWith(normalStrategy: scopes)
-    static final SemVerStrategy DEVELOPMENT = Strategies.DEVELOPMENT.copyWith(
-            normalStrategy: scopes,
-            buildMetadataStrategy: BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
-    static final SemVerStrategy PRE_RELEASE = Strategies.PRE_RELEASE.copyWith(normalStrategy: scopes)
-    static final SemVerStrategy FINAL = Strategies.FINAL.copyWith(normalStrategy: scopes)
+    private static final String TRAVIS_BRANCH_PROP = 'release.travisBranch'
 
-    static final class BuildMetadata {
-        static ReleaseExtension nebulaReleaseExtension
+    private final Object project
 
-        static final PartialSemVerStrategy DEVELOPMENT_METADATA_STRATEGY = { state ->
-            boolean needsBranchMetadata = true
-            nebulaReleaseExtension.releaseBranchPatterns.each {
-                if (state.currentBranch.name =~ it) {
-                    needsBranchMetadata = false
-                }
-            }
-            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
-            shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
-            def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
-            state.copyWith(inferredBuildMetadata: metadata)
-        }
+    NetflixOssStrategies(Project project) {
+        this.project = project
     }
 
-    static Project project
+    SemVerStrategy getSnapshot() {
+        Strategies.SNAPSHOT.copyWith(normalStrategy: scopes)
+    }
 
-    static final String TRAVIS_BRANCH_PROP = 'release.travisBranch'
+    SemVerStrategy getDevelopment() {
+        Strategies.DEVELOPMENT.copyWith(
+                normalStrategy: scopes,
+                buildMetadataStrategy: BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
+    }
 
-    static PartialSemVerStrategy fromTravisPropertyPattern(Pattern pattern) {
+    SemVerStrategy getPreRelease() {
+        Strategies.PRE_RELEASE.copyWith(normalStrategy: scopes)
+    }
+
+    SemVerStrategy getFinal() {
+        Strategies.FINAL.copyWith(normalStrategy: scopes)
+    }
+
+    PartialSemVerStrategy fromTravisPropertyPattern(Pattern pattern) {
         return closure { state ->
             if (project.hasProperty(TRAVIS_BRANCH_PROP)) {
                 def branch = project.property(TRAVIS_BRANCH_PROP)
@@ -110,7 +100,7 @@ class NetflixOssStrategies {
      * component as {@code 1.2.3}.
      * </p>
      */
-    static PartialSemVerStrategy nearestHigherAny() {
+    private PartialSemVerStrategy nearestHigherAny() {
         return closure { state ->
             def nearest = state.nearestVersion
             if (nearest.any.lessThanOrEqualTo(nearest.normal)) {
@@ -120,4 +110,34 @@ class NetflixOssStrategies {
             }
         }
     }
+
+    private getScopes() {
+        final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(~/^(\d+)\.x$/)
+        final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(~/^(\d+)\.(\d+)\.x$/)
+        final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
+        one(Strategies.Normal.USE_SCOPE_PROP,
+                TRAVIS_BRANCH_MAJOR_X, TRAVIS_BRANCH_MAJOR_MINOR_X,
+                Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
+                Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
+                NEAREST_HIGHER_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
+    }
+
+
+    static final class BuildMetadata {
+        static ReleaseExtension nebulaReleaseExtension
+
+        static final PartialSemVerStrategy DEVELOPMENT_METADATA_STRATEGY = { state ->
+            boolean needsBranchMetadata = true
+            nebulaReleaseExtension.releaseBranchPatterns.each {
+                if (state.currentBranch.name =~ it) {
+                    needsBranchMetadata = false
+                }
+            }
+            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
+            shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
+            def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
+            state.copyWith(inferredBuildMetadata: metadata)
+        }
+    }
+
 }
