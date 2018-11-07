@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release
 
+import nebula.plugin.release.ReleaseExtension
 import nebula.plugin.release.git.opinion.Strategies
 import nebula.plugin.release.git.semver.ChangeScope
 import nebula.plugin.release.git.semver.PartialSemVerStrategy
@@ -27,47 +28,43 @@ import java.util.regex.Pattern
 import static nebula.plugin.release.git.semver.StrategyUtil.*
 
 class NetflixOssStrategies {
-    static final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(~/^(\d+)\.x$/)
-    static final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(~/^(\d+)\.(\d+)\.x$/)
-    static final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
-    private static final scopes = one(Strategies.Normal.USE_SCOPE_PROP,
-            TRAVIS_BRANCH_MAJOR_X, TRAVIS_BRANCH_MAJOR_MINOR_X,
-            Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
-            Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
-            NEAREST_HIGHER_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
 
-    static final SemVerStrategy SNAPSHOT = Strategies.SNAPSHOT.copyWith(normalStrategy: scopes)
-    static final SemVerStrategy DEVELOPMENT = Strategies.DEVELOPMENT.copyWith(
-            normalStrategy: scopes,
-            buildMetadataStrategy: BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
-    static final SemVerStrategy PRE_RELEASE = Strategies.PRE_RELEASE.copyWith(normalStrategy: scopes)
-    static final SemVerStrategy FINAL = Strategies.FINAL.copyWith(normalStrategy: scopes)
+    private static final String TRAVIS_BRANCH_PROP = 'release.travisBranch'
 
-    static final class BuildMetadata {
-        static ReleaseExtension nebulaReleaseExtension
-
-        static final PartialSemVerStrategy DEVELOPMENT_METADATA_STRATEGY = { state ->
-            boolean needsBranchMetadata = true
-            nebulaReleaseExtension.releaseBranchPatterns.each {
-                if (state.currentBranch.name =~ it) {
-                    needsBranchMetadata = false
-                }
-            }
-            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
-            shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
-            def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
-            state.copyWith(inferredBuildMetadata: metadata)
-        }
+    static SemVerStrategy SNAPSHOT(Project project) {
+        Strategies.SNAPSHOT.copyWith(normalStrategy: getScopes(project))
     }
 
-    static Project project
+    static SemVerStrategy DEVELOPMENT(Project project) {
+        Strategies.DEVELOPMENT.copyWith(
+                normalStrategy: getScopes(project),
+                buildMetadataStrategy: BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
+    }
 
-    static final String TRAVIS_BRANCH_PROP = 'release.travisBranch'
+    static SemVerStrategy PRE_RELEASE(Project project) {
+        Strategies.PRE_RELEASE.copyWith(normalStrategy: getScopes(project))
+    }
 
-    static PartialSemVerStrategy fromTravisPropertyPattern(Pattern pattern) {
+    static SemVerStrategy FINAL(Project project) {
+        Strategies.FINAL.copyWith(normalStrategy: getScopes(project))
+    }
+
+    private static getScopes(Project project) {
+        Object travisReleaseBranch = (project.hasProperty(TRAVIS_BRANCH_PROP)) ? project.property(TRAVIS_BRANCH_PROP) : null
+        final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(travisReleaseBranch, ~/^(\d+)\.x$/)
+        final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(travisReleaseBranch, ~/^(\d+)\.(\d+)\.x$/)
+        final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
+        one(Strategies.Normal.USE_SCOPE_PROP,
+                TRAVIS_BRANCH_MAJOR_X, TRAVIS_BRANCH_MAJOR_MINOR_X,
+                Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
+                Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
+                NEAREST_HIGHER_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
+    }
+
+    private static PartialSemVerStrategy fromTravisPropertyPattern(Object travisReleaseBranch, Pattern pattern) {
         return closure { state ->
-            if (project.hasProperty(TRAVIS_BRANCH_PROP)) {
-                def branch = project.property(TRAVIS_BRANCH_PROP)
+            if (travisReleaseBranch) {
+                def branch = travisReleaseBranch
                 def m = branch =~ pattern
                 if (m) {
                     def major = m.groupCount() >= 1 ? parseIntOrZero(m[0][1]) : -1
@@ -110,7 +107,7 @@ class NetflixOssStrategies {
      * component as {@code 1.2.3}.
      * </p>
      */
-    static PartialSemVerStrategy nearestHigherAny() {
+    static private PartialSemVerStrategy nearestHigherAny() {
         return closure { state ->
             def nearest = state.nearestVersion
             if (nearest.any.lessThanOrEqualTo(nearest.normal)) {
@@ -120,4 +117,24 @@ class NetflixOssStrategies {
             }
         }
     }
+
+
+
+    static final class BuildMetadata {
+        static ReleaseExtension nebulaReleaseExtension
+
+        static final PartialSemVerStrategy DEVELOPMENT_METADATA_STRATEGY = { state ->
+            boolean needsBranchMetadata = true
+            nebulaReleaseExtension.releaseBranchPatterns.each {
+                if (state.currentBranch.name =~ it) {
+                    needsBranchMetadata = false
+                }
+            }
+            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
+            shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
+            def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
+            state.copyWith(inferredBuildMetadata: metadata)
+        }
+    }
+
 }

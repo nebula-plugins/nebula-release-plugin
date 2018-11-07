@@ -57,7 +57,6 @@ class ReleasePlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         this.project = project
-        NetflixOssStrategies.project = project
 
         def gitRoot = project.hasProperty('git.root') ? project.property('git.root') : project.rootProject.projectDir
 
@@ -77,11 +76,11 @@ class ReleasePlugin implements Plugin<Project> {
                 versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
                 versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
-                versionStrategy NetflixOssStrategies.SNAPSHOT
-                versionStrategy NetflixOssStrategies.DEVELOPMENT
-                versionStrategy NetflixOssStrategies.PRE_RELEASE
-                versionStrategy NetflixOssStrategies.FINAL
-                defaultVersionStrategy = NetflixOssStrategies.DEVELOPMENT
+                versionStrategy NetflixOssStrategies.SNAPSHOT(project)
+                versionStrategy NetflixOssStrategies.DEVELOPMENT(project)
+                versionStrategy NetflixOssStrategies.PRE_RELEASE(project)
+                versionStrategy NetflixOssStrategies.FINAL(project)
+                defaultVersionStrategy = NetflixOssStrategies.DEVELOPMENT(project)
             }
 
             releaseExtension.with {
