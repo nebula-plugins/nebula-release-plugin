@@ -545,7 +545,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
     def 'devSnapshot works if default is changed'() {
         buildFile << '''\
             release {
-                defaultVersionStrategy = nebula.plugin.release.NetflixOssStrategies.SNAPSHOT
+                defaultVersionStrategy = nebula.plugin.release.NetflixOssStrategies.SNAPSHOT(project)
             }
         '''.stripIndent()
         git.add(patterns: ['build.gradle'] as Set)

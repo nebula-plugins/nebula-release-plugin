@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release
 
+import nebula.plugin.release.ReleaseExtension
 import nebula.plugin.release.git.opinion.Strategies
 import nebula.plugin.release.git.semver.ChangeScope
 import nebula.plugin.release.git.semver.PartialSemVerStrategy
@@ -30,34 +31,40 @@ class NetflixOssStrategies {
 
     private static final String TRAVIS_BRANCH_PROP = 'release.travisBranch'
 
-    private final Object project
-
-    NetflixOssStrategies(Project project) {
-        this.project = project
+    static SemVerStrategy SNAPSHOT(Project project) {
+        Strategies.SNAPSHOT.copyWith(normalStrategy: getScopes(project))
     }
 
-    SemVerStrategy getSnapshot() {
-        Strategies.SNAPSHOT.copyWith(normalStrategy: scopes)
-    }
-
-    SemVerStrategy getDevelopment() {
+    static SemVerStrategy DEVELOPMENT(Project project) {
         Strategies.DEVELOPMENT.copyWith(
-                normalStrategy: scopes,
+                normalStrategy: getScopes(project),
                 buildMetadataStrategy: BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
     }
 
-    SemVerStrategy getPreRelease() {
-        Strategies.PRE_RELEASE.copyWith(normalStrategy: scopes)
+    static SemVerStrategy PRE_RELEASE(Project project) {
+        Strategies.PRE_RELEASE.copyWith(normalStrategy: getScopes(project))
     }
 
-    SemVerStrategy getFinal() {
-        Strategies.FINAL.copyWith(normalStrategy: scopes)
+    static SemVerStrategy FINAL(Project project) {
+        Strategies.FINAL.copyWith(normalStrategy: getScopes(project))
     }
 
-    PartialSemVerStrategy fromTravisPropertyPattern(Pattern pattern) {
+    private static getScopes(Project project) {
+        Object travisReleaseBranch = (project.hasProperty(TRAVIS_BRANCH_PROP)) ? project.property(TRAVIS_BRANCH_PROP) : null
+        final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(travisReleaseBranch, ~/^(\d+)\.x$/)
+        final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(travisReleaseBranch, ~/^(\d+)\.(\d+)\.x$/)
+        final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
+        one(Strategies.Normal.USE_SCOPE_PROP,
+                TRAVIS_BRANCH_MAJOR_X, TRAVIS_BRANCH_MAJOR_MINOR_X,
+                Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
+                Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
+                NEAREST_HIGHER_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
+    }
+
+    private static PartialSemVerStrategy fromTravisPropertyPattern(Object travisReleaseBranch, Pattern pattern) {
         return closure { state ->
-            if (project.hasProperty(TRAVIS_BRANCH_PROP)) {
-                def branch = project.property(TRAVIS_BRANCH_PROP)
+            if (travisReleaseBranch) {
+                def branch = travisReleaseBranch
                 def m = branch =~ pattern
                 if (m) {
                     def major = m.groupCount() >= 1 ? parseIntOrZero(m[0][1]) : -1
@@ -100,7 +107,7 @@ class NetflixOssStrategies {
      * component as {@code 1.2.3}.
      * </p>
      */
-    private PartialSemVerStrategy nearestHigherAny() {
+    static private PartialSemVerStrategy nearestHigherAny() {
         return closure { state ->
             def nearest = state.nearestVersion
             if (nearest.any.lessThanOrEqualTo(nearest.normal)) {
@@ -111,16 +118,6 @@ class NetflixOssStrategies {
         }
     }
 
-    private getScopes() {
-        final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(~/^(\d+)\.x$/)
-        final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(~/^(\d+)\.(\d+)\.x$/)
-        final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
-        one(Strategies.Normal.USE_SCOPE_PROP,
-                TRAVIS_BRANCH_MAJOR_X, TRAVIS_BRANCH_MAJOR_MINOR_X,
-                Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_X,
-                Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X,
-                NEAREST_HIGHER_ANY, Strategies.Normal.useScope(ChangeScope.MINOR))
-    }
 
 
     static final class BuildMetadata {
