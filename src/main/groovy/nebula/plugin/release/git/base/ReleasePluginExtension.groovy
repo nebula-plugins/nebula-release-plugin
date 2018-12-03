@@ -93,7 +93,7 @@ class ReleasePluginExtension {
     }
 
     // TODO: Decide if this should be thread-safe.
-    private class DelayedVersion {
+    private class DelayedVersion implements Serializable {
         ReleaseVersion inferredVersion
 
         private void infer() {
