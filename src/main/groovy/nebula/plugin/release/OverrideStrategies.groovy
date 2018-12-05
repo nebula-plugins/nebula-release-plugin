@@ -62,6 +62,10 @@ class OverrideStrategies {
             def locate = new NearestVersionLocator(tagStrategy).locate(grgit)
             String releaseStage = project.ext['release.stage']
 
+            if (releaseStage == 'dev' || releaseStage == 'SNAPSHOT') {
+                throw new GradleException("Cannot use useLastTag with snapshot and devSnapshot tasks")
+            }
+
             if (locate.distanceFromAny == 0) {
                 def preReleaseVersion = locate.any.preReleaseVersion
                 if (releaseStage == 'rc') {
