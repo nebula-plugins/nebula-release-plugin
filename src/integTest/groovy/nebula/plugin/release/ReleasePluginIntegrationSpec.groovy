@@ -458,7 +458,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
 
         then:
-        result.standardOutput.contains 'Current commit does not have a tag'
+        result.standardError.contains 'Current commit does not have a tag'
         !new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
     }
 
@@ -479,7 +479,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
 
         then:
-        result.standardOutput.contains "Current tag does not appear to be a final version"
+        result.standardError.contains "Current tag does not appear to be a final version"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
@@ -490,7 +490,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
 
         then:
-        result.standardOutput.contains "Current tag does not appear to be a prerelease version"
+        result.standardError.contains "Current tag does not appear to be a prerelease version"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
     }
 
