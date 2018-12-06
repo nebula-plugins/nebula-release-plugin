@@ -483,6 +483,34 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
+    def 'fails when running devSnapshot With useLastTag'() {
+        when:
+        def result = runTasksWithFailure('devSnapshot', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains "Cannot use useLastTag with snapshot and devSnapshot tasks"
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
+    }
+
+    def 'fails when running devSnapshot With useLastTag false'() {
+        expect:
+        runTasksSuccessfully('devSnapshot', '-Prelease.useLastTag=false')
+    }
+
+    def 'fails when running snapshot With useLastTag false'() {
+        expect:
+        runTasksSuccessfully('snapshot', '-Prelease.useLastTag=false')
+    }
+
+    def 'fails when running snapshot With useLastTag'() {
+        when:
+        def result = runTasksWithFailure('snapshot', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains "Cannot use useLastTag with snapshot and devSnapshot tasks"
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
+    }
+
     def 'using tag v3.1.2 fails when running candidate'() {
         git.tag.add(name: "v3.1.2")
 
