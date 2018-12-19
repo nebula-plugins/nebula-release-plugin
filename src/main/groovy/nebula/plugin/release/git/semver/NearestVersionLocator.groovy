@@ -18,6 +18,7 @@ package nebula.plugin.release.git.semver
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.git.base.TagStrategy
 import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.Tag
 import org.eclipse.jgit.lib.ObjectId
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.revwalk.RevWalk
@@ -94,8 +95,9 @@ class NearestVersionLocator {
                 walk.parseCommit(id)
             }
 
-            List tags = grgit.tag.list().collect { tag ->
-                [version: strategy.parseTag(tag), tag: tag, rev: toRev(tag)]
+            List tagRefs = grgit.repository.jgit.tagList().call()
+            List tags = tagRefs.collect { ref ->
+                [version: strategy.parseTag(new Tag(fullName: ref.name)), rev: walk.parseCommit(ref.getObjectId())]
             }.findAll {
                 it.version
             }
