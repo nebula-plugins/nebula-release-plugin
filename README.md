@@ -153,14 +153,14 @@ The plugin assumes Git root is in the same location as Gradle root. If this isn'
 * `candidateSetup` - any kind of setup is good to live around here, e.g. setting status, various checks
 * `release` - this is where the tag is pushed to the repo, so probably have `release` dependOn any `assemble` and `check` tasks, dependsOn `candidateSetup`
 * `postRelease` - any steps you want to happen after the repo tag, in our case this is where publishing happens since if the publish partially fails we don't want to fix the tags, dependsOn `release`
-* `candidate` - command line task to kick off devSnapshot workflow, dependsOn `postRelease`
+* `candidate` - command line task to kick off candidate workflow, dependsOn `postRelease`
 
 ### For `final`
 
 * `finalSetup` - any kind of setup is good to live around here, e.g. setting status, various checks
 * `release` - this is where the tag is pushed to the repo, so probably have `release` dependOn any `assemble` and `check` tasks, dependsOn `finalSetup`
 * `postRelease` - any steps you want to happen after the repo tag, in our case this is where publishing happens since if the publish partially fails we don't want to fix the tags, dependsOn `release`
-* `final` - command line task to kick off devSnapshot workflow, dependsOn `postRelease`
+* `final` - command line task to kick off final workflow, dependsOn `postRelease`
 
 Gradle and Java Compatibility
 =============================
