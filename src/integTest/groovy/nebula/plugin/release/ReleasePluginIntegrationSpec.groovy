@@ -483,6 +483,31 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
+    def 'useLastTag uses release tag when running "final"'() {
+        git.tag.add(name: "v3.1.2-rc.1")
+        git.tag.add(name: "v3.1.2")
+
+        when:
+        def result = runTasksSuccessfully('final', '-Prelease.useLastTag=true')
+
+        then:
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
+        new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
+    }
+
+    def 'useLastTag ignores rc tag when there is a release tag on the commit and running "candidate"'() {
+        git.tag.add(name: "v3.1.2-rc.1")
+        git.tag.add(name: "v3.1.2")
+
+        when:
+        def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains "Current tag does not appear to be a prerelease version"
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
+    }
+
     def 'fails when running devSnapshot With useLastTag'() {
         when:
         def result = runTasksWithFailure('devSnapshot', '-Prelease.useLastTag=true')
@@ -492,12 +517,111 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
-    def 'fails when running devSnapshot With useLastTag false'() {
+    def 'succeeds when running devSnapshot With useLastTag false'() {
         expect:
         runTasksSuccessfully('devSnapshot', '-Prelease.useLastTag=false')
     }
 
-    def 'fails when running snapshot With useLastTag false'() {
+    def 'useLastTag succeeds when release stage is not supplied for final tag'() {
+        git.tag.add(name: 'v42.5.3')
+
+        when:
+        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
+    }
+
+    def 'useLastTag succeeds when release stage is not supplied for rc tag'() {
+        git.tag.add(name: 'v3.1.2-rc.1')
+
+        when:
+        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
+    }
+
+    def 'useLastTag succeeds when release stage is not supplied for rc tag and devSnapshot tag'() {
+        git.tag.add(name: 'v3.1.2-rc.1')
+        git.tag.add(name: "${dev('0.1.0-dev.3+').toString()}")
+
+        when:
+        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
+    }
+
+    def 'useLastTag fails when release stage is not supplied for devSnapshot tag'() {
+        git.tag.add(name: "${dev('0.1.0-dev.3+').toString()}")
+
+        when:
+        def result = runTasksWithFailure('assemble', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains "Current commit has a snapshot or devSnapshot tag. 'useLastTag' requires a prerelease or release tag."
+        !new File(projectDir, "build/libs/${moduleName}-${dev('0.1.0-dev.3+').toString()}.jar").exists()
+    }
+
+    def 'useLastTag fails when release stage is not supplied for snapshot tag'() {
+        git.tag.add(name: "1.2.3-SNAPSHOT")
+
+        when:
+        def result = runTasksWithFailure('assemble', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains "Current commit has a snapshot or devSnapshot tag. 'useLastTag' requires a prerelease or release tag."
+        !new File(projectDir, "build/libs/${moduleName}-1.2.3-SNAPSHOT.jar").exists()
+    }
+
+    def 'useLastTag should release with semantically most significant tag'() {
+        git.tag.add(name: 'v3.1.2-rc.1')
+        git.tag.add(name: 'v3.1.2-rc.2')
+        git.tag.add(name: 'v3.1.2')
+
+        when:
+        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
+    }
+
+    def 'useLastTag should release with semantically most significant tag for RCs'() {
+        git.tag.add(name: 'v3.1.2-rc.1')
+        git.tag.add(name: 'v3.1.2-rc.2')
+
+        when:
+        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.2.jar").exists()
+    }
+
+    def 'useLastTag shows version selection with debug enabled'() {
+        git.tag.add(name: 'v42.5.3')
+
+        when:
+        def result = runTasksSuccessfully('final', '-Prelease.useLastTag=true', '--debug')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
+        result.standardOutput.contains('Using version 42.5.3 with final release strategy')
+    }
+
+    def 'useLastTag shows version selection with debug enabled - no release strategy selected'() {
+        git.tag.add(name: 'v42.5.3')
+
+        when:
+        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true', '--debug')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
+        result.standardOutput.contains("Note: It is recommended to supply a release strategy of <snapshot|devSnapshot|candidate|final> to make 'useLastTag' most explicit. Please add one to your list of tasks.")
+        result.standardOutput.contains('Using version 42.5.3 with a non-supplied release strategy')
+    }
+
+    def 'succeeds when running snapshot With useLastTag false'() {
         expect:
         runTasksSuccessfully('snapshot', '-Prelease.useLastTag=false')
     }

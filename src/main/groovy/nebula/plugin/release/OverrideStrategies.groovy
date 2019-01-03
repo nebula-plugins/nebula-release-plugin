@@ -23,6 +23,8 @@ import org.ajoberstar.grgit.Grgit
 import org.eclipse.jgit.api.errors.RefNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Strategies for setting the version externally from the build.
@@ -31,6 +33,8 @@ class OverrideStrategies {
 
     static class ReleaseLastTagStrategy implements VersionStrategy {
         static final String PROPERTY_NAME = 'release.useLastTag'
+        private static final String NOT_SUPPLIED = 'release-strategy-is-not-supplied'
+        private static final Logger logger = LoggerFactory.getLogger(ReleaseLastTagStrategy)
 
         Project project
         String propertyName
@@ -60,13 +64,24 @@ class OverrideStrategies {
         ReleaseVersion infer(Project project, Grgit grgit) {
             def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
             def locate = new NearestVersionLocator(tagStrategy).locate(grgit)
-            String releaseStage = project.ext['release.stage']
+            String releaseStage
+            try {
+                releaseStage = project.ext['release.stage']
+            } catch(MissingPropertyException e) {
+                releaseStage = NOT_SUPPLIED
+                logger.debug("ExtraPropertiesExtension 'release.stage' was not supplied", e.getMessage())
+                logger.info("Note: It is recommended to supply a release strategy of <snapshot|devSnapshot|candidate|final> to make 'useLastTag' most explicit. Please add one to your list of tasks.")
+            }
 
             if (releaseStage == 'dev' || releaseStage == 'SNAPSHOT') {
                 throw new GradleException("Cannot use useLastTag with snapshot and devSnapshot tasks")
             }
 
             if (locate.distanceFromAny == 0) {
+                if(releaseStage == NOT_SUPPLIED && (locate.any.toString().contains('-dev.') || locate.any.toString().contains('-SNAPSHOT'))) {
+                    throw new GradleException("Current commit has a snapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.")
+                }
+
                 def preReleaseVersion = locate.any.preReleaseVersion
                 if (releaseStage == 'rc') {
                     if (!(preReleaseVersion ==~ /rc\.\d+/)) {
@@ -78,6 +93,8 @@ class OverrideStrategies {
                         throw new GradleException("Current tag does not appear to be a final version")
                     }
                 }
+
+                logger.debug("Using version ${locate.any.toString()} with ${releaseStage == NOT_SUPPLIED ? "a non-supplied release strategy" : "${releaseStage} release strategy"}")
                 return new ReleaseVersion(locate.any.toString(), null, false)
             } else {
                 throw new GradleException("Current commit does not have a tag")
