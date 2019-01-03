@@ -560,7 +560,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('assemble', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current commit has a snapshot or devSnapshot tag. 'useLastTag' requires a prerelease or release tag."
+        result.standardError.contains "Current commit has a snapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
         !new File(projectDir, "build/libs/${moduleName}-${dev('0.1.0-dev.3+').toString()}.jar").exists()
     }
 
@@ -571,7 +571,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('assemble', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current commit has a snapshot or devSnapshot tag. 'useLastTag' requires a prerelease or release tag."
+        result.standardError.contains "Current commit has a snapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
         !new File(projectDir, "build/libs/${moduleName}-1.2.3-SNAPSHOT.jar").exists()
     }
 
