@@ -19,6 +19,7 @@ import com.github.zafarkhaja.semver.Version
 import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
 import nebula.test.functional.ExecutionResult
 import org.ajoberstar.grgit.Tag
+import org.gradle.api.GradleException
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 import spock.lang.Unroll
@@ -782,6 +783,52 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         then:
         version == dev('0.1.0-dev.2+dev.robtest.')
     }
+
+    def 'Can release final version with + not considered as pre-release'() {
+        buildFile << '''\
+            nebulaRelease {
+                allowReleaseFromDetached = true    
+            }
+            '''.stripIndent()
+        git.add(patterns: ['build.gradle'])
+        git.commit(message: 'configure skip branch checks')
+        git.tag.add(name: "v3.1.2")
+        new File(projectDir, 'test.txt').text = 'test'
+        git.add(patterns: ['test.txt'])
+        git.commit(message: 'Add file')
+        git.push(all: true)
+        git.tag.add(name: "v3.1.2+release2")
+
+        when:
+        def result = runTasksSuccessfully('final', '-Prelease.useLastTag=true')
+
+        then:
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
+        new File(projectDir, "build/libs/${moduleName}-3.1.2+release2.jar").exists()
+    }
+
+    def 'Can not release final version with - because it is a pre-release'() {
+        buildFile << '''\
+            nebulaRelease {
+                allowReleaseFromDetached = true    
+            }
+            '''.stripIndent()
+        git.add(patterns: ['build.gradle'])
+        git.commit(message: 'configure skip branch checks')
+        git.tag.add(name: "v3.1.2")
+        new File(projectDir, 'test.txt').text = 'test'
+        git.add(patterns: ['test.txt'])
+        git.commit(message: 'Add file')
+        git.push(all: true)
+        git.tag.add(name: "v3.1.2-release2")
+
+        when:
+        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains 'Current tag does not appear to be a final version'
+    }
+
 
     @Unroll('release task does not push for #task')
     def 'release task does not push'() {
