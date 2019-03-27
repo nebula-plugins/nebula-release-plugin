@@ -15,7 +15,6 @@
  */
 package nebula.plugin.release
 
-import com.jfrog.bintray.gradle.tasks.BintrayUploadTask
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import org.ajoberstar.grgit.Grgit
@@ -33,7 +32,7 @@ import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
-import org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 
 class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
@@ -254,8 +253,20 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void configureBintrayTasksIfPresent() {
+
+        if (isClassPresent('nebula.plugin.bintray.NebulaBintrayPackageTask')) {
+            project.tasks.withType(PublishToMavenRepository) { Task task ->
+                project.plugins.withType(JavaPlugin) {
+                    task.dependsOn(project.tasks.build)
+                }
+                project.rootProject.tasks.postRelease.dependsOn(task)
+            }
+        } else {
+            logger.info('Skipping configuration of nebula bintray task since it is not present')
+        }
+
         if (isClassPresent('com.jfrog.bintray.gradle.tasks.BintrayUploadTask')) {
-            project.tasks.withType(BintrayUploadTask) { Task task ->
+            project.tasks.withType(Class.forName('com.jfrog.bintray.gradle.tasks.BintrayUploadTask')) { Task task ->
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
@@ -275,7 +286,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
         } else if(isClassPresent('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) {
             // JFrog remove BuildInfoBaseTask see https://www.jfrog.com/jira/browse/GAP-281
-            project.tasks.withType(ArtifactoryTask) { Task task ->
+            project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) { Task task ->
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
