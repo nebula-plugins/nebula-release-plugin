@@ -19,7 +19,6 @@ import com.github.zafarkhaja.semver.Version
 import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
 import nebula.test.functional.ExecutionResult
 import org.ajoberstar.grgit.Tag
-import org.gradle.api.GradleException
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 import spock.lang.Unroll
@@ -710,27 +709,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         version.toString() == dev('0.1.0-dev.3+').toString()
-    }
-
-    def 'bintray tasks are wired in'() {
-        buildFile << '''\
-            buildscript {
-                repositories { jcenter() }
-                dependencies {
-                    classpath 'com.netflix.nebula:nebula-bintray-plugin:3.5.4'
-                    classpath 'com.netflix.nebula:nebula-publishing-plugin:7.2.2'
-                }
-            }
-            apply plugin: 'nebula.maven-publish'
-            apply plugin: 'nebula.nebula-bintray'
-        '''.stripIndent()
-
-        when:
-        def results = runTasksSuccessfully('devSnapshot', '-m')
-
-        then:
-        outputContains(results, 'bintrayUpload')
-        outputContains(results, 'artifactoryPublish')
     }
 
     def 'able to release from hash and push tag'() {

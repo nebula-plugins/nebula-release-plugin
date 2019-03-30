@@ -19,7 +19,7 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "org.ajoberstar.grgit:grgit-core": {
@@ -33,7 +33,7 @@
     },
     "compileOnly": {
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         }
     },
@@ -57,11 +57,11 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "7.1.7",
+            "locked": "7.2.3",
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
@@ -79,11 +79,11 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "7.1.7",
+            "locked": "7.2.3",
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
@@ -101,11 +101,11 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "7.1.7",
+            "locked": "7.2.3",
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
@@ -123,11 +123,11 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "7.1.7",
+            "locked": "7.2.3",
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
@@ -141,12 +141,12 @@
     },
     "jacocoAgent": {
         "org.jacoco:org.jacoco.agent": {
-            "locked": "0.8.2"
+            "locked": "0.8.3"
         }
     },
     "jacocoAnt": {
         "org.jacoco:org.jacoco.ant": {
-            "locked": "0.8.2"
+            "locked": "0.8.3"
         }
     },
     "runtime": {
@@ -183,11 +183,11 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "7.1.7",
+            "locked": "7.2.3",
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
@@ -205,11 +205,11 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "7.1.7",
+            "locked": "7.2.3",
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
@@ -227,11 +227,11 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "7.1.7",
+            "locked": "7.2.3",
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
@@ -249,11 +249,11 @@
             "requested": "0.9.0"
         },
         "com.netflix.nebula:nebula-bintray-plugin": {
-            "locked": "4.0.2",
+            "locked": "7.0.0",
             "requested": "latest.release"
         },
         "com.netflix.nebula:nebula-test": {
-            "locked": "7.1.7",
+            "locked": "7.2.3",
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {

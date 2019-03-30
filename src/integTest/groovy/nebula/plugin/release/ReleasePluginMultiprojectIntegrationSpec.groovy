@@ -104,6 +104,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
             allprojects {
                 ${applyPlugin(PublishingPlugin)}
                 ${applyPlugin(BintrayPlugin)}
+                ${applyPlugin(JavaPlugin)}
             }
         """.stripIndent()
         when:
@@ -125,6 +126,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
             allprojects {
                 ${applyPlugin(PublishingPlugin)}
                 ${applyPlugin(BintrayPlugin)}
+                ${applyPlugin(JavaPlugin)}
             }
 
             subprojects { sub ->
