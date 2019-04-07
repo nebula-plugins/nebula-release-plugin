@@ -22,7 +22,7 @@ import groovy.transform.Immutable
  * inference.
  */
 @Immutable
-class ReleaseVersion {
+class ReleaseVersion implements Serializable {
     /**
      * The version that should be used by the project.
      */
