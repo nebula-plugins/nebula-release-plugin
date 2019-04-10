@@ -36,7 +36,7 @@ contacts {
 
 dependencies {
     compile 'org.eclipse.jgit:org.eclipse.jgit:5.1.1.201809181055-r'
-    compile ('org.ajoberstar.grgit:grgit-core:3.0.0-beta.1') {
+    compile ('org.ajoberstar.grgit:grgit-core:x') {
         exclude group: 'org.codehaus.groovy', module: 'groovy'
     }
     compile 'com.github.zafarkhaja:java-semver:0.9.0'

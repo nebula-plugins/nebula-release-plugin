@@ -5,11 +5,11 @@
             "requested": "0.9.0"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -23,11 +23,11 @@
             "requested": "latest.release"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -43,11 +43,11 @@
             "requested": "0.9.0"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -65,11 +65,11 @@
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -87,11 +87,11 @@
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -109,11 +109,11 @@
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -131,11 +131,11 @@
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -155,11 +155,11 @@
             "requested": "0.9.0"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -169,11 +169,11 @@
             "requested": "0.9.0"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -191,11 +191,11 @@
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -213,11 +213,11 @@
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -235,11 +235,11 @@
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     },
@@ -257,11 +257,11 @@
             "requested": "7.+"
         },
         "org.ajoberstar.grgit:grgit-core": {
-            "locked": "3.0.0-beta.1",
-            "requested": "3.0.0-beta.1"
+            "locked": "3.0.0",
+            "requested": "3.0.0"
         },
         "org.eclipse.jgit:org.eclipse.jgit": {
-            "locked": "5.1.1.201809181055-r",
+            "locked": "5.1.3.201810200350-r",
             "requested": "5.1.1.201809181055-r"
         }
     }
