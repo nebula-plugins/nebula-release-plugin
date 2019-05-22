@@ -158,7 +158,7 @@ class NearestVersionLocatorSpec extends Specification {
 
     private void merge(String name) {
         def currentHead = grgit.head()
-        grgit.merge(head: name)
+        grgit.merge(head: name, mode: 'create-commit')
         println "Merged ${name}, now at ${grgit.head().abbreviatedId}"
     }
 }
