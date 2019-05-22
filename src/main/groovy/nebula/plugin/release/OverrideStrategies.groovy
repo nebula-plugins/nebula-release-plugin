@@ -20,6 +20,7 @@ import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
 import nebula.plugin.release.git.semver.NearestVersionLocator
 import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.Tag
 import org.eclipse.jgit.api.errors.RefNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -97,7 +98,12 @@ class OverrideStrategies {
                 logger.debug("Using version ${locate.any.toString()} with ${releaseStage == NOT_SUPPLIED ? "a non-supplied release strategy" : "${releaseStage} release strategy"}")
                 return new ReleaseVersion(locate.any.toString(), null, false)
             } else {
-                throw new GradleException("Current commit does not have a tag")
+                List<Tag> headTags = grgit.tag.list().findAll { it.commit == grgit.head()}
+                if (headTags.isEmpty()) {
+                    throw new GradleException("Current commit does not have a tag")
+                } else {
+                    throw new GradleException("Current commit has following tags: ${headTags.collect{it.name}} but they were not recognized as valid versions" )
+                }
             }
         }
     }
