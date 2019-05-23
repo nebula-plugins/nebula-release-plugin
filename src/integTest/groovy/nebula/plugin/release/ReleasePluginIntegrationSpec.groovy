@@ -462,6 +462,20 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         !new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
     }
 
+    def 'useLastTag errors out if there is a tag in incorrect format'() {
+        git.tag.add(name: 'v42.5.3')
+        new File(projectDir, "foo").text = "Hi"
+        git.add(patterns: ['foo'] as Set)
+        git.commit(message: 'Something got committed')
+        git.tag.add(name: 'v42.5.4-rc.01')
+
+        when:
+        def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains 'Current commit has following tags: [v42.5.4-rc.01] but they were not recognized as valid versions'
+    }
+
     def 'use last tag for rc'() {
         git.tag.add(name: 'v3.1.2-rc.1')
 
