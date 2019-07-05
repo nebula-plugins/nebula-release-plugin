@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -200,7 +200,7 @@ final class Strategies {
         static final PartialSemVerStrategy STAGE_FLOAT = closure { state ->
             def sameNormal = state.inferredNormal == state.nearestVersion.any.normalVersion
             def nearestAnyPreRelease = state.nearestVersion.any.preReleaseVersion
-            if (sameNormal && nearestAnyPreRelease != null && nearestAnyPreRelease > state.stageFromProp) {
+            if (sameNormal && nearestAnyPreRelease != null && (nearestAnyPreRelease > state.stageFromProp)) {
                 state.copyWith(inferredPreRelease: "${nearestAnyPreRelease}.${state.stageFromProp}")
             } else {
                 state.copyWith(inferredPreRelease: state.stageFromProp)
@@ -237,6 +237,16 @@ final class Strategies {
         static final PartialSemVerStrategy COUNT_COMMITS_SINCE_ANY = closure { state ->
             def count = state.nearestVersion.distanceFromAny
             def inferred = state.inferredPreRelease ? "${state.inferredPreRelease}.${count}" : "${count}"
+            return state.copyWith(inferredPreRelease: inferred)
+        }
+
+
+        /**
+         * Append timestamp to make snapshot version unique
+         */
+        static final PartialSemVerStrategy TIMESTAMP = closure { state ->
+            def timestamp = TimestampUtil.getUTCFormattedTimestamp()
+            def inferred = state.inferredPreRelease ? "${state.inferredPreRelease}.${timestamp}" : "${timestamp}"
             return state.copyWith(inferredPreRelease: inferred)
         }
 
@@ -319,6 +329,19 @@ final class Strategies {
             stages: ['dev'] as SortedSet,
             allowDirtyRepo: true,
             preReleaseStrategy: all(PreRelease.STAGE_FLOAT, PreRelease.COUNT_COMMITS_SINCE_ANY, PreRelease.SHOW_UNCOMMITTED),
+            buildMetadataStrategy: BuildMetadata.COMMIT_ABBREVIATED_ID,
+            createTag: false
+    )
+
+    /**
+     * Provides a "immutable snapshot" stage that attaches UTC timestamp as part of the generated version to guarantee uniqueness.
+     * The abbreviated ID of the HEAD will be used as build metadata.
+     */
+    static final SemVerStrategy IMMUTABLE_SNAPSHOT = DEFAULT.copyWith(
+            name: 'immutable_snapshot',
+            stages: ['snapshot'] as SortedSet,
+            allowDirtyRepo: true,
+            preReleaseStrategy: all(PreRelease.STAGE_FLOAT, PreRelease.TIMESTAMP, PreRelease.SHOW_UNCOMMITTED),
             buildMetadataStrategy: BuildMetadata.COMMIT_ABBREVIATED_ID,
             createTag: false
     )

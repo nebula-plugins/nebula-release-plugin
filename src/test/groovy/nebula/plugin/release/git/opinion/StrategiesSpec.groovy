@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,20 +35,22 @@ import org.gradle.api.Project
 import spock.lang.Specification
 import spock.lang.Unroll
 
+@Unroll
 class StrategiesSpec extends Specification {
     SemVerStrategyState initialState = new SemVerStrategyState([:])
+
     @Unroll('Normal.USE_SCOPE_PROP with scope #scope results in #version')
     def 'Normal.USE_SCOPE_PROP'() {
         def nearestVersion = new NearestVersion(normal: Version.valueOf('1.2.3'))
         def initialState = new SemVerStrategyState(
-            scopeFromProp: scope,
-            nearestVersion: nearestVersion)
+                scopeFromProp: scope,
+                nearestVersion: nearestVersion)
         expect:
         Strategies.Normal.USE_SCOPE_PROP.infer(initialState) ==
-            new SemVerStrategyState(
-                scopeFromProp: scope,
-                nearestVersion: nearestVersion,
-                inferredNormal: version)
+                new SemVerStrategyState(
+                        scopeFromProp: scope,
+                        nearestVersion: nearestVersion,
+                        inferredNormal: version)
         where:
         scope             | version
         ChangeScope.PATCH | '1.2.4'
@@ -59,21 +61,21 @@ class StrategiesSpec extends Specification {
     def 'Normal.USE_NEAREST_ANY with different nearest any and normal uses any\'s normal'() {
         given:
         def nearestVersion = new NearestVersion(
-            any: Version.valueOf('1.2.5-beta.1'),
-            normal: Version.valueOf('1.2.4'))
+                any: Version.valueOf('1.2.5-beta.1'),
+                normal: Version.valueOf('1.2.4'))
         def initialState = new SemVerStrategyState(nearestVersion: nearestVersion)
         expect:
         Strategies.Normal.USE_NEAREST_ANY.infer(initialState) ==
-            new SemVerStrategyState(nearestVersion: nearestVersion, inferredNormal: '1.2.5')
+                new SemVerStrategyState(nearestVersion: nearestVersion, inferredNormal: '1.2.5')
     }
 
 
     def 'Normal.USE_NEAREST_ANY with same nearest any and normal does nothing'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(
-                any: Version.valueOf('1.2.4'),
-                normal: Version.valueOf('1.2.4')))
+                nearestVersion: new NearestVersion(
+                        any: Version.valueOf('1.2.4'),
+                        normal: Version.valueOf('1.2.4')))
         expect:
         Strategies.Normal.USE_NEAREST_ANY.infer(initialState) == initialState
     }
@@ -81,8 +83,8 @@ class StrategiesSpec extends Specification {
     def 'Normal.ENFORCE_BRANCH_MAJOR_X fails if nearest normal can\'t be incremented to something that complies with branch'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf('1.2.3')),
-            currentBranch: new Branch(fullName: 'refs/heads/3.x'))
+                nearestVersion: new NearestVersion(normal: Version.valueOf('1.2.3')),
+                currentBranch: new Branch(fullName: 'refs/heads/3.x'))
         when:
         Strategies.Normal.ENFORCE_BRANCH_MAJOR_X.infer(initialState)
         then:
@@ -94,11 +96,11 @@ class StrategiesSpec extends Specification {
     def 'Normal.ENFORCE_BRANCH_MAJOR_X correctly increments version to comply with branch'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: 'refs/heads/3.x'))
+                nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
+                currentBranch: new Branch(fullName: 'refs/heads/3.x'))
         expect:
         Strategies.Normal.ENFORCE_BRANCH_MAJOR_X.infer(initialState) ==
-            initialState.copyWith(inferredNormal: inferred)
+                initialState.copyWith(inferredNormal: inferred)
         where:
         nearest | inferred
         '2.0.0' | '3.0.0'
@@ -112,13 +114,13 @@ class StrategiesSpec extends Specification {
     def 'Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X correctly increments version to comply with branch'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
+                nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
+                currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         expect:
         Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_X.infer(initialState) ==
-            initialState.copyWith(inferredNormal: inferred)
+                initialState.copyWith(inferredNormal: inferred)
         where:
-        branchName        | nearest | inferred
+        branchName    | nearest | inferred
         'release/3.x' | '2.0.0' | '3.0.0'
         'release-3.x' | '2.3.4' | '3.0.0'
         'release-3.x' | '3.0.0' | null
@@ -128,8 +130,8 @@ class StrategiesSpec extends Specification {
     def 'Normal.ENFORCE_BRANCH_MAJOR_MINOR_X fails if nearest normal can\'t be incremented to something that complies with branch'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf(version)),
-            currentBranch: new Branch(fullName: 'refs/heads/3.2.x'))
+                nearestVersion: new NearestVersion(normal: Version.valueOf(version)),
+                currentBranch: new Branch(fullName: 'refs/heads/3.2.x'))
         when:
         Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X.infer(initialState)
         then:
@@ -141,34 +143,34 @@ class StrategiesSpec extends Specification {
     def 'Normal.ENFORCE_BRANCH_MAJOR_MINOR_X correctly increments version to comply with branch'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
+                nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
+                currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         expect:
         Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X.infer(initialState) ==
-            initialState.copyWith(inferredNormal: inferred)
+                initialState.copyWith(inferredNormal: inferred)
         where:
-        branchName  | nearest | inferred
-        '3.0.x' | '2.0.0' | '3.0.0'
-        '3.0.x' | '2.1.0' | '3.0.0'
-        '3.0.x' | '2.1.2' | '3.0.0'
-        '3.0.x' | '3.0.0' | '3.0.1'
-        '3.0.x' | '3.0.1' | '3.0.2'
-        '3.2.x' | '3.1.0' | '3.2.0'
-        '3.2.x' | '3.1.2' | '3.2.0'
-        '3.2.x' | '3.2.0' | '3.2.1'
-        '3.2.x' | '3.2.1' | '3.2.2'
+        branchName | nearest | inferred
+        '3.0.x'    | '2.0.0' | '3.0.0'
+        '3.0.x'    | '2.1.0' | '3.0.0'
+        '3.0.x'    | '2.1.2' | '3.0.0'
+        '3.0.x'    | '3.0.0' | '3.0.1'
+        '3.0.x'    | '3.0.1' | '3.0.2'
+        '3.2.x'    | '3.1.0' | '3.2.0'
+        '3.2.x'    | '3.1.2' | '3.2.0'
+        '3.2.x'    | '3.2.0' | '3.2.1'
+        '3.2.x'    | '3.2.1' | '3.2.2'
     }
 
     def 'Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X correctly increments version to comply with branch'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
+                nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
+                currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         expect:
         Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X.infer(initialState) ==
-            initialState.copyWith(inferredNormal: inferred)
+                initialState.copyWith(inferredNormal: inferred)
         where:
-        branchName          | nearest | inferred
+        branchName      | nearest | inferred
         'release/3.0.x' | '2.0.0' | '3.0.0'
         'release-3.0.x' | '3.0.0' | '3.0.1'
         'release-3.2.x' | '3.1.2' | '3.2.0'
@@ -178,34 +180,34 @@ class StrategiesSpec extends Specification {
     def 'Normal.ENFORCE_BRANCH_MAJOR_MINOR_X correctly increments version to comply with branch if normalStrategy is to increment minor instead of patch'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
+                nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
+                currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         def strategy = StrategyUtil.one(Strategies.Normal.ENFORCE_BRANCH_MAJOR_MINOR_X, Strategies.Normal.useScope(ChangeScope.MINOR))
         expect:
         strategy.infer(initialState) == initialState.copyWith(inferredNormal: inferred)
         where:
-        branchName  | nearest | inferred
-        '3.0.x' | '2.0.0' | '3.0.0'
-        '3.0.x' | '2.1.0' | '3.0.0'
-        '3.0.x' | '2.1.2' | '3.0.0'
-        '3.0.x' | '3.0.0' | '3.0.1'
-        '3.0.x' | '3.0.1' | '3.0.2'
-        '3.2.x' | '3.1.0' | '3.2.0'
-        '3.2.x' | '3.1.2' | '3.2.0'
-        '3.2.x' | '3.2.0' | '3.2.1'
-        '3.2.x' | '3.2.1' | '3.2.2'
+        branchName | nearest | inferred
+        '3.0.x'    | '2.0.0' | '3.0.0'
+        '3.0.x'    | '2.1.0' | '3.0.0'
+        '3.0.x'    | '2.1.2' | '3.0.0'
+        '3.0.x'    | '3.0.0' | '3.0.1'
+        '3.0.x'    | '3.0.1' | '3.0.2'
+        '3.2.x'    | '3.1.0' | '3.2.0'
+        '3.2.x'    | '3.1.2' | '3.2.0'
+        '3.2.x'    | '3.2.0' | '3.2.1'
+        '3.2.x'    | '3.2.1' | '3.2.2'
     }
 
     def 'Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X correctly increments version to comply with branch if normalStrategy is to increment minor instead of patch'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
-            currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
+                nearestVersion: new NearestVersion(normal: Version.valueOf(nearest)),
+                currentBranch: new Branch(fullName: "refs/heads/${branchName}"))
         def strategy = StrategyUtil.one(Strategies.Normal.ENFORCE_GITFLOW_BRANCH_MAJOR_MINOR_X, Strategies.Normal.useScope(ChangeScope.MINOR))
         expect:
         strategy.infer(initialState) == initialState.copyWith(inferredNormal: inferred)
         where:
-        branchName          | nearest | inferred
+        branchName      | nearest | inferred
         'release/3.0.x' | '2.0.0' | '3.0.0'
         'release-3.0.x' | '3.0.0' | '3.0.1'
         'release-3.2.x' | '3.1.2' | '3.2.0'
@@ -215,7 +217,7 @@ class StrategiesSpec extends Specification {
     def 'Normal.useScope correctly increments normal'() {
         given:
         def initialState = new SemVerStrategyState(
-            nearestVersion: new NearestVersion(normal: Version.valueOf('1.2.3')))
+                nearestVersion: new NearestVersion(normal: Version.valueOf('1.2.3')))
         expect:
         Strategies.Normal.useScope(scope).infer(initialState) == initialState.copyWith(inferredNormal: inferred)
         where:
@@ -233,8 +235,8 @@ class StrategiesSpec extends Specification {
     def 'PreRelease.STAGE_FIXED always replaces inferredPreRelease with stageFromProp'() {
         given:
         def initialState = new SemVerStrategyState(
-            stageFromProp: 'boom',
-            inferredPreRelease: initialPreRelease)
+                stageFromProp: 'boom',
+                inferredPreRelease: initialPreRelease)
         expect:
         Strategies.PreRelease.STAGE_FIXED.infer(initialState) == initialState.copyWith(inferredPreRelease: 'boom')
         where:
@@ -244,12 +246,12 @@ class StrategiesSpec extends Specification {
     def 'PreRelease.STAGE_FLOAT will append the stageFromProp to the nearest any\'s pre release, if any, unless it has higher precedence'() {
         given:
         def initialState = new SemVerStrategyState(
-            stageFromProp: 'boom',
-            inferredNormal: '1.1.0',
-            inferredPreRelease: 'other',
-            nearestVersion: new NearestVersion(
-                normal: Version.valueOf('1.0.0'),
-                any: Version.valueOf(nearest)))
+                stageFromProp: 'boom',
+                inferredNormal: '1.1.0',
+                inferredPreRelease: 'other',
+                nearestVersion: new NearestVersion(
+                        normal: Version.valueOf('1.0.0'),
+                        any: Version.valueOf(nearest)))
         expect:
         Strategies.PreRelease.STAGE_FLOAT.infer(initialState) == initialState.copyWith(inferredPreRelease: expected)
         where:
@@ -264,11 +266,11 @@ class StrategiesSpec extends Specification {
     def 'PreRelease.COUNT_INCREMENTED will increment the nearest any\'s pre release or set to 1 if not found'() {
         given:
         def initialState = new SemVerStrategyState(
-            inferredNormal: '1.1.0',
-            inferredPreRelease: initialPreRelease,
-            nearestVersion: new NearestVersion(
-                normal: Version.valueOf('1.0.0'),
-                any: Version.valueOf(nearestAny)))
+                inferredNormal: '1.1.0',
+                inferredPreRelease: initialPreRelease,
+                nearestVersion: new NearestVersion(
+                        normal: Version.valueOf('1.0.0'),
+                        any: Version.valueOf(nearestAny)))
         expect:
         Strategies.PreRelease.COUNT_INCREMENTED.infer(initialState) == initialState.copyWith(inferredPreRelease: expected)
         where:
@@ -289,8 +291,8 @@ class StrategiesSpec extends Specification {
     def 'PreRelease.COUNT_COMMITS_SINCE_ANY will append distanceFromAny'() {
         given:
         def initialState = new SemVerStrategyState(
-            inferredPreRelease: initialPreRelease,
-            nearestVersion: new NearestVersion(distanceFromAny: distance))
+                inferredPreRelease: initialPreRelease,
+                nearestVersion: new NearestVersion(distanceFromAny: distance))
         expect:
         Strategies.PreRelease.COUNT_COMMITS_SINCE_ANY.infer(initialState) == initialState.copyWith(inferredPreRelease: expected)
         where:
@@ -304,8 +306,8 @@ class StrategiesSpec extends Specification {
     def 'PreRelease.SHOW_UNCOMMITTED appends uncommitted only if repo is dirty'() {
         given:
         def initialState = new SemVerStrategyState(
-            inferredPreRelease: initialPreRelease,
-            repoDirty: dirty)
+                inferredPreRelease: initialPreRelease,
+                repoDirty: dirty)
         expect:
         Strategies.PreRelease.SHOW_UNCOMMITTED.infer(initialState) == initialState.copyWith(inferredPreRelease: expected)
         where:
@@ -339,7 +341,7 @@ class StrategiesSpec extends Specification {
         def initialState = new SemVerStrategyState(currentHead: new Commit(id: id))
         expect:
         Strategies.BuildMetadata.COMMIT_FULL_ID.infer(initialState) ==
-            initialState.copyWith(inferredBuildMetadata: id)
+                initialState.copyWith(inferredBuildMetadata: id)
     }
 
     def 'BuildMetadata.TIMESTAMP uses current time'() {
@@ -376,15 +378,38 @@ class StrategiesSpec extends Specification {
         expect:
         Strategies.DEVELOPMENT.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, false)
         where:
+        scope   | stage | nearestNormal | nearestAny      | repoDirty | expected
+        null    | null  | '1.0.0'       | '1.0.0'         | false     | '1.0.1-dev.2+5e9b2a1'
+        null    | null  | '1.0.0'       | '1.0.0'         | true      | '1.0.1-dev.2.uncommitted+5e9b2a1'
+        null    | null  | '1.0.0'       | '1.1.0-alpha.1' | false     | '1.1.0-dev.2+5e9b2a1'
+        null    | null  | '1.0.0'       | '1.1.0-rc.3'    | false     | '1.1.0-rc.3.dev.2+5e9b2a1'
+        null    | null  | '1.0.0'       | '1.1.0-rc.3'    | true      | '1.1.0-rc.3.dev.2.uncommitted+5e9b2a1'
+        'PATCH' | 'dev' | '1.0.0'       | '1.0.0'         | false     | '1.0.1-dev.2+5e9b2a1'
+        'MINOR' | 'dev' | '1.0.0'       | '1.0.0'         | false     | '1.1.0-dev.2+5e9b2a1'
+        'MAJOR' | 'dev' | '1.0.0'       | '1.0.0'         | false     | '2.0.0-dev.2+5e9b2a1'
+    }
+
+    def 'IMMUTABLE_SNAPSHOT works as expected'() {
+        given:
+        def project = mockProject(scope, stage)
+        def grgit = mockGrgit(repoDirty)
+        def locator = mockLocator(nearestNormal, nearestAny)
+        GroovyMock(TimestampUtil, global: true)
+        TimestampUtil.getUTCFormattedTimestamp() >> '20190705103502'
+
+        expect:
+        Strategies.IMMUTABLE_SNAPSHOT.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, false)
+
+        where:
         scope   | stage      | nearestNormal | nearestAny      | repoDirty | expected
-        null    | null       | '1.0.0'       | '1.0.0'         | false     | '1.0.1-dev.2+5e9b2a1'
-        null    | null       | '1.0.0'       | '1.0.0'         | true      | '1.0.1-dev.2.uncommitted+5e9b2a1'
-        null    | null       | '1.0.0'       | '1.1.0-alpha.1' | false     | '1.1.0-dev.2+5e9b2a1'
-        null    | null       | '1.0.0'       | '1.1.0-rc.3'    | false     | '1.1.0-rc.3.dev.2+5e9b2a1'
-        null    | null       | '1.0.0'       | '1.1.0-rc.3'    | true      | '1.1.0-rc.3.dev.2.uncommitted+5e9b2a1'
-        'PATCH' | 'dev'      | '1.0.0'       | '1.0.0'         | false     | '1.0.1-dev.2+5e9b2a1'
-        'MINOR' | 'dev'      | '1.0.0'       | '1.0.0'         | false     | '1.1.0-dev.2+5e9b2a1'
-        'MAJOR' | 'dev'      | '1.0.0'       | '1.0.0'         | false     | '2.0.0-dev.2+5e9b2a1'
+        null    | null       | '1.0.0'       | '1.0.0'         | false     | '1.0.1-snapshot.20190705103502+5e9b2a1'
+        null    | null       | '1.0.0'       | '1.0.0'         | true      | '1.0.1-snapshot.20190705103502.uncommitted+5e9b2a1'
+        null    | null       | '1.0.0'       | '1.1.0-alpha.1' | false     | '1.1.0-snapshot.20190705103502+5e9b2a1'
+        null    | null       | '1.0.0'       | '1.1.0-rc.3'    | false     | '1.1.0-snapshot.20190705103502+5e9b2a1'
+        null    | null       | '1.0.0'       | '1.1.0-rc.3'    | true      | '1.1.0-snapshot.20190705103502.uncommitted+5e9b2a1'
+        'PATCH' | 'snapshot' | '1.0.0'       | '1.0.0'         | false     | '1.0.1-snapshot.20190705103502+5e9b2a1'
+        'MINOR' | 'snapshot' | '1.0.0'       | '1.0.0'         | false     | '1.1.0-snapshot.20190705103502+5e9b2a1'
+        'MAJOR' | 'snapshot' | '1.0.0'       | '1.0.0'         | false     | '2.0.0-snapshot.20190705103502+5e9b2a1'
     }
 
     def 'PRE_RELEASE works as expected'() {
@@ -414,13 +439,13 @@ class StrategiesSpec extends Specification {
         expect:
         Strategies.FINAL.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, true)
         where:
-        scope   | stage       | nearestNormal | nearestAny          | repoDirty | expected
-        null    | null        | '1.0.0'       | '1.0.0'             | false     | '1.0.1'
-        'PATCH' | null        | '1.0.0'       | '1.0.0'             | false     | '1.0.1'
-        'MINOR' | null        | '1.0.0'       | '1.0.0'             | false     | '1.1.0'
-        'MAJOR' | null        | '1.0.0'       | '1.0.0'             | false     | '2.0.0'
-        'MAJOR' | 'final'     | '1.0.0'       | '1.0.0'             | false     | '2.0.0'
-        'MINOR' | 'final'     | '1.0.0'       | '1.1.0-alpha.2'     | false     | '1.1.0'
+        scope   | stage   | nearestNormal | nearestAny      | repoDirty | expected
+        null    | null    | '1.0.0'       | '1.0.0'         | false     | '1.0.1'
+        'PATCH' | null    | '1.0.0'       | '1.0.0'         | false     | '1.0.1'
+        'MINOR' | null    | '1.0.0'       | '1.0.0'         | false     | '1.1.0'
+        'MAJOR' | null    | '1.0.0'       | '1.0.0'         | false     | '2.0.0'
+        'MAJOR' | 'final' | '1.0.0'       | '1.0.0'         | false     | '2.0.0'
+        'MINOR' | 'final' | '1.0.0'       | '1.1.0-alpha.2' | false     | '1.1.0'
     }
 
     def 'PRE_RELEASE_ALPHA_BETA works as expected'() {
@@ -430,21 +455,21 @@ class StrategiesSpec extends Specification {
         expect:
         Strategies.PRE_RELEASE_ALPHA_BETA.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, true)
         where:
-        scope   | stage       | nearestNormal | nearestAny          | repoDirty | expected
-        null    | null        | '1.0.0'       | '1.0.0'             | false     | '1.0.1-alpha.1'
-        null    | 'alpha'     | '1.0.0'       | '1.0.0'             | false     | '1.0.1-alpha.1'
-        null    | 'beta'      | '1.0.0'       | '1.0.0'             | false     | '1.0.1-beta.1'
-        null    | 'rc'        | '1.0.0'       | '1.0.0'             | false     | '1.0.1-rc.1'
-        'PATCH' | 'alpha'     | '1.0.0'       | '1.0.0'             | false     | '1.0.1-alpha.1'
-        'MINOR' | 'alpha'     | '1.0.0'       | '1.0.0'             | false     | '1.1.0-alpha.1'
-        'MAJOR' | 'alpha'     | '1.0.0'       | '1.0.0'             | false     | '2.0.0-alpha.1'
-        'PATCH' | 'beta'      | '1.0.0'       | '1.0.0'             | false     | '1.0.1-beta.1'
-        'MINOR' | 'beta'      | '1.0.0'       | '1.0.0'             | false     | '1.1.0-beta.1'
-        'MAJOR' | 'beta'      | '1.0.0'       | '1.0.0'             | false     | '2.0.0-beta.1'
-        null    | 'rc'        | '1.0.0'       | '1.1.0-beta.1'      | false     | '1.1.0-rc.1'
-        null    | 'beta'      | '1.0.0'       | '1.1.0-beta.1'      | false     | '1.1.0-beta.2'
-        null    | 'rc'        | '1.0.0'       | '1.1.0-rc'          | false     | '1.1.0-rc.1'
-        null    | 'rc'        | '1.0.0'       | '1.1.0-rc.4.dev.1'  | false     | '1.1.0-rc.5'
+        scope   | stage   | nearestNormal | nearestAny         | repoDirty | expected
+        null    | null    | '1.0.0'       | '1.0.0'            | false     | '1.0.1-alpha.1'
+        null    | 'alpha' | '1.0.0'       | '1.0.0'            | false     | '1.0.1-alpha.1'
+        null    | 'beta'  | '1.0.0'       | '1.0.0'            | false     | '1.0.1-beta.1'
+        null    | 'rc'    | '1.0.0'       | '1.0.0'            | false     | '1.0.1-rc.1'
+        'PATCH' | 'alpha' | '1.0.0'       | '1.0.0'            | false     | '1.0.1-alpha.1'
+        'MINOR' | 'alpha' | '1.0.0'       | '1.0.0'            | false     | '1.1.0-alpha.1'
+        'MAJOR' | 'alpha' | '1.0.0'       | '1.0.0'            | false     | '2.0.0-alpha.1'
+        'PATCH' | 'beta'  | '1.0.0'       | '1.0.0'            | false     | '1.0.1-beta.1'
+        'MINOR' | 'beta'  | '1.0.0'       | '1.0.0'            | false     | '1.1.0-beta.1'
+        'MAJOR' | 'beta'  | '1.0.0'       | '1.0.0'            | false     | '2.0.0-beta.1'
+        null    | 'rc'    | '1.0.0'       | '1.1.0-beta.1'     | false     | '1.1.0-rc.1'
+        null    | 'beta'  | '1.0.0'       | '1.1.0-beta.1'     | false     | '1.1.0-beta.2'
+        null    | 'rc'    | '1.0.0'       | '1.1.0-rc'         | false     | '1.1.0-rc.1'
+        null    | 'rc'    | '1.0.0'       | '1.1.0-rc.4.dev.1' | false     | '1.1.0-rc.5'
     }
 
     def mockProject(String scope, String stage) {
@@ -478,10 +503,10 @@ class StrategiesSpec extends Specification {
     def mockLocator(String nearestNormal, String nearestAny) {
         NearestVersionLocator locator = Mock()
         locator.locate(_) >> new NearestVersion(
-            normal: Version.valueOf(nearestNormal),
-            distanceFromNormal: 5,
-            any: Version.valueOf(nearestAny),
-            distanceFromAny: 2
+                normal: Version.valueOf(nearestNormal),
+                distanceFromNormal: 5,
+                any: Version.valueOf(nearestAny),
+                distanceFromAny: 2
         )
         return locator
     }

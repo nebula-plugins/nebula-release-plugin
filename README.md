@@ -12,7 +12,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 # Applying the plugin
 
     plugins {
-        id 'nebula.release' version '6.3.5'
+        id 'nebula.release' version '10.1.2'
     }
 
 -or-
@@ -20,7 +20,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
     buildscript {
         repositories { jcenter() }
         dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:6.3.5'
+            classpath 'com.netflix.nebula:nebula-release-plugin:10.1.2'
         }
     }
     apply plugin: 'nebula.release'
@@ -73,9 +73,10 @@ All tasks will trigger gradle-git's release task which is configured to depend o
 * final - Sets the version to the appropriate `<major>.<minor>.<patch>`, creates tag `v<major>.<minor>.<patch>`
 * candidate - Sets the version to the appropriate `<major>.<minor>.<patch>-rc.#`, creates tag `v<major>.<minor>.<patch>-rc.#` where `#` is the number of release candidates for this version produced so far. 1st 1.0.0 will be 1.0.0-rc.1, 2nd 1.0.0-rc.2 and so on.
 * devSnapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-dev.#+<hash>`, does not create a tag. Where `#` is the number of commits since the last release and `hash` is the git hash of the current commit.  If releasing a devSnapshot from a branch not listed in the `releaseBranchPatterns` and not excluded by `excludeBranchPatterns` the version will be `<major>.<minor>.<patch>-dev.#+<branchname>.<hash>`
+* immutableSnapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-snapshot.<timestamp>+<hash>`, does not create a tag. Where `timestamp` is UTC time in `YYYYMMddHHmmssSSS` format, ex. `20190705210556893`  and `hash` is the git hash of the current commit.  If releasing a immutableSnapshot from a branch not listed in the `releaseBranchPatterns` and not excluded by `excludeBranchPatterns` the version will be `<major>.<minor>.<patch>-snapshot.<timestamp>+<branchname>.<hash>`
 * snapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-SNAPSHOT`, does not create a tag.
 
-Use of devSnapshot vs snapshot is a project by project choice of whether you want maven style versioning (snapshot) or unique semantic versioned snapshots (devSnapshot).
+Use of immutableSnapshot vs devSnapshot vs snapshot is a project by project choice of whether you want maven style versioning (snapshot) or unique semantic versioned snapshots (devSnapshot) or unique semantic versioned snapshots that guaranteed uniqueness (immutableSnapshot).
 
 # Versioning Notes
 
@@ -141,6 +142,13 @@ The plugin assumes Git root is in the same location as Gradle root. If this isn'
 * `postRelease` - any steps you want to happen after the repo tag, in our case this is where publishing happens since if the publish partially fails we don't want to fix the tags, dependsOn `release`
 * `devSnapshot` - command line task to kick off devSnapshot workflow, dependsOn `postRelease`
 
+### For `immutableSnapshot`
+
+* `immutableSnapshotSetup` - any kind of setup is good to live around here, e.g. setting status, various checks
+* `release` - probably have `release` dependOn any `assemble` and `check` tasks, dependsOn `immutableSnapshotSetup`
+* `postRelease` - any steps you want to happen after the repo tag, in our case this is where publishing happens since if the publish partially fails we don't want to fix the tags, dependsOn `release`
+* `immutableSnapshot` - command line task to kick off immutableSnapshot workflow, dependsOn `postRelease`
+
 ### For `snapshot`
 
 * `snapshotSetup` - any kind of setup is good to live around here, e.g. setting status, various checks
@@ -165,20 +173,22 @@ The plugin assumes Git root is in the same location as Gradle root. If this isn'
 Gradle and Java Compatibility
 =============================
 
-Built with Oracle JDK7
-Tested with Oracle JDK8
+Built with OpenJDK8
+Tested with OpenJDK8
 
 | Gradle Version | Works |
 | :------------: | :---: |
-| 2.13           | yes   |
-| 3.3            | yes   |
-| 3.4.1          | yes   |
-| 3.5            | yes   |
+| 5.0            | yes   |
+| 5.1            | yes   |
+| 5.2            | yes   |
+| 5.3            | yes   |
+| 5.4            | yes   |
+| 5.5            | yes   |
 
 LICENSE
 =======
 
-Copyright 2014-2017 Netflix, Inc.
+Copyright 2014-2019 Netflix, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
