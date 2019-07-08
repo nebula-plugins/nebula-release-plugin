@@ -76,7 +76,7 @@ All tasks will trigger gradle-git's release task which is configured to depend o
 * immutableSnapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-snapshot.<timestamp>+<hash>`, does not create a tag. Where `timestamp` is UTC time in `YYYYMMddHHmmssSSS` format, ex. `20190705210556893`  and `hash` is the git hash of the current commit.  If releasing a immutableSnapshot from a branch not listed in the `releaseBranchPatterns` and not excluded by `excludeBranchPatterns` the version will be `<major>.<minor>.<patch>-snapshot.<timestamp>+<branchname>.<hash>`
 * snapshot - Sets the version to the appropriate `<major>.<minor>.<patch>-SNAPSHOT`, does not create a tag.
 
-Use of immutableSnapshot vs devSnapshot vs snapshot is a project by project choice of whether you want maven style versioning (snapshot) or unique semantic versioned snapshots (devSnapshot) or unique semantic versioned snapshots that guaranteed uniqueness (immutableSnapshot).
+Use of immutableSnapshot vs devSnapshot vs snapshot is a project by project choice of whether you want maven style versioning (snapshot) or semantic versioned snapshots (devSnapshot) or unique semantic versioned snapshots that guaranteed uniqueness (immutableSnapshot).
 
 # Versioning Notes
 
