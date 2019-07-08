@@ -497,6 +497,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         then:
         version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
         version.toString().contains('+testexample.')
+        !version.toString().contains('+feature/testexample.')
     }
 
     def 'version includes branch name with underscores on devSnapshot of non release branch'() {
