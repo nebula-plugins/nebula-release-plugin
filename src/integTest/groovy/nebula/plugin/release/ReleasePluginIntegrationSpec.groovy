@@ -918,7 +918,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         version.toString().startsWith('0.1.0-snapshot.' + getUtcDateForComparison())
-        version.toString().contains('.robtest.')
+        version.toString().contains('+dev.robtest.')
     }
 
     def 'Can release final version with + not considered as pre-release'() {
