@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 Netflix, Inc.
+ * Copyright 2014-2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ class ReleasePlugin implements Plugin<Project> {
     static final String SNAPSHOT_SETUP_TASK_NAME = 'snapshotSetup'
     static final String DEV_SNAPSHOT_TASK_NAME = 'devSnapshot'
     static final String DEV_SNAPSHOT_SETUP_TASK_NAME = 'devSnapshotSetup'
+    static final String IMMUTABLE_SNAPSHOT_TASK_NAME = 'immutableSnapshot'
+    static final String IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME = 'immutableSnapshotSetup'
     static final String CANDIDATE_TASK_NAME = 'candidate'
     static final String CANDIDATE_SETUP_TASK_NAME = 'candidateSetup'
     static final String FINAL_TASK_NAME = 'final'
@@ -71,11 +73,13 @@ class ReleasePlugin implements Plugin<Project> {
         if (project == project.rootProject) {
             project.plugins.apply(BaseReleasePlugin)
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
+
             releaseExtension.with {
                 versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
                 versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
                 versionStrategy NetflixOssStrategies.SNAPSHOT(project)
+                versionStrategy NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project)
                 versionStrategy NetflixOssStrategies.DEVELOPMENT(project)
                 versionStrategy NetflixOssStrategies.PRE_RELEASE(project)
                 versionStrategy NetflixOssStrategies.FINAL(project)
@@ -120,6 +124,7 @@ class ReleasePlugin implements Plugin<Project> {
             postReleaseTask.dependsOn project.tasks.release
 
             def snapshotSetupTask = project.task(SNAPSHOT_SETUP_TASK_NAME)
+            def immutableSnapshotSetupTask = project.task(IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME)
             def devSnapshotSetupTask = project.task(DEV_SNAPSHOT_SETUP_TASK_NAME)
             def candidateSetupTask = project.task(CANDIDATE_SETUP_TASK_NAME)
             candidateSetupTask.doLast {
@@ -130,13 +135,15 @@ class ReleasePlugin implements Plugin<Project> {
                 project.allprojects.each { it.status = 'release' }
             }
 
-            [snapshotSetupTask, devSnapshotSetupTask, candidateSetupTask, finalSetupTask].each {
+            [snapshotSetupTask, immutableSnapshotSetupTask, devSnapshotSetupTask, candidateSetupTask, finalSetupTask].each {
                 it.group = GROUP
                 it.dependsOn releaseCheck
             }
 
             def snapshotTask = project.task(SNAPSHOT_TASK_NAME)
             snapshotTask.dependsOn snapshotSetupTask
+            def immutableSnapshotTask = project.task(IMMUTABLE_SNAPSHOT_TASK_NAME)
+            immutableSnapshotTask.dependsOn immutableSnapshotSetupTask
             def devSnapshotTask = project.task(DEV_SNAPSHOT_TASK_NAME)
             devSnapshotTask.dependsOn devSnapshotSetupTask
             def candidateTask = project.task(CANDIDATE_TASK_NAME)
@@ -144,13 +151,13 @@ class ReleasePlugin implements Plugin<Project> {
             def finalTask = project.task(FINAL_TASK_NAME)
             finalTask.dependsOn finalSetupTask
 
-            [snapshotTask, devSnapshotTask, candidateTask, finalTask].each {
+            [snapshotTask, immutableSnapshotTask, devSnapshotTask, candidateTask, finalTask].each {
                 it.group = GROUP
                 it.dependsOn postReleaseTask
             }
 
             def cliTasks = project.gradle.startParameter.taskNames
-            determineStage(cliTasks, releaseCheck)
+            determineStage(nebulaReleaseExtension, cliTasks, releaseCheck)
             checkStateForStage()
 
             if (shouldSkipGitChecks()) {
@@ -183,13 +190,14 @@ class ReleasePlugin implements Plugin<Project> {
         project.tasks.prepare.enabled = false
     }
 
-    private void determineStage(List<String> cliTasks, ReleaseCheck releaseCheck) {
+    private void determineStage(ReleaseExtension releaseExtension, List<String> cliTasks, ReleaseCheck releaseCheck) {
         def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME)
         def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME)
+        def hasImmutableSnapshot = cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME)
         def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME)
         def hasFinal = cliTasks.contains(FINAL_TASK_NAME)
-        if ([hasSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
-            throw new GradleException('Only one of snapshot, devSnapshot, candidate, or final can be specified.')
+        if ([hasSnapshot, hasImmutableSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
+            throw new GradleException('Only one of snapshot, immutableSnapshot, devSnapshot, candidate, or final can be specified.')
         }
 
         releaseCheck.isSnapshotRelease = hasSnapshot || hasDevSnapshot || (!hasCandidate && !hasFinal)
@@ -200,6 +208,8 @@ class ReleasePlugin implements Plugin<Project> {
         } else if (hasCandidate) {
             setupStatus('candidate')
             applyReleaseStage('rc')
+        } else if (hasImmutableSnapshot) {
+            applyReleaseStage('snapshot')
         } else if (hasSnapshot) {
             applyReleaseStage('SNAPSHOT')
         } else if (hasDevSnapshot) {

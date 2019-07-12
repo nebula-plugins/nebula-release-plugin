@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 Netflix, Inc.
+ * Copyright 2014-2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,16 +72,16 @@ class OverrideStrategies {
             } catch(MissingPropertyException e) {
                 releaseStage = NOT_SUPPLIED
                 logger.debug("ExtraPropertiesExtension 'release.stage' was not supplied", e.getMessage())
-                logger.info("Note: It is recommended to supply a release strategy of <snapshot|devSnapshot|candidate|final> to make 'useLastTag' most explicit. Please add one to your list of tasks.")
+                logger.info("Note: It is recommended to supply a release strategy of <snapshot|immutableSnapshot|devSnapshot|candidate|final> to make 'useLastTag' most explicit. Please add one to your list of tasks.")
             }
 
-            if (releaseStage == 'dev' || releaseStage == 'SNAPSHOT') {
-                throw new GradleException("Cannot use useLastTag with snapshot and devSnapshot tasks")
+            if (releaseStage == 'dev' ||  releaseStage == 'snapshot' || releaseStage == 'SNAPSHOT') {
+                throw new GradleException("Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks")
             }
 
             if (locate.distanceFromAny == 0) {
-                if(releaseStage == NOT_SUPPLIED && (locate.any.toString().contains('-dev.') || locate.any.toString().contains('-SNAPSHOT'))) {
-                    throw new GradleException("Current commit has a snapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.")
+                if(releaseStage == NOT_SUPPLIED && (locate.any.toString().contains('-dev.') || locate.any.toString().contains('-SNAPSHOT')  || locate.any.toString().contains('-snapshot.') )) {
+                    throw new GradleException("Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.")
                 }
 
                 def preReleaseVersion = locate.any.preReleaseVersion
