@@ -19,6 +19,7 @@ import groovy.transform.Immutable
 import groovy.transform.PackageScope
 
 import com.github.zafarkhaja.semver.Version
+import nebula.plugin.release.VersionSanitizerUtil
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import org.ajoberstar.grgit.Grgit
@@ -171,13 +172,20 @@ final class SemVerStrategy implements nebula.plugin.release.git.base.DefaultVers
         Version version = StrategyUtil.all(
             normalStrategy, preReleaseStrategy, buildMetadataStrategy).infer(state).toVersion()
 
-        logger.warn('Inferred project: {}, version: {}', project.name, version)
+
+        String versionAsString = version.toString()
+        if(VersionSanitizerUtil.hasSanitizeFlag(project)) {
+            versionAsString = VersionSanitizerUtil.sanitize(version.toString())
+        }
+
+        logger.warn('Inferred project: {}, version: {}', project.name, versionAsString)
 
         if (enforcePrecedence && version < nearestVersion.any) {
             throw new GradleException("Inferred version (${version}) cannot be lower than nearest (${nearestVersion.any}). Required by selected strategy.")
         }
 
-        return new ReleaseVersion(version.toString(), nearestVersion.normal.toString(), createTag)
+
+        return new ReleaseVersion(versionAsString, nearestVersion.normal.toString(), createTag)
     }
 
     private String getPropertyOrNull(Project project, String name) {
