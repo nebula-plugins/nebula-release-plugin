@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory
  */
 class OverrideStrategies {
 
+
     static class ReleaseLastTagStrategy implements VersionStrategy {
         static final String PROPERTY_NAME = 'release.useLastTag'
         private static final String NOT_SUPPLIED = 'release-strategy-is-not-supplied'
@@ -95,8 +96,13 @@ class OverrideStrategies {
                     }
                 }
 
-                logger.debug("Using version ${locate.any.toString()} with ${releaseStage == NOT_SUPPLIED ? "a non-supplied release strategy" : "${releaseStage} release strategy"}")
-                return new ReleaseVersion(locate.any.toString(), null, false)
+                String inferredVersion = locate.any.toString()
+                if(VersionSanitizerUtil.hasSanitizeFlag(project)) {
+                    inferredVersion = VersionSanitizerUtil.sanitize(inferredVersion)
+                }
+
+                logger.debug("Using version ${inferredVersion} with ${releaseStage == NOT_SUPPLIED ? "a non-supplied release strategy" : "${releaseStage} release strategy"}")
+                return new ReleaseVersion(inferredVersion, null, false)
             } else {
                 List<Tag> headTags = grgit.tag.list().findAll { it.commit == grgit.head()}
                 if (headTags.isEmpty()) {
@@ -134,8 +140,15 @@ class OverrideStrategies {
             if (requestedVersion == null || requestedVersion.isEmpty()) {
                 throw new GradleException('Supplied release.version is empty')
             }
+
+            if(VersionSanitizerUtil.hasSanitizeFlag(project)) {
+                requestedVersion = VersionSanitizerUtil.sanitize(requestedVersion.toString())
+            }
+
             new ReleaseVersion(requestedVersion, null, true)
         }
+
+
     }
 
     static class NoCommitStrategy implements VersionStrategy {
@@ -160,4 +173,5 @@ class OverrideStrategies {
             new ReleaseVersion('0.1.0-dev.0.uncommitted', null, false)
         }
     }
+
 }

@@ -34,4 +34,20 @@ class OverrideStrategiesSpec extends ProjectSpec {
         then:
         project.version.toString() == '42.5.0'
     }
+
+    def 'able to set via gradle property and sanitize'() {
+        setup:
+        project.ext.set('release.version', '42.5.0+feature')
+        project.ext.set('release.sanitizeVersion', true)
+
+        when:
+        project.plugins.apply(BaseReleasePlugin)
+        def releaseExtension = project.extensions.findByType(ReleasePluginExtension)
+        releaseExtension.with {
+            versionStrategy new OverrideStrategies.GradlePropertyStrategy(project, 'release.version')
+        }
+
+        then:
+        project.version.toString() == '42.5.0.feature'
+    }
 }

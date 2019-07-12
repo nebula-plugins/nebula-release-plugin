@@ -841,6 +841,14 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         task << ['devSnapshot', 'snapshot']
     }
 
+    def 'can release devSnapshot with sanitized version'() {
+        when:
+        def version = inferredVersionForTask('devSnapshot', '-Prelease.sanitizeVersion=true')
+
+        then:
+        version.toString().startsWith('0.1.0-dev.2.')
+    }
+
     static outputContains(ExecutionResult result, String substring) {
         return result.standardError.contains(substring) || result.standardOutput.contains(substring)
     }
