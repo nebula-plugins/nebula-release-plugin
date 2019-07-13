@@ -12,7 +12,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 # Applying the plugin
 
     plugins {
-        id 'nebula.release' version '10.1.2'
+        id 'nebula.release' version '11.0.0'
     }
 
 -or-
@@ -20,7 +20,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
     buildscript {
         repositories { jcenter() }
         dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:10.1.2'
+            classpath 'com.netflix.nebula:nebula-release-plugin:11.0.0'
         }
     }
     apply plugin: 'nebula.release'
@@ -132,6 +132,19 @@ This will create a tag `v<string>` where String is whatever you set on `release.
 The plugin assumes Git root is in the same location as Gradle root. If this isn't the case, you may specify a different path for Git root via the `git.root` Gradle property. For example:
 
     ./gradlew -Pgit.root=<git root path> final
+
+### Sanitize versions
+
+Historically, this plugin generated versions using build metadata which comes after the `+` sign. While we suggest using this approach to be semver compliant, some people has raised their need for removing the build medata and make it part of the pre-release string.
+
+For this, starting on version `11.0.0` we have introduced a `sanitizedVersion` flag. Ex.
+
+`./gradlew -PsanitizeVersion devSnapshot`
+
+This will generate a version string similar to: `0.1.0-dev.2.e1c43c7`
+
+Please note that now the build metadata is part of the pre-release information and could affect how versions are handled by a SemVer library/tool. 
+
 
 # Lifecycle Hooks
 
