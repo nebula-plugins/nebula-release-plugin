@@ -44,4 +44,31 @@ class ReleasePluginNoCommitIntegrationSpec extends IntegrationSpec {
         then:
         results.standardOutput.contains 'Version in task: 0.1.0-dev.0.uncommitted'
     }
+
+    def 'repo with no commits does not throw errors - replace dev with immutable snapshot'() {
+        given:
+        repo = Grgit.init(dir: projectDir)
+        new File(buildFile.parentFile, "gradle.properties").text = """
+nebula.release.features.replaceDevWithImmutableSnapshot=true
+"""
+        buildFile << """\
+            ext.dryRun = true
+            group = 'test'
+            ${applyPlugin(ReleasePlugin)}
+            ${applyPlugin(JavaPlugin)}
+
+            task showVersion {
+                doLast {
+                    logger.lifecycle "Version in task: \${version.toString()}"
+                }
+            }
+            """.stripIndent()
+
+        when:
+        def results = runTasks('showVersion')
+
+        then:
+        results.standardOutput.contains 'Version in task: 0.1.0-snapshot.'
+        results.standardOutput.contains '.uncommitted'
+    }
 }
