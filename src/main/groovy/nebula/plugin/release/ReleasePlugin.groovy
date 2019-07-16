@@ -17,6 +17,7 @@ package nebula.plugin.release
 
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
+import nebula.plugin.release.git.semver.SemVerStrategy
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Status
 import org.eclipse.jgit.errors.RepositoryNotFoundException
@@ -70,10 +71,12 @@ class ReleasePlugin implements Plugin<Project> {
             return
         }
         checkForBadBranchNames()
+        boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
         if (project == project.rootProject) {
             project.plugins.apply(BaseReleasePlugin)
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
 
+            SemVerStrategy defaultStrategy = replaceDevSnapshots ? NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project) : NetflixOssStrategies.DEVELOPMENT(project)
             releaseExtension.with {
                 versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
@@ -83,7 +86,7 @@ class ReleasePlugin implements Plugin<Project> {
                 versionStrategy NetflixOssStrategies.DEVELOPMENT(project)
                 versionStrategy NetflixOssStrategies.PRE_RELEASE(project)
                 versionStrategy NetflixOssStrategies.FINAL(project)
-                defaultVersionStrategy = NetflixOssStrategies.DEVELOPMENT(project)
+                defaultVersionStrategy = defaultStrategy
             }
 
             releaseExtension.with {
@@ -157,7 +160,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             def cliTasks = project.gradle.startParameter.taskNames
-            determineStage(nebulaReleaseExtension, cliTasks, releaseCheck)
+            determineStage(nebulaReleaseExtension, cliTasks, releaseCheck, replaceDevSnapshots)
             checkStateForStage()
 
             if (shouldSkipGitChecks()) {
@@ -190,7 +193,7 @@ class ReleasePlugin implements Plugin<Project> {
         project.tasks.prepare.enabled = false
     }
 
-    private void determineStage(ReleaseExtension releaseExtension, List<String> cliTasks, ReleaseCheck releaseCheck) {
+    private void determineStage(ReleaseExtension releaseExtension, List<String> cliTasks, ReleaseCheck releaseCheck, boolean replaceDevSnapshots) {
         def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME)
         def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME)
         def hasImmutableSnapshot = cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME)
@@ -213,7 +216,11 @@ class ReleasePlugin implements Plugin<Project> {
         } else if (hasSnapshot) {
             applyReleaseStage('SNAPSHOT')
         } else if (hasDevSnapshot) {
-            applyReleaseStage('dev')
+            if (replaceDevSnapshots) {
+                applyReleaseStage('snapshot')
+            } else {
+                applyReleaseStage('dev')
+            }
         }
     }
 

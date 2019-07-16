@@ -18,6 +18,7 @@ package nebula.plugin.release
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
+import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.plugin.release.git.semver.NearestVersionLocator
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
@@ -170,7 +171,12 @@ class OverrideStrategies {
 
         @Override
         ReleaseVersion infer(Project project, Grgit grgit) {
-            new ReleaseVersion('0.1.0-dev.0.uncommitted', null, false)
+            boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
+            if(replaceDevSnapshots) {
+                new ReleaseVersion("0.1.0-snapshot.${TimestampUtil.getUTCFormattedTimestamp()}.uncommitted", null, false)
+            } else {
+                new ReleaseVersion('0.1.0-dev.0.uncommitted', null, false)
+            }
         }
     }
 

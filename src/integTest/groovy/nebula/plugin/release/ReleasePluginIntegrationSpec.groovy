@@ -70,6 +70,17 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         version == dev('0.1.0-dev.2+')
     }
 
+    def 'choose immutableSnapshot version if devSnapshot is replaced and devSnapshot is executed'() {
+        given:
+        replaceDevWithImmutableSnapshot()
+
+        when:
+        def version = inferredVersionForTask('devSnapshot')
+
+        then:
+        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
+    }
+
 
     def 'choose immutableSnapshot version'() {
         when:
@@ -89,6 +100,20 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         then:
         version == dev('0.1.0-dev.2.uncommitted+')
     }
+
+    def 'choose immutableSnapshot uncommitted version if devSnapshot is replaced and devSnapshot is executed'() {
+        given:
+        replaceDevWithImmutableSnapshot()
+        new File(projectDir, 'newfile').createNewFile()
+
+        when:
+        def version = inferredVersionForTask('build')
+
+        then:
+        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
+        version.toString().contains('uncommitted')
+    }
+
 
     def 'use maven style snapshot string'() {
         when:
@@ -1009,6 +1034,26 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         version.toString().startsWith('0.1.0-snapshot.' + getUtcDateForComparison())
+    }
+
+    def 'immutableSnapshot works as default when dev is replaced with it'() {
+        replaceDevWithImmutableSnapshot()
+        git.add(patterns: ['build.gradle'] as Set)
+        git.commit(message: 'Setup')
+        git.push()
+
+        when:
+        def version = inferredVersionForTask('build')
+
+        then:
+        version.toString().startsWith('0.1.0-snapshot.' + getUtcDateForComparison())
+    }
+
+
+    private void replaceDevWithImmutableSnapshot() {
+        new File(buildFile.parentFile, "gradle.properties").text = """
+nebula.release.features.replaceDevWithImmutableSnapshot=true
+"""
     }
 
     static outputContains(ExecutionResult result, String substring) {
