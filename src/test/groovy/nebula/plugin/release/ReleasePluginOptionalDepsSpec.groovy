@@ -17,9 +17,7 @@ package nebula.plugin.release
 
 import nebula.test.ProjectSpec
 import org.ajoberstar.grgit.Grgit
-import org.gradle.api.logging.Logger
 import spock.lang.Unroll
-import spock.util.mop.ConfineMetaClassChanges
 
 class ReleasePluginOptionalDepsSpec extends ProjectSpec {
     Grgit git
@@ -28,41 +26,6 @@ class ReleasePluginOptionalDepsSpec extends ProjectSpec {
         git = Grgit.init(dir: projectDir)
         git.commit(message: 'initial commit')
         git.tag.add(name: 'v0.0.1')
-    }
-
-    @ConfineMetaClassChanges(value = [ReleasePlugin])
-    def 'log info for missing BintrayUpload task'() {
-        given:
-        Logger myLogger = Mock()
-        ReleasePlugin.logger = myLogger
-        ReleasePlugin.metaClass.isClassPresent = { String name ->
-            name != 'com.jfrog.bintray.gradle.tasks.BintrayUploadTask' &&
-                    name != 'org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask'
-        }
-
-        when:
-        project.plugins.apply(ReleasePlugin)
-
-        then:
-        1 * myLogger.info(_)
-    }
-
-    @ConfineMetaClassChanges(value = [ReleasePlugin])
-    def 'log info for missing BuildInfoBaseTask task'() {
-        given:
-        Logger myLogger = Mock()
-        ReleasePlugin.logger = myLogger
-        ReleasePlugin.metaClass.isClassPresent = { String name ->
-            name != 'com.jfrog.bintray.gradle.tasks.BintrayUploadTask' &&
-                    name != 'org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask' &&
-                    name != 'org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask'
-        }
-
-        when:
-        project.plugins.apply(ReleasePlugin)
-
-        then:
-        2 * myLogger.info(_)
     }
 
     @Unroll('verify isClassPresent determines #className #presenceString present')

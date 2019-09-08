@@ -270,47 +270,45 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void configureBintrayTasksIfPresent() {
-
-        if (isClassPresent('nebula.plugin.bintray.NebulaBintrayPackageTask')) {
+        project.plugins.withId('nebula.nebula-bintray') {
             project.tasks.withType(PublishToMavenRepository) { Task task ->
+                logger.info('Configuring nebula bintray plugin to work with release plugin')
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
                 project.rootProject.tasks.postRelease.dependsOn(task)
             }
-        } else {
-            logger.info('Skipping configuration of nebula bintray task since it is not present')
         }
 
-        if (isClassPresent('com.jfrog.bintray.gradle.tasks.BintrayUploadTask')) {
+        project.plugins.withId('com.jfrog.bintray') {
             project.tasks.withType(Class.forName('com.jfrog.bintray.gradle.tasks.BintrayUploadTask')) { Task task ->
+                logger.info('Configuring jfrog bintray plugin to work with release plugin')
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
                 project.rootProject.tasks.postRelease.dependsOn(task)
             }
-        } else {
-            logger.info('Skipping configuration of bintray task since it is not present')
         }
 
-        if (isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) {
-            project.logger.warn 'Please upgrade com.jfrog.artifactory (org.jfrog.buildinfo:build-info-extractor-gradle:) to version 4.6.0 or above'
-            project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) { Task task ->
-                project.plugins.withType(JavaPlugin) {
-                    task.dependsOn(project.tasks.build)
+        project.plugins.withId('com.jfrog.artifactory') {
+            logger.info('Configuring jfrog artifactory plugin to work with release plugin')
+            if (isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) {
+                project.logger.warn 'Please upgrade com.jfrog.artifactory (org.jfrog.buildinfo:build-info-extractor-gradle:) to version 4.6.0 or above'
+                project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) { Task task ->
+                    project.plugins.withType(JavaPlugin) {
+                        task.dependsOn(project.tasks.build)
+                    }
+                    project.rootProject.tasks.postRelease.dependsOn(task)
                 }
-                project.rootProject.tasks.postRelease.dependsOn(task)
-            }
-        } else if(isClassPresent('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) {
-            // JFrog remove BuildInfoBaseTask see https://www.jfrog.com/jira/browse/GAP-281
-            project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) { Task task ->
-                project.plugins.withType(JavaPlugin) {
-                    task.dependsOn(project.tasks.build)
+            } else if(isClassPresent('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) {
+                // JFrog remove BuildInfoBaseTask see https://www.jfrog.com/jira/browse/GAP-281
+                project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) { Task task ->
+                    project.plugins.withType(JavaPlugin) {
+                        task.dependsOn(project.tasks.build)
+                    }
+                    project.rootProject.tasks.postRelease.dependsOn(task)
                 }
-                project.rootProject.tasks.postRelease.dependsOn(task)
             }
-        } else {
-            logger.info('Skipping configuration of artifactoryPublish task since it is not present')
         }
     }
 
