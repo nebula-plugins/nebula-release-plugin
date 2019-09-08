@@ -272,7 +272,6 @@ class ReleasePlugin implements Plugin<Project> {
     void configureBintrayTasksIfPresent() {
         project.plugins.withId('nebula.nebula-bintray') {
             project.tasks.withType(PublishToMavenRepository) { Task task ->
-                logger.info('Configuring nebula bintray plugin to work with release plugin')
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
