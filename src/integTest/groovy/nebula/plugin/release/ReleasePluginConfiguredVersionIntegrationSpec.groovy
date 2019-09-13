@@ -23,7 +23,7 @@ class ReleasePluginConfiguredVersionIntegrationSpec extends GitVersioningIntegra
         addSubproject('test-release-common', '// hello')
         addSubproject('test-release-client', '''\
             dependencies {
-                compile project(':test-release-common')
+                implementation project(':test-release-common')
             }
         '''.stripIndent())
 
