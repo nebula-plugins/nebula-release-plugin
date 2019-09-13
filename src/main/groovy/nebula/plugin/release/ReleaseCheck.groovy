@@ -15,11 +15,9 @@
  */
 package nebula.plugin.release
 
-import org.ajoberstar.grgit.Grgit
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 
 class ReleaseCheck extends DefaultTask {
