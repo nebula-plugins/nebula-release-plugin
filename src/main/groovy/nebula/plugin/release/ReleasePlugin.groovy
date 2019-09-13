@@ -119,7 +119,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             def releaseCheck = project.tasks.create(RELEASE_CHECK_TASK_NAME, ReleaseCheck)
             releaseCheck.group = GROUP
-            releaseCheck.grgit = releaseExtension.grgit
+            releaseCheck.branch = releaseExtension.grgit.branch.current().name
             releaseCheck.patterns = nebulaReleaseExtension
 
             def postReleaseTask = project.task(POST_RELEASE_TASK_NAME)

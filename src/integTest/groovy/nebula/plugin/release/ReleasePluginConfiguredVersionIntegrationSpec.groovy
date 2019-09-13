@@ -23,7 +23,7 @@ class ReleasePluginConfiguredVersionIntegrationSpec extends GitVersioningIntegra
         addSubproject('test-release-common', '// hello')
         addSubproject('test-release-client', '''\
             dependencies {
-                compile project(':test-release-common')
+                implementation project(':test-release-common')
             }
         '''.stripIndent())
 
@@ -35,7 +35,7 @@ class ReleasePluginConfiguredVersionIntegrationSpec extends GitVersioningIntegra
 
     def 'should fail build if version is set in build file'() {
         when:
-        def results = runTasksWithFailure('final')
+        def results = runTasksWithFailure('final', '--warning-mode', 'all')
 
         then:
         results.standardError.contains('version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter')
