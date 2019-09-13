@@ -35,7 +35,7 @@ class ReleasePluginConfiguredVersionIntegrationSpec extends GitVersioningIntegra
 
     def 'should fail build if version is set in build file'() {
         when:
-        def results = runTasksWithFailure('final', '--warning-mode', 'all')
+        def results = runTasksWithFailure('final')
 
         then:
         results.standardError.contains('version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter')
