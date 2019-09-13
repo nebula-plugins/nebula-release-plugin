@@ -138,7 +138,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def version = inferredVersionForTask('devSnapshot')
 
         then:
-        version == dev('2.2.0-rc.1.dev.0+')
+        version == dev('2.2.0-dev.0+')
     }
 
     def 'choose no rc in snapshot version'() {

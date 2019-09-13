@@ -243,25 +243,7 @@ class StrategiesSpec extends Specification {
         initialPreRelease << [null, 'other']
     }
 
-    def 'PreRelease.STAGE_FLOAT will append the stageFromProp to the nearest any\'s pre release, if any, unless it has higher precedence'() {
-        given:
-        def initialState = new SemVerStrategyState(
-                stageFromProp: 'boom',
-                inferredNormal: '1.1.0',
-                inferredPreRelease: 'other',
-                nearestVersion: new NearestVersion(
-                        normal: Version.valueOf('1.0.0'),
-                        any: Version.valueOf(nearest)))
-        expect:
-        Strategies.PreRelease.STAGE_FLOAT.infer(initialState) == initialState.copyWith(inferredPreRelease: expected)
-        where:
-        nearest                    | expected
-        '1.0.0'                    | 'boom'
-        '1.0.1-cat.something.else' | 'boom'
-        '1.1.0-and.1'              | 'boom'
-        '1.1.0-cat.1'              | 'cat.1.boom'
-        '1.1.0-cat.something.else' | 'cat.something.else.boom'
-    }
+
 
     def 'PreRelease.COUNT_INCREMENTED will increment the nearest any\'s pre release or set to 1 if not found'() {
         given:
@@ -382,8 +364,8 @@ class StrategiesSpec extends Specification {
         null    | null  | '1.0.0'       | '1.0.0'         | false     | '1.0.1-dev.2+5e9b2a1'
         null    | null  | '1.0.0'       | '1.0.0'         | true      | '1.0.1-dev.2.uncommitted+5e9b2a1'
         null    | null  | '1.0.0'       | '1.1.0-alpha.1' | false     | '1.1.0-dev.2+5e9b2a1'
-        null    | null  | '1.0.0'       | '1.1.0-rc.3'    | false     | '1.1.0-rc.3.dev.2+5e9b2a1'
-        null    | null  | '1.0.0'       | '1.1.0-rc.3'    | true      | '1.1.0-rc.3.dev.2.uncommitted+5e9b2a1'
+        null    | null  | '1.0.0'       | '1.1.0-rc.3'    | false     | '1.1.0-dev.2+5e9b2a1'
+        null    | null  | '1.0.0'       | '1.1.0-rc.3'    | true      | '1.1.0-dev.2.uncommitted+5e9b2a1'
         'PATCH' | 'dev' | '1.0.0'       | '1.0.0'         | false     | '1.0.1-dev.2+5e9b2a1'
         'MINOR' | 'dev' | '1.0.0'       | '1.0.0'         | false     | '1.1.0-dev.2+5e9b2a1'
         'MAJOR' | 'dev' | '1.0.0'       | '1.0.0'         | false     | '2.0.0-dev.2+5e9b2a1'

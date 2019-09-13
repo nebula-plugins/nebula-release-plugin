@@ -198,13 +198,7 @@ final class Strategies {
          * to the nearest any's pre-release.
          */
         static final PartialSemVerStrategy STAGE_FLOAT = closure { state ->
-            def sameNormal = state.inferredNormal == state.nearestVersion.any.normalVersion
-            def nearestAnyPreRelease = state.nearestVersion.any.preReleaseVersion
-            if (sameNormal && nearestAnyPreRelease != null && (nearestAnyPreRelease > state.stageFromProp)) {
-                state.copyWith(inferredPreRelease: "${nearestAnyPreRelease}.${state.stageFromProp}")
-            } else {
-                state.copyWith(inferredPreRelease: state.stageFromProp)
-            }
+            state.copyWith(inferredPreRelease: state.stageFromProp)
         }
 
         /**
@@ -330,7 +324,8 @@ final class Strategies {
             allowDirtyRepo: true,
             preReleaseStrategy: all(PreRelease.STAGE_FLOAT, PreRelease.COUNT_COMMITS_SINCE_ANY, PreRelease.SHOW_UNCOMMITTED),
             buildMetadataStrategy: BuildMetadata.COMMIT_ABBREVIATED_ID,
-            createTag: false
+            createTag: false,
+            enforcePrecedence: false
     )
 
     /**
