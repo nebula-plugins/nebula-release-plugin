@@ -101,6 +101,10 @@ class BaseReleasePlugin implements Plugin<Project> {
             ext.toPush << grgit.branch.current.fullName
         }
 
+        if(project.version instanceof String) {
+            throw new GradleException("version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter")
+        }
+
         ext.tagName = extension.tagStrategy.maybeCreateTag(grgit, project.version.inferredVersion)
         if (ext.tagName) {
             ext.toPush << ext.tagName
