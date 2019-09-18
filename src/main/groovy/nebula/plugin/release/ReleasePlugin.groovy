@@ -15,9 +15,13 @@
  */
 package nebula.plugin.release
 
+import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
+import nebula.plugin.release.git.base.ReleaseVersion
+import nebula.plugin.release.git.base.TagStrategy
 import nebula.plugin.release.git.semver.SemVerStrategy
+import org.ajoberstar.grgit.Commit
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Status
 import org.eclipse.jgit.errors.RepositoryNotFoundException
@@ -25,6 +29,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
@@ -56,6 +61,7 @@ class ReleasePlugin implements Plugin<Project> {
     static final String POST_RELEASE_TASK_NAME = 'postRelease'
     static final String GROUP = 'Nebula Release'
 
+    @CompileDynamic
     @Override
     void apply(Project project) {
         this.project = project
@@ -91,8 +97,8 @@ class ReleasePlugin implements Plugin<Project> {
 
             releaseExtension.with {
                 grgit = git
-                tagStrategy {
-                    generateMessage = { version ->
+                tagStrategy { TagStrategy tagStrategy ->
+                    tagStrategy.generateMessage = { ReleaseVersion version ->
                         StringBuilder builder = new StringBuilder()
                         builder << "Release of ${version.version}\n\n"
 
@@ -102,10 +108,7 @@ class ReleasePlugin implements Plugin<Project> {
                             if (tagExists(grgit, previousVersion)) {
                                 excludes << previousVersion
                             }
-                            grgit.log(
-                                    includes: ['HEAD'],
-                                    excludes: excludes
-                            ).inject(builder) { bldr, commit ->
+                            grgit.log([includes: ['HEAD'], excludes: excludes] as Map<String, Object>).inject(builder) { bldr, Commit commit ->
                                 bldr << "- ${commit.id}: ${commit.shortMessage}\n"
                             }
                         }
@@ -114,26 +117,26 @@ class ReleasePlugin implements Plugin<Project> {
                 }
             }
 
-            def nebulaReleaseExtension = project.extensions.create(NEBULA_RELEASE_EXTENSION_NAME, ReleaseExtension)
+            ReleaseExtension nebulaReleaseExtension = project.extensions.create(NEBULA_RELEASE_EXTENSION_NAME, ReleaseExtension)
             NetflixOssStrategies.BuildMetadata.nebulaReleaseExtension = nebulaReleaseExtension
 
-            def releaseCheck = project.tasks.create(RELEASE_CHECK_TASK_NAME, ReleaseCheck)
+            ReleaseCheck releaseCheck = project.tasks.create(RELEASE_CHECK_TASK_NAME, ReleaseCheck)
             releaseCheck.group = GROUP
             releaseCheck.branchName = releaseExtension.grgit.branch.current().name
             releaseCheck.patterns = nebulaReleaseExtension
 
             def postReleaseTask = project.task(POST_RELEASE_TASK_NAME)
             postReleaseTask.group = GROUP
-            postReleaseTask.dependsOn project.tasks.release
+            postReleaseTask.dependsOn project.tasks.getByName('release')
 
-            def snapshotSetupTask = project.task(SNAPSHOT_SETUP_TASK_NAME)
-            def immutableSnapshotSetupTask = project.task(IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME)
-            def devSnapshotSetupTask = project.task(DEV_SNAPSHOT_SETUP_TASK_NAME)
-            def candidateSetupTask = project.task(CANDIDATE_SETUP_TASK_NAME)
+            Task snapshotSetupTask = project.task(SNAPSHOT_SETUP_TASK_NAME)
+            Task immutableSnapshotSetupTask = project.task(IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME)
+            Task devSnapshotSetupTask = project.task(DEV_SNAPSHOT_SETUP_TASK_NAME)
+            Task candidateSetupTask = project.task(CANDIDATE_SETUP_TASK_NAME)
             candidateSetupTask.doLast {
                 project.allprojects.each { it.status = 'candidate' }
             }
-            def finalSetupTask = project.task(FINAL_SETUP_TASK_NAME)
+            Task finalSetupTask = project.task(FINAL_SETUP_TASK_NAME)
             finalSetupTask.doLast {
                 project.allprojects.each { it.status = 'release' }
             }
@@ -143,15 +146,15 @@ class ReleasePlugin implements Plugin<Project> {
                 it.dependsOn releaseCheck
             }
 
-            def snapshotTask = project.task(SNAPSHOT_TASK_NAME)
+            Task snapshotTask = project.task(SNAPSHOT_TASK_NAME)
             snapshotTask.dependsOn snapshotSetupTask
-            def immutableSnapshotTask = project.task(IMMUTABLE_SNAPSHOT_TASK_NAME)
+            Task immutableSnapshotTask = project.task(IMMUTABLE_SNAPSHOT_TASK_NAME)
             immutableSnapshotTask.dependsOn immutableSnapshotSetupTask
-            def devSnapshotTask = project.task(DEV_SNAPSHOT_TASK_NAME)
+            Task devSnapshotTask = project.task(DEV_SNAPSHOT_TASK_NAME)
             devSnapshotTask.dependsOn devSnapshotSetupTask
-            def candidateTask = project.task(CANDIDATE_TASK_NAME)
+            Task candidateTask = project.task(CANDIDATE_TASK_NAME)
             candidateTask.dependsOn candidateSetupTask
-            def finalTask = project.task(FINAL_TASK_NAME)
+            Task finalTask = project.task(FINAL_TASK_NAME)
             finalTask.dependsOn finalSetupTask
 
             [snapshotTask, immutableSnapshotTask, devSnapshotTask, candidateTask, finalTask].each {
@@ -159,8 +162,8 @@ class ReleasePlugin implements Plugin<Project> {
                 it.dependsOn postReleaseTask
             }
 
-            def cliTasks = project.gradle.startParameter.taskNames
-            determineStage(nebulaReleaseExtension, cliTasks, releaseCheck, replaceDevSnapshots)
+            List<String> cliTasks = project.gradle.startParameter.taskNames
+            determineStage(cliTasks, releaseCheck, replaceDevSnapshots)
             checkStateForStage()
 
             if (shouldSkipGitChecks()) {
@@ -170,15 +173,15 @@ class ReleasePlugin implements Plugin<Project> {
             project.version = project.rootProject.version
         }
 
-        def isParent = project.rootProject.subprojects.any { it.parent == project }
+        boolean isParent = project.rootProject.subprojects.any { it.parent == project }
         if (!isParent) {
             project.plugins.withType(JavaPlugin) {
-                project.rootProject.tasks.release.dependsOn project.tasks.build
+                project.rootProject.tasks.getByName('release').dependsOn project.tasks.getByName('build')
             }
         }
 
-        project.gradle.taskGraph.whenReady { g ->
-            def tasks = [DEV_SNAPSHOT_TASK_NAME, SNAPSHOT_TASK_NAME].collect { project.getPath() + it }
+        project.gradle.taskGraph.whenReady { TaskExecutionGraph g ->
+            List<String> tasks = [DEV_SNAPSHOT_TASK_NAME, SNAPSHOT_TASK_NAME].collect { project.getPath() + it }
             if(tasks.any { g.hasTask(it) }) {
                 removeReleaseAndPrepLogic(project)
             }
@@ -189,11 +192,11 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private void removeReleaseAndPrepLogic(Project project) {
-        project.tasks.release.enabled = false
-        project.tasks.prepare.enabled = false
+        project.tasks.getByName('release').enabled = false
+        project.tasks.getByName('prepare').enabled = false
     }
 
-    private void determineStage(ReleaseExtension releaseExtension, List<String> cliTasks, ReleaseCheck releaseCheck, boolean replaceDevSnapshots) {
+    private void determineStage(List<String> cliTasks, ReleaseCheck releaseCheck, boolean replaceDevSnapshots) {
         def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME)
         def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME)
         def hasImmutableSnapshot = cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME)
@@ -225,7 +228,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private void checkStateForStage() {
-        if (!project.tasks.releaseCheck.isSnapshotRelease) {
+        if (!(project.tasks.getByName('releaseCheck') as ReleaseCheck).isSnapshotRelease) {
             Status status = git.status()
             if (!status.isClean()) {
                 String message = new ErrorMessageFormatter().format(status)
@@ -236,10 +239,11 @@ class ReleasePlugin implements Plugin<Project> {
 
     private boolean shouldSkipGitChecks() {
         def disableGit = project.hasProperty(DISABLE_GIT_CHECKS) && project.property(DISABLE_GIT_CHECKS) as Boolean
-        def travis = project.hasProperty('release.travisci') && project.property('release.travisci').toBoolean()
+        def travis = project.hasProperty('release.travisci') && project.property('release.travisci').toString().toBoolean()
         disableGit || travis
     }
 
+    @CompileDynamic
     void setupStatus(String status) {
         project.plugins.withType(IvyPublishPlugin) {
             project.publishing {
@@ -250,6 +254,7 @@ class ReleasePlugin implements Plugin<Project> {
         }
     }
 
+    @CompileDynamic
     void applyReleaseStage(String stage) {
         final String releaseStage = 'release.stage'
         project.allprojects.each { it.ext.set(releaseStage, stage) }
@@ -258,24 +263,25 @@ class ReleasePlugin implements Plugin<Project> {
     void configurePublishingIfPresent() {
         project.plugins.withType(MavenPublishPlugin) {
             project.tasks.withType(GenerateMavenPom) { task ->
-                project.rootProject.tasks.postRelease.dependsOn(task)
+                project.rootProject.tasks.getByName('postRelease').dependsOn(task)
             }
         }
 
         project.plugins.withType(IvyPublishPlugin) {
             project.tasks.withType(GenerateIvyDescriptor) { task ->
-                project.rootProject.tasks.postRelease.dependsOn(task)
+                project.rootProject.tasks.getByName('postRelease').dependsOn(task)
             }
         }
     }
 
+    @CompileDynamic
     void configureBintrayTasksIfPresent() {
         project.plugins.withId('nebula.nebula-bintray') {
             project.tasks.withType(PublishToMavenRepository) { Task task ->
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
-                project.rootProject.tasks.postRelease.dependsOn(task)
+                project.rootProject.tasks.getByName('postRelease').dependsOn(task)
             }
         }
 

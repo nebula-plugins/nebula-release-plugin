@@ -15,11 +15,13 @@
  */
 package nebula.plugin.release.git.semver
 
+import groovy.transform.CompileDynamic
 import groovy.transform.Immutable
 import groovy.transform.PackageScope
 
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.VersionSanitizerUtil
+import nebula.plugin.release.git.base.DefaultVersionStrategy
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import org.ajoberstar.grgit.Grgit
@@ -36,8 +38,9 @@ import org.slf4j.LoggerFactory
  * @see SemVerStrategyState
  * @see <a href="https://github.com/ajoberstar/gradle-git/wiki/SemVer%20Support">Wiki Doc</a>
  */
+@CompileDynamic
 @Immutable(copyWith=true, knownImmutableClasses=[PartialSemVerStrategy])
-final class SemVerStrategy implements nebula.plugin.release.git.base.DefaultVersionStrategy {
+final class SemVerStrategy implements DefaultVersionStrategy {
     private static final Logger logger = LoggerFactory.getLogger(SemVerStrategy)
     static final String SCOPE_PROP = 'release.scope'
     static final String STAGE_PROP = 'release.stage'

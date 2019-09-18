@@ -17,6 +17,7 @@ package nebula.plugin.release.git.base
 
 import com.github.zafarkhaja.semver.ParseException
 import com.github.zafarkhaja.semver.Version
+import groovy.transform.CompileDynamic
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
 import org.slf4j.Logger
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory
 /**
  * Strategy for creating a Git tag associated with a release.
  */
+@CompileDynamic
 class TagStrategy {
 
     /**
@@ -62,7 +64,7 @@ class TagStrategy {
      * Closure taking a {@link ReleaseVersion} as an argument and returning
      * a string to be used as the tag's message.
      */
-    Closure generateMessage = { version -> "Release of ${version.version}" }
+    Closure generateMessage = { ReleaseVersion version -> "Release of ${version.version}" }
 
     /**
      * If the release version specifies a tag should be created, create a tag

@@ -15,6 +15,8 @@
  */
 package nebula.plugin.release.git.base
 
+import groovy.transform.CompileDynamic
+
 import org.ajoberstar.grgit.Grgit
 
 import org.gradle.api.GradleException
@@ -65,8 +67,8 @@ class ReleasePluginExtension {
     ReleasePluginExtension(Project project) {
         this.project = project
         def sharedVersion = new DelayedVersion()
-        project.rootProject.allprojects {
-            version = sharedVersion
+        project.rootProject.allprojects { Project p ->
+            p.version = sharedVersion
         }
     }
 
@@ -96,8 +98,9 @@ class ReleasePluginExtension {
     private class DelayedVersion implements Serializable {
         ReleaseVersion inferredVersion
 
+        @CompileDynamic
         private void infer() {
-            VersionStrategy selectedStrategy = versionStrategies.find { strategy ->
+            VersionStrategy selectedStrategy = versionStrategies.find {  strategy ->
                 strategy.selector(project, grgit)
             }
 

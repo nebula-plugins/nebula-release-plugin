@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
+
 import groovy.transform.Immutable
 
 /**

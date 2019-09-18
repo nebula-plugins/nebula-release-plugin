@@ -1,9 +1,7 @@
 package nebula.plugin.release
 
-import groovy.transform.CompileStatic
 import org.ajoberstar.grgit.Status
 
-@CompileStatic
 class ErrorMessageFormatter {
     static final String ROOT_CAUSE = 'Final and candidate builds require all changes to be committed into Git.'
     static final String NEW_LINE = sprintf("%n")

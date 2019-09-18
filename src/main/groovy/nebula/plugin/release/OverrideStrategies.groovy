@@ -54,10 +54,10 @@ class OverrideStrategies {
 
         @Override
         boolean selector(Project project, Grgit grgit) {
-            def shouldSelect = project.hasProperty(propertyName) ? project.property(propertyName).toBoolean() : false
+            def shouldSelect = project.hasProperty(propertyName) ? project.property(propertyName).toString().toBoolean() : false
 
             if (shouldSelect) {
-                project.tasks.release.enabled = false // remove tagging op since already tagged
+                project.tasks.getByName('release').enabled = false // remove tagging op since already tagged
             }
 
             shouldSelect
@@ -69,7 +69,7 @@ class OverrideStrategies {
             def locate = new NearestVersionLocator(tagStrategy).locate(grgit)
             String releaseStage
             try {
-                releaseStage = project.ext['release.stage']
+                releaseStage = project.property('release.stage')
             } catch(MissingPropertyException e) {
                 releaseStage = NOT_SUPPLIED
                 logger.debug("ExtraPropertiesExtension 'release.stage' was not supplied", e.getMessage())
@@ -137,7 +137,7 @@ class OverrideStrategies {
 
         @Override
         ReleaseVersion infer(Project project, Grgit grgit) {
-            def requestedVersion = project.property(propertyName)
+            String requestedVersion = project.property(propertyName).toString()
             if (requestedVersion == null || requestedVersion.isEmpty()) {
                 throw new GradleException('Supplied release.version is empty')
             }
