@@ -15,7 +15,7 @@
  */
 package nebula.plugin.release.git.opinion
 
-
+import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.semver.ChangeScope
 import nebula.plugin.release.git.semver.PartialSemVerStrategy
 import nebula.plugin.release.git.semver.SemVerStrategy
@@ -33,10 +33,12 @@ import java.util.regex.Pattern
  * @see nebula.plugin.release.git.semver.SemVerStrategyState
  * @see PartialSemVerStrategy
  */
+@CompileDynamic
 final class Strategies {
     /**
      * Sample strategies that infer the normal component of a version.
      */
+    @CompileDynamic
     static final class Normal {
         /**
          * Increments the nearest normal version using the scope specified
@@ -180,6 +182,7 @@ final class Strategies {
     /**
      * Sample strategies that infer the pre-release component of a version.
      */
+    @CompileDynamic
     static final class PreRelease {
         /**
          * Do not modify the pre-release component.
@@ -260,6 +263,7 @@ final class Strategies {
     /**
      * Sample strategies that infer the build metadata component of a version.
      */
+    @CompileDynamic
     static final class BuildMetadata {
         /**
          * Do not modify the build metadata.

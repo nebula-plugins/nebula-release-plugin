@@ -15,12 +15,14 @@
  */
 package nebula.plugin.release.git.semver
 
+import groovy.transform.CompileDynamic
+
 /**
  * Utility class to more easily create {@link PartialSemVerStrategy} instances.
  */
 final class StrategyUtil {
     private StrategyUtil() {
-        throw new AssertionError('Cannot instantiate this class.')
+        throw new AssertionError('Cannot instantiate this class.' as Object)
     }
 
     /**
@@ -60,6 +62,7 @@ final class StrategyUtil {
     /**
      * Increments the nearest normal version using the specified scope.
      */
+    @CompileDynamic
     static final SemVerStrategyState incrementNormalFromScope(SemVerStrategyState state, ChangeScope scope) {
         def oldNormal = state.nearestVersion.normal
         switch (scope) {

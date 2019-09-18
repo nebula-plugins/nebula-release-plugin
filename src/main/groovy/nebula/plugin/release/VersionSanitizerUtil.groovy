@@ -18,6 +18,6 @@ class VersionSanitizerUtil {
             return false
         }
 
-        return project.property(SANITIZE_PROPERTY_NAME)?.toBoolean()
+        return project.property(SANITIZE_PROPERTY_NAME)?.toString()?.toBoolean()
     }
 }

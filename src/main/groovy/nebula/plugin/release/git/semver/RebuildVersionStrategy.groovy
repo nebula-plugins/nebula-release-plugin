@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release.git.semver
 
+import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory
  * Strategy that infers the version based on the tag on the current
  * HEAD.
  */
+@CompileDynamic
 class RebuildVersionStrategy implements VersionStrategy {
     private static final Logger logger = LoggerFactory.getLogger(RebuildVersionStrategy)
     public static final RebuildVersionStrategy INSTANCE = new RebuildVersionStrategy()

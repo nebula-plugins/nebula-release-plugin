@@ -16,6 +16,8 @@
 package nebula.plugin.release.git.semver
 
 import com.github.zafarkhaja.semver.Version
+import groovy.transform.CompileDynamic
+
 import groovy.transform.Immutable
 import groovy.transform.ToString
 import org.ajoberstar.grgit.Branch
@@ -26,6 +28,7 @@ import org.ajoberstar.grgit.Commit
  */
 @Immutable(copyWith = true, knownImmutableClasses = [Commit, Branch, NearestVersion])
 @ToString(includeNames = true)
+@CompileDynamic
 final class SemVerStrategyState {
     ChangeScope scopeFromProp
     String stageFromProp

@@ -15,6 +15,8 @@
  */
 package nebula.plugin.release.git.opinion
 
+import groovy.transform.CompileDynamic
+
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.semver.RebuildVersionStrategy
 import org.ajoberstar.grgit.Grgit
@@ -47,6 +49,7 @@ import org.gradle.api.Project
  * @see nebula.plugin.release.git.base.BaseReleasePlugin
  * @see <a href="https://github.com/ajoberstar/gradle-git/wiki/org.ajoberstar.release-opinion">Wiki Doc</a>
  */
+@CompileDynamic
 class OpinionReleasePlugin implements Plugin<Project> {
     void apply(Project project) {
         project.plugins.apply(BaseReleasePlugin)

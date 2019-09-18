@@ -16,6 +16,8 @@
 package nebula.plugin.release.git.semver
 
 import com.github.zafarkhaja.semver.Version
+import groovy.transform.CompileDynamic
+
 import nebula.plugin.release.git.base.TagStrategy
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
@@ -39,6 +41,7 @@ import org.slf4j.LoggerFactory
  *
  * @since 0.8.0
  */
+@CompileDynamic
 class NearestVersionLocator {
     private static final Logger logger = LoggerFactory.getLogger(NearestVersionLocator)
     private static final Version UNKNOWN = Version.valueOf('0.0.0')
@@ -85,7 +88,7 @@ class NearestVersionLocator {
         logger.debug('Locate beginning on branch: {}', grgit.branch.current.fullName)
 
         // Reuse a single walk to make use of caching.
-        RevWalk walk = new RevWalk(grgit.repository.jgit.repo)
+        RevWalk walk = new RevWalk(grgit.repository.jgit.repository)
         try {
             walk.retainBody = false
 

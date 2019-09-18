@@ -42,15 +42,19 @@ class TagStrategySpec extends Specification {
     }
 
     def 'maybeCreateTag with version create tag true and prefix name with v false will create a tag'() {
-        given:
+        setup:
         Grgit grgit = GroovyMock()
         TagService tag = GroovyMock()
         grgit.tag >> tag
-        1 * tag.add([name: '1.2.3', message: 'Release of 1.2.3'])
-        0 * tag._
+
+        when:
         def strategy = new TagStrategy()
         strategy.prefixNameWithV = false
-        expect:
         strategy.maybeCreateTag(grgit, new ReleaseVersion('1.2.3', null, true)) == '1.2.3'
+
+        then:
+
+        1 * tag.add([name: '1.2.3', message: 'Release of 1.2.3'])
+        0 * tag._
     }
 }

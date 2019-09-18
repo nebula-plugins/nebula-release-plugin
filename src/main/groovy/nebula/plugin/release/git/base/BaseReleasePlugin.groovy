@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
+import groovy.transform.CompileDynamic
 import org.ajoberstar.grgit.Grgit
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory
  * @see nebula.plugin.release.git.opinion.OpinionReleasePlugin
  * @see <a href="https://github.com/ajoberstar/gradle-git/wiki/org.ajoberstar.release-base">Wiki Doc</a>
  */
+@CompileDynamic
 class BaseReleasePlugin implements Plugin<Project> {
     private static final Logger logger = LoggerFactory.getLogger(BaseReleasePlugin)
     private static final String PREPARE_TASK_NAME = 'prepare'

@@ -36,6 +36,9 @@ contacts {
 
 targetCompatibility = JavaVersion.VERSION_1_8
 
+compileGroovy.groovyOptions.configurationScript = file('src/groovyCompile/groovycConfig.groovy')
+
+
 dependencies {
     compile 'org.eclipse.jgit:org.eclipse.jgit:5.1.1.201809181055-r'
     compile ('org.ajoberstar.grgit:grgit-core:3.1.1') {

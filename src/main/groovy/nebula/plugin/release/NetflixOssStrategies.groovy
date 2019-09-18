@@ -15,11 +15,13 @@
  */
 package nebula.plugin.release
 
-import nebula.plugin.release.ReleaseExtension
+import groovy.transform.CompileDynamic
+
 import nebula.plugin.release.git.opinion.Strategies
 import nebula.plugin.release.git.semver.ChangeScope
 import nebula.plugin.release.git.semver.PartialSemVerStrategy
 import nebula.plugin.release.git.semver.SemVerStrategy
+import nebula.plugin.release.git.semver.SemVerStrategyState
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
@@ -27,6 +29,7 @@ import java.util.regex.Pattern
 
 import static nebula.plugin.release.git.semver.StrategyUtil.*
 
+@CompileDynamic
 class NetflixOssStrategies {
 
     private static final String TRAVIS_BRANCH_PROP = 'release.travisBranch'
@@ -68,7 +71,7 @@ class NetflixOssStrategies {
     }
 
     private static PartialSemVerStrategy fromTravisPropertyPattern(Object travisReleaseBranch, Pattern pattern) {
-        return closure { state ->
+        return closure { SemVerStrategyState state ->
             if (travisReleaseBranch) {
                 def branch = travisReleaseBranch
                 def m = branch =~ pattern
@@ -114,7 +117,7 @@ class NetflixOssStrategies {
      * </p>
      */
     static private PartialSemVerStrategy nearestHigherAny() {
-        return closure { state ->
+        return closure { SemVerStrategyState state ->
             def nearest = state.nearestVersion
             if (nearest.any.lessThanOrEqualTo(nearest.normal)) {
                 return state
@@ -124,8 +127,7 @@ class NetflixOssStrategies {
         }
     }
 
-
-
+    @CompileDynamic
     static final class BuildMetadata {
         static ReleaseExtension nebulaReleaseExtension
 

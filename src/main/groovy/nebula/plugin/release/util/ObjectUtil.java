@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 
 import groovy.lang.Closure;
 
+
 /**
  * Utility class for general {@code Object} related operations.
  * @since 0.1.0
