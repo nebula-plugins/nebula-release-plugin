@@ -15,7 +15,7 @@ com.google.j2objc:j2objc-annotations:1.1
 com.googlecode.javaewah:JavaEWAH:1.1.6
 com.jcraft:jsch:0.1.54
 com.jcraft:jzlib:1.1.1
-com.netflix.nebula:nebula-bintray-plugin:7.3.0
+com.netflix.nebula:nebula-bintray-plugin:7.4.1
 com.squareup.moshi:moshi-kotlin:1.8.0
 com.squareup.moshi:moshi:1.8.0
 com.squareup.okhttp3:logging-interceptor:3.12.2
@@ -44,10 +44,10 @@ org.jetbrains.kotlin:kotlin-reflect:1.2.71
 org.jetbrains.kotlin:kotlin-stdlib-common:1.2.71
 org.jetbrains.kotlin:kotlin-stdlib:1.2.71
 org.jetbrains:annotations:13.0
-org.jfrog.buildinfo:build-info-api:2.13.10
-org.jfrog.buildinfo:build-info-client:2.13.10
-org.jfrog.buildinfo:build-info-extractor-gradle:4.9.8
-org.jfrog.buildinfo:build-info-extractor:2.13.10
+org.jfrog.buildinfo:build-info-api:2.13.11
+org.jfrog.buildinfo:build-info-client:2.13.11
+org.jfrog.buildinfo:build-info-extractor-gradle:4.9.9
+org.jfrog.buildinfo:build-info-extractor:2.13.11
 org.slf4j:slf4j-api:1.7.2
 xmlpull:xmlpull:1.1.3.1
 xpp3:xpp3_min:1.1.4c

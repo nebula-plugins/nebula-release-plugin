@@ -8,7 +8,7 @@ com.google.guava:guava:19.0
 com.googlecode.javaewah:JavaEWAH:1.1.6
 com.jcraft:jsch:0.1.54
 com.jcraft:jzlib:1.1.1
-com.netflix.nebula:nebula-bintray-plugin:7.3.0
+com.netflix.nebula:nebula-bintray-plugin:7.4.1
 com.netflix.nebula:nebula-test:7.3.0
 commons-io:commons-io:2.5
 junit:junit:4.12
