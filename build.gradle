@@ -40,16 +40,16 @@ compileGroovy.groovyOptions.configurationScript = file('src/groovyCompile/groovy
 
 
 dependencies {
-    compile 'org.eclipse.jgit:org.eclipse.jgit:5.1.1.201809181055-r'
-    compile ('org.ajoberstar.grgit:grgit-core:3.1.1') {
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:5.1.1.201809181055-r'
+    implementation ('org.ajoberstar.grgit:grgit-core:3.1.1') {
         exclude group: 'org.codehaus.groovy', module: 'groovy'
     }
-    compile 'com.github.zafarkhaja:java-semver:0.9.0'
-    compile platform("com.fasterxml.jackson:jackson-bom:2.9.9.20190807")
+    implementation 'com.github.zafarkhaja:java-semver:0.9.0'
+    implementation platform("com.fasterxml.jackson:jackson-bom:2.9.9.20190807")
 
     compileOnly platform("com.fasterxml.jackson:jackson-bom:2.9.9.20190807")
     compileOnly 'com.netflix.nebula:nebula-bintray-plugin:latest.release'
-    testCompile 'com.netflix.nebula:nebula-bintray-plugin:latest.release'
+    testImplementation 'com.netflix.nebula:nebula-bintray-plugin:latest.release'
 }
 
 pluginBundle {
