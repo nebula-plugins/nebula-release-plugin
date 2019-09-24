@@ -28,6 +28,8 @@ class ReleaseExtension {
 
     Boolean allowReleaseFromDetached = false
 
+    Boolean checkRemoteBranchOnRelease = false
+
     void addReleaseBranchPattern(String pattern) {
         releaseBranchPatterns.add(pattern)
     }

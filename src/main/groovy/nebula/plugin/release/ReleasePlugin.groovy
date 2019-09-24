@@ -169,6 +169,13 @@ class ReleasePlugin implements Plugin<Project> {
             if (shouldSkipGitChecks()) {
                 removeReleaseAndPrepLogic(project)
             }
+
+            project.gradle.taskGraph.whenReady { TaskExecutionGraph g ->
+                if(!nebulaReleaseExtension.checkRemoteBranchOnRelease) {
+                    removePrepLogic(project)
+                }
+            }
+
         } else {
             project.version = project.rootProject.version
         }
@@ -192,7 +199,15 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private void removeReleaseAndPrepLogic(Project project) {
+        removeReleaseLogic(project)
+        removePrepLogic(project)
+    }
+
+    private void removeReleaseLogic(Project project) {
         project.tasks.getByName('release').enabled = false
+    }
+
+    private void removePrepLogic(Project project) {
         project.tasks.getByName('prepare').enabled = false
     }
 
