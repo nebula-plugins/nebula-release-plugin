@@ -1049,6 +1049,58 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         version.toString().startsWith('0.1.0-snapshot.' + getUtcDateForComparison())
     }
 
+    def 'does not run prepare as default when releasing'() {
+        given:
+        def file = new File(projectDir, "test_file.txt")
+        file.text = "DUMMY"
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Add file")
+        git.push(all: true)
+        runTasksSuccessfully('candidate')
+        git.branch.add(name: "0.1.x")
+        file.text = "Updated dummy"
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Update file")
+        git.push(all: true)
+
+        when:
+        def result = runTasksSuccessfully('candidate')
+
+        then:
+        result.wasSkipped(':prepare')
+    }
+
+    def 'executes prepare if checkRemoteBranchOnRelease when releasing'() {
+        given:
+        buildFile << """
+            ext.dryRun = true
+            group = 'test'
+            ${applyPlugin(ReleasePlugin)}
+            ${applyPlugin(JavaPlugin)}
+
+            nebulaRelease { 
+                checkRemoteBranchOnRelease = true
+            }
+        """.stripIndent()
+        def file = new File(projectDir, "test_file.txt")
+        file.text = "DUMMY"
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Add file")
+        git.push(all: true)
+        runTasksSuccessfully('candidate')
+        git.branch.add(name: "0.1.x")
+        file.text = "Updated dummy"
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Update file")
+        git.push(all: true)
+
+        when:
+        def result = runTasksSuccessfully('candidate', '-Drelease.configurePrepareTaskEnabled=true')
+
+        then:
+        result.wasExecuted(':prepare')
+        !result.wasSkipped(':prepare')
+    }
 
     private void replaceDevWithImmutableSnapshot() {
         new File(buildFile.parentFile, "gradle.properties").text = """
