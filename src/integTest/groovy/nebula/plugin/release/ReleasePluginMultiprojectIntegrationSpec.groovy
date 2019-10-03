@@ -38,7 +38,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         addSubproject('test-release-common', '// hello')
         addSubproject('test-release-client', '''\
             dependencies {
-                compile project(':test-release-common')
+                implementation project(':test-release-common')
             }
         '''.stripIndent())
 
@@ -119,7 +119,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
             buildscript {
                 repositories { jcenter() }
                 dependencies {
-                    classpath 'com.netflix.nebula:nebula-publishing-plugin:4.4.4'
+                    classpath 'com.netflix.nebula:nebula-publishing-plugin:14.0.0'
                 }
             }
 
@@ -150,7 +150,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         """.stripIndent()
 
         when:
-        runTasksSuccessfully('tasks', '--all')
+        runTasksSuccessfully('tasks', '--all', '--warning-mode', 'all')
 
         then:
         noExceptionThrown()
