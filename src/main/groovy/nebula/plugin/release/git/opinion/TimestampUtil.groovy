@@ -23,7 +23,7 @@ import java.time.format.DateTimeFormatter
 class TimestampUtil {
 
     private static DateTimeFormatter timestampDateFormat = DateTimeFormatter
-            .ofPattern("YYYYMMddHHmmssSSS")
+            .ofPattern("YYYYMMddHHmm")
             .withZone(ZoneOffset.UTC)
 
     static String getUTCFormattedTimestamp() {
