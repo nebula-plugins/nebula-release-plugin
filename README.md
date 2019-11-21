@@ -137,9 +137,9 @@ The plugin assumes Git root is in the same location as Gradle root. If this isn'
 
 Historically, this plugin generated versions using build metadata which comes after the `+` sign. While we suggest using this approach to be semver compliant, some people has raised their need for removing the build medata and make it part of the pre-release string.
 
-For this, starting on version `11.0.0` we have introduced a `sanitizedVersion` flag. Ex.
+For this, starting on version `11.0.0` we have introduced a `sanitizeVersion` flag. Ex.
 
-`./gradlew -PsanitizeVersion devSnapshot`
+`./gradlew -Prelease.sanitizeVersion=true devSnapshot`
 
 This will generate a version string similar to: `0.1.0-dev.2.e1c43c7`
 
