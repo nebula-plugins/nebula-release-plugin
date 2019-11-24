@@ -104,6 +104,10 @@ provide the release.useLastTag project property, e.g.
 
     git tag v1.0.0
     ./gradlew -Prelease.useLastTag=true final
+    
+The build will fail if the current commit does not have a tag name following the versioning scheme. If you want to use the tag name if available and otherwise fallback to the default versioning strategy, you may provide the release.tryUsingLastTag project property, e.g.
+
+    ./gradlew -Prelease.tryUsingLastTag=true build
 
 # Overriding version from the command line
 
