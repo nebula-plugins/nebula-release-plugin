@@ -86,6 +86,7 @@ class ReleasePlugin implements Plugin<Project> {
             releaseExtension.with {
                 versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
+                versionStrategy new OverrideStrategies.TryReleaseLastTagStrategy()
                 versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
                 versionStrategy NetflixOssStrategies.SNAPSHOT(project)
                 versionStrategy NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project)

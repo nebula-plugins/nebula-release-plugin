@@ -33,6 +33,32 @@ import org.slf4j.LoggerFactory
  */
 class OverrideStrategies {
 
+    static class TryReleaseLastTagStrategy implements VersionStrategy {
+        static final String PROPERTY_NAME = 'release.tryUsingLastTag'
+
+        @Override
+        String getName() {
+            return 'try-using-last-tag'
+        }
+
+        @Override
+        boolean selector(Project project, Grgit grgit) {
+            if (!(project.hasProperty(PROPERTY_NAME) && project.property(PROPERTY_NAME).toString().toBoolean())) {
+                return false
+            }
+            try {
+                new ReleaseLastTagStrategy(project).infer(project, grgit)
+            } catch (GradleException e) {
+                return false
+            }
+            return true
+        }
+
+        @Override
+        ReleaseVersion infer(Project project, Grgit grgit) {
+            return new ReleaseLastTagStrategy(project).infer(project, grgit)
+        }
+    }
 
     static class ReleaseLastTagStrategy implements VersionStrategy {
         static final String PROPERTY_NAME = 'release.useLastTag'
