@@ -849,6 +849,28 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         then:
         new File(projectDir, "build/libs/${moduleName}-19.71.1.jar").exists()
     }
+    def 'try using last tag on tagged version succeeds'() {
+        git.tag.add(name: 'v42.5.3')
+
+        when:
+        runTasksSuccessfully('final', '-Prelease.tryUsingLastTag=true')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
+    }
+
+    def 'tryUsingLastTag not on tagged version succeeds with fallback to default strategy'() {
+        git.tag.add(name: 'v42.5.3')
+        new File(projectDir, "foo").text = "Hi"
+        git.add(patterns: ['foo'] as Set)
+        git.commit(message: 'Something got committed')
+
+        when:
+        def version = inferredVersionForTask('-Prelease.tryUsingLastTag=true', 'build')
+
+        then:
+        version.toString().contains('42.6.0-dev.1+')
+    }
 
     def 'able to release with the override of version calculation'() {
         when:
