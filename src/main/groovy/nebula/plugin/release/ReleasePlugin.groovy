@@ -183,7 +183,9 @@ class ReleasePlugin implements Plugin<Project> {
         boolean isParent = project.rootProject.subprojects.any { it.parent == project }
         if (!isParent) {
             project.plugins.withType(JavaPlugin) {
-                project.rootProject.tasks.getByName('release').dependsOn project.tasks.getByName('build')
+                project.rootProject.tasks.named('release').configure {
+                    it.dependsOn project.tasks.named('build')
+                }
             }
         }
 
@@ -204,11 +206,15 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private void removeReleaseLogic(Project project) {
-        project.tasks.getByName('release').enabled = false
+        project.tasks.named('release').configure {
+            it.enabled = false
+        }
     }
 
     private void removePrepLogic(Project project) {
-        project.tasks.getByName('prepare').enabled = false
+        project.tasks.named('prepare').configure {
+            it.enabled = false
+        }
     }
 
     private void determineStage(List<String> cliTasks, ReleaseCheck releaseCheck, boolean replaceDevSnapshots) {
@@ -277,14 +283,18 @@ class ReleasePlugin implements Plugin<Project> {
 
     void configurePublishingIfPresent() {
         project.plugins.withType(MavenPublishPlugin) {
-            project.tasks.withType(GenerateMavenPom) { task ->
-                project.rootProject.tasks.getByName('postRelease').dependsOn(task)
+            project.tasks.withType(GenerateMavenPom).configureEach { task ->
+                project.rootProject.tasks.named('postRelease').configure {
+                    it.dependsOn(task)
+                }
             }
         }
 
         project.plugins.withType(IvyPublishPlugin) {
-            project.tasks.withType(GenerateIvyDescriptor) { task ->
-                project.rootProject.tasks.getByName('postRelease').dependsOn(task)
+            project.tasks.withType(GenerateIvyDescriptor).configureEach { task ->
+                project.rootProject.tasks.named('postRelease').configure{
+                    it.dependsOn(task)
+                }
             }
         }
     }
@@ -292,16 +302,18 @@ class ReleasePlugin implements Plugin<Project> {
     @CompileDynamic
     void configureBintrayTasksIfPresent() {
         project.plugins.withId('nebula.nebula-bintray') {
-            project.tasks.withType(PublishToMavenRepository) { Task task ->
+            project.tasks.withType(PublishToMavenRepository).configureEach { Task task ->
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
                 }
-                project.rootProject.tasks.getByName('postRelease').dependsOn(task)
+                project.rootProject.tasks.named('postRelease').configure {
+                    it.dependsOn(task)
+                }
             }
         }
 
         project.plugins.withId('com.jfrog.bintray') {
-            project.tasks.withType(Class.forName('com.jfrog.bintray.gradle.tasks.BintrayUploadTask')) { Task task ->
+            project.tasks.withType(Class.forName('com.jfrog.bintray.gradle.tasks.BintrayUploadTask')).configureEach { Task task ->
                 logger.info('Configuring jfrog bintray plugin to work with release plugin')
                 project.plugins.withType(JavaPlugin) {
                     task.dependsOn(project.tasks.build)
@@ -314,7 +326,7 @@ class ReleasePlugin implements Plugin<Project> {
             logger.info('Configuring jfrog artifactory plugin to work with release plugin')
             if (isClassPresent('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) {
                 project.logger.warn 'Please upgrade com.jfrog.artifactory (org.jfrog.buildinfo:build-info-extractor-gradle:) to version 4.6.0 or above'
-                project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')) { Task task ->
+                project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.BuildInfoBaseTask')).configureEach { Task task ->
                     project.plugins.withType(JavaPlugin) {
                         task.dependsOn(project.tasks.build)
                     }
@@ -322,7 +334,7 @@ class ReleasePlugin implements Plugin<Project> {
                 }
             } else if(isClassPresent('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) {
                 // JFrog remove BuildInfoBaseTask see https://www.jfrog.com/jira/browse/GAP-281
-                project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')) { Task task ->
+                project.tasks.withType(Class.forName('org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask')).configureEach { Task task ->
                     project.plugins.withType(JavaPlugin) {
                         task.dependsOn(project.tasks.build)
                     }

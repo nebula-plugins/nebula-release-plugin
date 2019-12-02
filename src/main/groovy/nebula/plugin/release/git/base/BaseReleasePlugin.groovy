@@ -61,7 +61,7 @@ class BaseReleasePlugin implements Plugin<Project> {
         }
 
         project.tasks.configureEach { task ->
-            if (name != PREPARE_TASK_NAME) {
+            if (task.name != PREPARE_TASK_NAME) {
                 task.shouldRunAfter PREPARE_TASK_NAME
             }
         }
