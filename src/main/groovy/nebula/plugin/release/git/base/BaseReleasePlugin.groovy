@@ -52,16 +52,16 @@ class BaseReleasePlugin implements Plugin<Project> {
     }
 
     private void addPrepareTask(Project project, ReleasePluginExtension extension) {
-        project.tasks.create(PREPARE_TASK_NAME) {
-            description = 'Verifies that the project could be released.'
-            doLast {
-                ext.grgit = extension.grgit
+        project.tasks.register(PREPARE_TASK_NAME) {
+            it.description = 'Verifies that the project could be released.'
+            it.doLast {
+                project.ext.grgit = extension.grgit
                 prepare(extension)
             }
         }
 
         project.tasks.configureEach { task ->
-            if (name != PREPARE_TASK_NAME) {
+            if (task.name != PREPARE_TASK_NAME) {
                 task.shouldRunAfter PREPARE_TASK_NAME
             }
         }
@@ -69,11 +69,11 @@ class BaseReleasePlugin implements Plugin<Project> {
 
 
     private void addReleaseTask(Project project, ReleasePluginExtension extension) {
-        project.tasks.create(RELEASE_TASK_NAME) {
-            description = 'Releases this project.'
-            dependsOn PREPARE_TASK_NAME
-            doLast {
-                release(project, ext, extension)
+        project.tasks.register(RELEASE_TASK_NAME) {
+            it.description = 'Releases this project.'
+            it.dependsOn PREPARE_TASK_NAME
+            it.doLast {
+                release(project, project.ext, extension)
             }
         }
     }

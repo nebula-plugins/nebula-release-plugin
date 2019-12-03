@@ -53,8 +53,8 @@ class ExperimentalReleasePlugin implements Plugin<Project> {
             }
         }
 
-        project.tasks.all { task ->
-            if (name != PREPARE_TASK_NAME) {
+        project.tasks.configureEach { task ->
+            if (task.name != PREPARE_TASK_NAME) {
                 task.shouldRunAfter PREPARE_TASK_NAME
             }
         }
