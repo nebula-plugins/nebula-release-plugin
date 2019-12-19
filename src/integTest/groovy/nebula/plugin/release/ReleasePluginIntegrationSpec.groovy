@@ -912,7 +912,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         Tag tag = originGit.tag.list().find { it.commit == commit }
         tag.commit.abbreviatedId == commit.abbreviatedId
 
-        originGit.branch.list().size() == 2
+        originGit.branch.list().size() == 1
     }
 
     def 'branches with slashes that do not match specified patterns do not fail builds'() {

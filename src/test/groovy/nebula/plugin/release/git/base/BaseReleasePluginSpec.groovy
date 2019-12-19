@@ -23,6 +23,7 @@ import org.ajoberstar.grgit.service.TagService
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
+import spock.lang.Ignore
 import spock.lang.Specification
 
 class BaseReleasePluginSpec extends Specification {
@@ -89,58 +90,9 @@ class BaseReleasePluginSpec extends Specification {
         BaseReleasePlugin.release(project, project.ext, releaseExtension)
 
         then:
-        1 * repo.push([remote: 'origin', refsOrSpecs: ['refs/heads/master', 'v1.2.3']])
+        1 * repo.push([remote: 'origin', refsOrSpecs: ['v1.2.3']])
         _ * repo.branch >> branch
         _ * branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
         1 * repo.tag >> tag
-    }
-
-    def 'release task pushes branch but not tag if it was not created'() {
-        given:
-        VersionStrategy strategy = [
-                getName: { 'a' },
-                selector: {proj, repo2 -> true },
-                infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, false)}] as VersionStrategy
-        Grgit repo = GroovyMock()
-        BranchService branch = GroovyMock()
-
-        ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
-        releaseExtension.grgit = repo
-        releaseExtension.versionStrategy(strategy)
-
-        when:
-        BaseReleasePlugin.release(project, project.ext, releaseExtension)
-
-        then:
-        1 * repo.push([remote: 'origin', refsOrSpecs: ['refs/heads/master']])
-        _ * repo.branch >> branch
-        _ * branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
-        0 * repo.tag
-
-    }
-
-    def 'release task skips push if on detached head'() {
-        given:
-        VersionStrategy strategy = [
-                getName: { 'a' },
-                selector: {proj, repo2 -> true },
-                infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, false)}] as VersionStrategy
-        Grgit repo = GroovyMock()
-        BranchService branch = GroovyMock()
-        repo.branch >> branch
-
-
-        ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
-        releaseExtension.grgit = repo
-        releaseExtension.versionStrategy(strategy)
-
-        when:
-        BaseReleasePlugin.release(project, project.ext, releaseExtension)
-
-        then:
-        1 * branch.current >> new Branch(fullName: 'HEAD')
-        0 * repo.push(_)
-        0 * repo.tag
-
     }
 }
