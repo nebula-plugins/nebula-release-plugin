@@ -98,11 +98,6 @@ class BaseReleasePlugin implements Plugin<Project> {
         ext.grgit = grgit
         ext.toPush = []
 
-        // if not on detached HEAD, push branch
-        if (grgit.branch.current.fullName != 'HEAD') {
-            ext.toPush << grgit.branch.current.fullName
-        }
-
         if(project.version instanceof String) {
             throw new GradleException("version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter")
         }
