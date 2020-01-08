@@ -57,9 +57,7 @@ class OverrideStrategies {
             def shouldSelect = project.hasProperty(propertyName) ? project.property(propertyName).toString().toBoolean() : false
 
             if (shouldSelect) {
-                project.tasks.named('release').configure {
-                    it.enabled = false // remove tagging op since already tagged
-                }
+                project.tasks.getByName('release').enabled = false // remove tagging op since already tagged
             }
 
             shouldSelect
