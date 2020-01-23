@@ -1102,6 +1102,33 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         !result.wasSkipped(':prepare')
     }
 
+
+    def 'fails when branch ends with dash'() {
+        given:
+        buildFile << """
+            ext.dryRun = true
+            group = 'test'
+            ${applyPlugin(ReleasePlugin)}
+            ${applyPlugin(JavaPlugin)}
+
+            nebulaRelease { 
+                checkRemoteBranchOnRelease = true
+            }
+        """.stripIndent()
+        def file = new File(projectDir, "test_file.txt")
+        file.text = "DUMMY"
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Add file")
+        git.push(all: true)
+        git.checkout(branch: 'my-branch-with-dash-', createBranch: true)
+
+        when:
+        def result = runTasksWithFailure('candidate', '-Drelease.configurePrepareTaskEnabled=true')
+
+        then:
+        result.standardError.contains('Nebula Release plugin does not support branches that end with dash (-)')
+    }
+
     private void replaceDevWithImmutableSnapshot() {
         new File(buildFile.parentFile, "gradle.properties").text = """
 nebula.release.features.replaceDevWithImmutableSnapshot=true
