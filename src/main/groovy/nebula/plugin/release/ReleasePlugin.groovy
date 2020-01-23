@@ -21,6 +21,7 @@ import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.TagStrategy
 import nebula.plugin.release.git.semver.SemVerStrategy
+import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.Commit
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Status
@@ -387,7 +388,11 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void checkForBadBranchNames() {
-        if (git.branch.current().name ==~ /release\/\d+(\.\d+)?/) {
+        Branch currentBranch = git.branch.current()
+        if(currentBranch.name.endsWith('-')) {
+            throw new GradleException('Nebula Release plugin does not support branches that end with dash (-)')
+        }
+        if (currentBranch.name ==~ /release\/\d+(\.\d+)?/) {
             throw new GradleException('Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>')
         }
     }
