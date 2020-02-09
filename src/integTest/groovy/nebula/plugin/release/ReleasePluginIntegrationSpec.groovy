@@ -626,7 +626,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current tag does not appear to be a final version"
+        result.standardError.contains "Current tag (3.1.2-rc.1) does not appear to be a final version"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
@@ -650,7 +650,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current tag does not appear to be a prerelease version"
+        result.standardError.contains "Current tag (3.1.2) does not appear to be a pre-release version. A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version. For more information, please refer to https://semver.org/"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
     }
@@ -815,7 +815,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current tag does not appear to be a prerelease version"
+        result.standardError.contains "Current tag (3.1.2) does not appear to be a pre-release version. A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version. For more information, please refer to https://semver.org/"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
     }
 
@@ -988,7 +988,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains 'Current tag does not appear to be a final version'
+        result.standardError.contains 'Current tag (3.1.2-release2) does not appear to be a final version'
     }
 
 

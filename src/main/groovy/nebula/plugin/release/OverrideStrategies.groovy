@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release
 
+import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
@@ -85,15 +86,16 @@ class OverrideStrategies {
                     throw new GradleException("Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.")
                 }
 
-                def preReleaseVersion = locate.any.preReleaseVersion
+                Version version = locate.any
+                def preReleaseVersion = version.preReleaseVersion
                 if (releaseStage == 'rc') {
                     if (!(preReleaseVersion ==~ /rc\.\d+/)) {
-                        throw new GradleException("Current tag does not appear to be a prerelease version")
+                        throw new GradleException("Current tag ($version) does not appear to be a pre-release version. A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version. For more information, please refer to https://semver.org/")
                     }
                 }
                 if (releaseStage == 'final') {
                     if (preReleaseVersion) {
-                        throw new GradleException("Current tag does not appear to be a final version")
+                        throw new GradleException("Current tag ($version) does not appear to be a final version. final task can not be used with prerelease versions. A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version.  For more information, please refer to https://semver.org/")
                     }
                 }
 
