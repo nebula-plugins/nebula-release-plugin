@@ -121,7 +121,6 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             ReleaseExtension nebulaReleaseExtension = project.extensions.create(NEBULA_RELEASE_EXTENSION_NAME, ReleaseExtension)
-            NetflixOssStrategies.BuildMetadata.nebulaReleaseExtension = nebulaReleaseExtension
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP

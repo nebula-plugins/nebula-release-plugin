@@ -41,13 +41,13 @@ class NetflixOssStrategies {
     static SemVerStrategy DEVELOPMENT(Project project) {
         Strategies.DEVELOPMENT.copyWith(
                 normalStrategy: getScopes(project),
-                buildMetadataStrategy: BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
+                buildMetadataStrategy: developmentMetadataStrategy(project))
     }
 
     static SemVerStrategy IMMUTABLE_SNAPSHOT(Project project) {
         Strategies.IMMUTABLE_SNAPSHOT.copyWith(
                 normalStrategy: getScopes(project),
-                buildMetadataStrategy: BuildMetadata.DEVELOPMENT_METADATA_STRATEGY)
+                buildMetadataStrategy: developmentMetadataStrategy(project))
     }
 
     static SemVerStrategy PRE_RELEASE(Project project) {
@@ -127,11 +127,9 @@ class NetflixOssStrategies {
         }
     }
 
-    @CompileDynamic
-    static final class BuildMetadata {
-        static ReleaseExtension nebulaReleaseExtension
-
-        static final PartialSemVerStrategy DEVELOPMENT_METADATA_STRATEGY = { state ->
+    static private PartialSemVerStrategy developmentMetadataStrategy(Project project) {
+        return { state ->
+            def nebulaReleaseExtension = project.extensions.findByType(ReleaseExtension)
             boolean needsBranchMetadata = true
             nebulaReleaseExtension.releaseBranchPatterns.each {
                 if (state.currentBranch.name =~ it) {
@@ -144,5 +142,4 @@ class NetflixOssStrategies {
             state.copyWith(inferredBuildMetadata: metadata)
         }
     }
-
 }
