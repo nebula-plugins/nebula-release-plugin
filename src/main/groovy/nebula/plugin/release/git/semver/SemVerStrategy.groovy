@@ -184,7 +184,7 @@ final class SemVerStrategy implements DefaultVersionStrategy {
         logger.warn('Inferred project: {}, version: {}', project.name, versionAsString)
 
         if (enforcePrecedence && version < nearestVersion.any) {
-            throw new GradleException("Inferred version (${version}) cannot be lower than nearest (${nearestVersion.any}). Required by selected strategy.")
+            throw new GradleException("Based on previous tags in this branch the nearest version is ${nearestVersion.any} You're attempting to release ${version} based on the tag recently pushed. Please look at https://github.com/nebula-plugins/nebula-release-plugin/wiki/Error-Messages-Explained#orggradleapigradleexception-inferred-version-cannot-be-lower-than-nearest-required-by-selected-strategy")
         }
 
 
