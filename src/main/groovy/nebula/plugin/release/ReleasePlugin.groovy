@@ -50,14 +50,19 @@ class ReleasePlugin implements Plugin<Project> {
     static Logger logger = Logging.getLogger(ReleasePlugin)
 
     static final String SNAPSHOT_TASK_NAME = 'snapshot'
+    static final String SNAPSHOT_TASK_NAME_OPTIONAL_COLON = ":$SNAPSHOT_TASK_NAME"
     static final String SNAPSHOT_SETUP_TASK_NAME = 'snapshotSetup'
     static final String DEV_SNAPSHOT_TASK_NAME = 'devSnapshot'
     static final String DEV_SNAPSHOT_SETUP_TASK_NAME = 'devSnapshotSetup'
+    static final String DEV_SNAPSHOT_SETUP_TASK_NAME_OPTIONAL_COLON = ":$DEV_SNAPSHOT_SETUP_TASK_NAME"
     static final String IMMUTABLE_SNAPSHOT_TASK_NAME = 'immutableSnapshot'
     static final String IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME = 'immutableSnapshotSetup'
+    static final String IMMUTABLE_SNAPSHOT_TASK_NAME_OPTIONAL_COLON = ":$IMMUTABLE_SNAPSHOT_TASK_NAME"
     static final String CANDIDATE_TASK_NAME = 'candidate'
+    static final String CANDIDATE_TASK_NAME_OPTIONAL_COLON = ":$CANDIDATE_TASK_NAME"
     static final String CANDIDATE_SETUP_TASK_NAME = 'candidateSetup'
     static final String FINAL_TASK_NAME = 'final'
+    static final String FINAL_TASK_NAME_WITH_OPTIONAL_COLON = ":$FINAL_TASK_NAME"
     static final String FINAL_SETUP_TASK_NAME = 'finalSetup'
     static final String RELEASE_CHECK_TASK_NAME = 'releaseCheck'
     static final String NEBULA_RELEASE_EXTENSION_NAME = 'nebulaRelease'
@@ -233,16 +238,16 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private boolean determineStage(List<String> cliTasks, TaskProvider<ReleaseCheck> releaseCheck, boolean replaceDevSnapshots) {
-        def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME)
-        def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME)
-        def hasImmutableSnapshot = cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME)
-        def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME)
-        def hasFinal = cliTasks.contains(FINAL_TASK_NAME)
+        def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME) || cliTasks.contains(SNAPSHOT_TASK_NAME_OPTIONAL_COLON)
+        def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME) || cliTasks.contains(DEV_SNAPSHOT_SETUP_TASK_NAME_OPTIONAL_COLON)
+        def hasImmutableSnapshot = cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME) || cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME_OPTIONAL_COLON)
+        def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME) ||  cliTasks.contains(CANDIDATE_TASK_NAME_OPTIONAL_COLON)
+        def hasFinal = cliTasks.contains(FINAL_TASK_NAME) || cliTasks.contains(FINAL_TASK_NAME_WITH_OPTIONAL_COLON)
         if ([hasSnapshot, hasImmutableSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
             throw new GradleException('Only one of snapshot, immutableSnapshot, devSnapshot, candidate, or final can be specified.')
         }
 
-        def isSnapshotRelease = hasSnapshot || hasDevSnapshot || (!hasCandidate && !hasFinal)
+        def isSnapshotRelease = hasSnapshot || hasDevSnapshot || hasImmutableSnapshot || (!hasCandidate && !hasFinal)
 
         releaseCheck.configure {
             it.isSnapshotRelease = isSnapshotRelease
