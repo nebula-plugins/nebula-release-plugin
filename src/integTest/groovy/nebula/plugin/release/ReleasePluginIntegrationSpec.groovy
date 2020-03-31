@@ -90,6 +90,14 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
     }
 
+    def 'choose immutableSnapshot version with optional colon (:)'() {
+        when:
+        def version = inferredVersionForTask(':immutableSnapshot')
+
+        then:
+        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
+    }
+
     def 'choose devSnapshot uncommitted version'() {
         given:
         new File(projectDir, 'newfile').createNewFile()
@@ -126,6 +134,29 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
     def 'choose candidate version'() {
         when:
         def version = inferredVersionForTask('candidate')
+
+        then:
+        version == normal('0.1.0-rc.1')
+    }
+
+    def 'choose candidate version with optional colon (:) for root project'() {
+        when:
+        def version = inferredVersionForTask(':candidate')
+
+        then:
+        version == normal('0.1.0-rc.1')
+    }
+
+    def 'choose candidate version with optional colon (:) for root project - multi-module'() {
+        setup:
+        addSubproject('sub1')
+        addSubproject('sub2')
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Update file")
+        git.push(all: true)
+
+        when:
+        def version = inferredVersionForTask(':candidate')
 
         then:
         version == normal('0.1.0-rc.1')
@@ -173,6 +204,29 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
     def 'choose release version'() {
         when:
         def version = inferredVersionForTask('final')
+
+        then:
+        version == normal('0.1.0')
+    }
+
+    def 'choose release version with optional colon (:) for root project'() {
+        when:
+        def version = inferredVersionForTask(':final')
+
+        then:
+        version == normal('0.1.0')
+    }
+
+    def 'choose release version with optional colon (:) for root project - multi-module'() {
+        setup:
+        addSubproject('sub1')
+        addSubproject('sub2')
+        git.add(patterns: ['.'] as Set)
+        git.commit(message: "Update file")
+        git.push(all: true)
+
+        when:
+        def version = inferredVersionForTask(':final')
 
         then:
         version == normal('0.1.0')
