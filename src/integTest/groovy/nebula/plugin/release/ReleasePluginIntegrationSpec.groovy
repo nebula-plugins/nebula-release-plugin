@@ -1183,6 +1183,63 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         result.standardError.contains('Nebula Release plugin does not support branches that end with dash (-)')
     }
 
+    @Unroll
+    def 'useLastTag errors out if version has invalid number of digits - #version'() {
+        git.tag.add(name: "v$version")
+
+        when:
+        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains "Current commit has following tags: [v${version}] but they were not recognized as valid versions"
+        !new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
+
+        where:
+        version << [
+                '42.5.3.5',
+                '42.5.3.5.3',
+                '42.5.3.1-rc.1',
+                '42.5.3.1.4-rc.1',
+        ]
+    }
+
+    @Unroll
+    def 'release with the override of version calculation errors out if version has invalid number of digits - #version'() {
+        when:
+        def result = runTasksWithFailure('final', "-Prelease.version=${version}")
+
+        then:
+        result.standardError.contains "Supplied release.version ($version) is not valid per semver spec. For more information, please refer to https://semver.org/"
+        !new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
+        !originGit.tag.list()*.name.contains("v${version}")
+
+        where:
+        version << [
+                '42.5.3.5',
+                '42.5.3.5.3',
+                '42.5.3.1-rc.1',
+                '42.5.3.1.4-rc.1',
+        ]
+    }
+
+    @Unroll
+    def 'release with the override of version calculation does not errors out if version has invalid number of digits but verification is off - #version'() {
+        when:
+        def result = runTasksSuccessfully('final', "-Prelease.version=${version}", "-Prelease.ignoreSuppliedVersionVerification=true")
+
+        then:
+        !result.standardError.contains("Supplied release.version ($version) is not valid per semver spec. For more information, please refer to https://semver.org/")
+        new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
+
+        where:
+        version << [
+                '42.5.3.5',
+                '42.5.3.5.3',
+                '42.5.3.1-rc.1',
+                '42.5.3.1.4-rc.1',
+        ]
+    }
+
     private void replaceDevWithImmutableSnapshot() {
         new File(buildFile.parentFile, "gradle.properties").text = """
 nebula.release.features.replaceDevWithImmutableSnapshot=true
