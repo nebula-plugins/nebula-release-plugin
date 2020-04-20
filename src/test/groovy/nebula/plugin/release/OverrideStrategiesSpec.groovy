@@ -37,7 +37,7 @@ class OverrideStrategiesSpec extends ProjectSpec {
 
     def 'able to set via gradle property and sanitize'() {
         setup:
-        project.ext.set('release.version', '42.5.0+feature')
+        project.ext.set('release.version', '42.5.0-rc.1+feature')
         project.ext.set('release.sanitizeVersion', true)
 
         when:
@@ -48,6 +48,6 @@ class OverrideStrategiesSpec extends ProjectSpec {
         }
 
         then:
-        project.version.toString() == '42.5.0.feature'
+        project.version.toString() == '42.5.0-rc.1.feature'
     }
 }

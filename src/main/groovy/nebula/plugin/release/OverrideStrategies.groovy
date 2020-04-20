@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release
 
+import com.github.zafarkhaja.semver.UnexpectedCharacterException
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
@@ -119,6 +120,8 @@ class OverrideStrategies {
 
     static class GradlePropertyStrategy implements VersionStrategy {
         static final String PROPERTY_NAME = 'release.version'
+        static final String VERSION_VERIFICATION_PROPERTY_NAME = 'release.ignoreSuppliedVersionVerification'
+
         Project project
         String propertyName
 
@@ -148,9 +151,26 @@ class OverrideStrategies {
                 requestedVersion = VersionSanitizerUtil.sanitize(requestedVersion.toString())
             }
 
+            boolean isValidVersion = validateRequestedVersion(requestedVersion)
+            if(!isValidVersion) {
+                throw new GradleException("Supplied release.version ($requestedVersion) is not valid per semver spec. For more information, please refer to https://semver.org/")
+            }
+
             new ReleaseVersion(requestedVersion, null, true)
         }
 
+        private boolean validateRequestedVersion(String version) {
+            if(project.hasProperty(VERSION_VERIFICATION_PROPERTY_NAME)) {
+                return true
+            }
+
+            try {
+                Version.valueOf(version[0] == 'v' ? version[1..-1] : version)
+                return true
+            } catch(UnexpectedCharacterException e) {
+                return false
+            }
+        }
 
     }
 
