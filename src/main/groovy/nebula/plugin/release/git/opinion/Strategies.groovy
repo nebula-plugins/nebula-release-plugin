@@ -175,7 +175,7 @@ final class Strategies {
          * Always use the scope provided to increment the normal component.
          */
         static PartialSemVerStrategy useScope(ChangeScope scope) {
-            return closure { state -> incrementNormalFromScope(state, scope) }
+            return closure { state -> incrementNormalFromScope(state, scope)}
         }
     }
 
@@ -307,6 +307,7 @@ final class Strategies {
     static final SemVerStrategy SNAPSHOT = DEFAULT.copyWith(
             name: 'snapshot',
             stages: ['SNAPSHOT'] as SortedSet,
+            normalStrategy: one(Normal.USE_SCOPE_PROP, Normal.USE_NEAREST_ANY, Normal.useScope(ChangeScope.MINOR)),
             allowDirtyRepo: true,
             preReleaseStrategy: PreRelease.STAGE_FIXED,
             createTag: false,

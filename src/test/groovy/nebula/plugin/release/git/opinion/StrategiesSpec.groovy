@@ -343,8 +343,8 @@ class StrategiesSpec extends Specification {
         Strategies.SNAPSHOT.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, false)
         where:
         scope   | stage      | nearestNormal | nearestAny   | repoDirty | expected
-        null    | null       | '1.0.0'       | '1.0.0'      | false     | '1.0.1-SNAPSHOT'
-        null    | null       | '1.0.0'       | '1.0.0'      | true      | '1.0.1-SNAPSHOT'
+        null    | null       | '1.0.0'       | '1.0.0'      | false     | '1.1.0-SNAPSHOT'
+        null    | null       | '1.0.0'       | '1.0.0'      | true      | '1.1.0-SNAPSHOT'
         null    | 'SNAPSHOT' | '1.0.0'       | '1.1.0-beta' | true      | '1.1.0-SNAPSHOT'
         null    | 'SNAPSHOT' | '1.0.0'       | '1.1.0-zed'  | true      | '1.1.0-SNAPSHOT'
         'PATCH' | 'SNAPSHOT' | '1.0.0'       | '1.1.0-zed'  | true      | '1.0.1-SNAPSHOT'
