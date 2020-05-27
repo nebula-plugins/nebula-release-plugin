@@ -145,7 +145,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
                     }
                 }
 
-                sub.tasks.artifactoryPublish.dependsOn ":\${sub.name}:generateDescriptorFileForNebulaIvyPublication"
+                sub.tasks.findByName('artifactoryPublish').dependsOn ":\${sub.name}:generateDescriptorFileForNebulaIvyPublication"
             }
         """.stripIndent()
 

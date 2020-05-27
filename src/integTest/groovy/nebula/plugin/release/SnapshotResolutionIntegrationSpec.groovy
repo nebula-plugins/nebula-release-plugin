@@ -21,7 +21,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
 
 
             dependencies {
-                compile 'test:a:0.+'
+                implementation 'test:a:0.+'
             }
         """.stripIndent()
 
@@ -47,7 +47,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
 
 
             dependencies {
-                compile 'test:a:0.+'
+                implementation 'test:a:0.+'
             }
         """.stripIndent()
 
@@ -74,7 +74,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
 
 
             dependencies {
-                compile 'test:a:0.+'
+                implementation 'test:a:0.+'
             }
         """.stripIndent()
 
@@ -101,7 +101,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
 
 
             dependencies {
-                compile 'test:a:0.+'
+                implementation 'test:a:0.+'
             }
         """.stripIndent()
 
