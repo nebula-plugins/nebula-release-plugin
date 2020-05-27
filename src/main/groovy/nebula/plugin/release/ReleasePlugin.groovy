@@ -116,7 +116,7 @@ class ReleasePlugin implements Plugin<Project> {
                             if (tagExists(grgit, previousVersion)) {
                                 excludes << previousVersion
                             }
-                            grgit.log([includes: ['HEAD'], excludes: excludes] as Map<String, Object>).inject(builder) { bldr, Commit commit ->
+                            grgit.log([includes: ['HEAD'], excludes: excludes]).inject(builder) { bldr, Commit commit ->
                                 bldr << "- ${commit.id}: ${commit.shortMessage}\n"
                             }
                         }
@@ -374,8 +374,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     private boolean tagExists(Grgit grgit, String revStr) {
         try {
-            grgit.resolve.toCommit(revStr)
-            return true
+            return grgit.resolve.toCommit(revStr)
         } catch (e) {
             return false
         }
