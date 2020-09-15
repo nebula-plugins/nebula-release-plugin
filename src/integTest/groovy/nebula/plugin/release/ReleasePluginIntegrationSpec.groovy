@@ -521,7 +521,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         result.failure != null
-        outputContains(result, 'testexample does not match one of the included patterns: [master, HEAD, (release(-|/))?\\d+(\\.\\d+)?\\.x, v?\\d+\\.\\d+\\.\\d+]')
+        outputContains(result, 'testexample does not match one of the included patterns: [master, HEAD, main, (release(-|/))?\\d+(\\.\\d+)?\\.x, v?\\d+\\.\\d+\\.\\d+]')
     }
 
     def 'version includes branch name on devSnapshot of non release branch'() {
@@ -1238,6 +1238,18 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
                 '42.5.3.1-rc.1',
                 '42.5.3.1.4-rc.1',
         ]
+    }
+
+    def 'final release using main branch'() {
+        git.checkout(branch: 'main', createBranch: true)
+
+        when:
+        def result = runTasksSuccessfully('final')
+
+        then:
+        result.wasExecuted('final')
+        result.standardOutput.contains('Tagging repository as v0.1.0')
+        result.standardOutput.contains('Pushing changes in [v0.1.0] to origin')
     }
 
     private void replaceDevWithImmutableSnapshot() {
