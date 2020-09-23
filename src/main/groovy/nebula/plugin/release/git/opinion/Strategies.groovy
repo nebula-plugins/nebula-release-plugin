@@ -343,7 +343,8 @@ final class Strategies {
             allowDirtyRepo: true,
             preReleaseStrategy: all(PreRelease.STAGE_FLOAT, PreRelease.TIMESTAMP, PreRelease.SHOW_UNCOMMITTED),
             buildMetadataStrategy: BuildMetadata.COMMIT_ABBREVIATED_ID,
-            createTag: false
+            createTag: false,
+            enforcePrecedence: false
     )
 
     /**
