@@ -1252,6 +1252,31 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         result.standardOutput.contains('Pushing changes in [v0.1.0] to origin')
     }
 
+    def 'Can create devSnapshot with scope patch if candidate for next minor is present'() {
+        git.tag.add(name: 'v3.1.2')
+        git.tag.add(name: 'v3.2.0-rc.1')
+        git.tag.add(name: 'v3.2.0-rc.2')
+
+        when:
+        def version =  inferredVersionForTask('devSnapshot', '-Prelease.scope=patch')
+
+        then:
+        version == dev('3.1.3-dev.0+')
+    }
+
+    def 'Can create devSnapshot with scope patch if candidate for next minor is present - immutable snapshot'() {
+        replaceDevWithImmutableSnapshot()
+        git.tag.add(name: 'v3.1.2')
+        git.tag.add(name: 'v3.2.0-rc.1')
+        git.tag.add(name: 'v3.2.0-rc.2')
+
+        when:
+        def version =  inferredVersionForTask('devSnapshot', '-Prelease.scope=patch')
+
+        then:
+        version.toString().startsWith("3.1.3-snapshot." + getUtcDateForComparison())
+    }
+
     private void replaceDevWithImmutableSnapshot() {
         new File(buildFile.parentFile, "gradle.properties").text = """
 nebula.release.features.replaceDevWithImmutableSnapshot=true
