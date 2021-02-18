@@ -4,7 +4,15 @@ import nebula.test.IntegrationTestKitSpec
 import nebula.test.dependencies.DependencyGraphBuilder
 import nebula.test.dependencies.GradleDependencyGenerator
 
+import org.gradle.util.GradleVersion
+
 class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
+
+    def setup() {
+        if (GradleVersion.current().baseVersion < GradleVersion.version("7.0")) {
+            settingsFile << "enableFeaturePreview('VERSION_ORDERING_V2')"
+        }
+    }
 
     def 'choose immutableSnapshot version if no release candidate'() {
         def graph = new DependencyGraphBuilder()
@@ -58,7 +66,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
         result.output.contains("test:a:0.+ -> 0.0.2-dev.1+23sd")
     }
 
-    def 'choose candidate version instead of immutable if release candidate is present'() {
+    def 'choose immutable version instead of candidate if both is present'() {
         def graph = new DependencyGraphBuilder()
                 .addModule('test:a:0.0.1')
                 .addModule('test:a:0.0.2-rc.1')
@@ -82,7 +90,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
         def result = runTasks('dependencies')
 
         then:
-        result.output.contains("test:a:0.+ -> 0.0.2-rc.1")
+        result.output.contains("test:a:0.+ -> 0.0.2-snapshot.")
     }
 
     def 'choose candidate version instead of devSnapshot if release candidate is present'() {
