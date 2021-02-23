@@ -117,7 +117,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
     def 'tasks task does not fail with our publishing plugin'() {
         buildFile << """
             buildscript {
-                repositories { jcenter() }
+                repositories { mavenCentral() }
                 dependencies {
                     classpath 'com.netflix.nebula:nebula-publishing-plugin:14.0.0'
                 }

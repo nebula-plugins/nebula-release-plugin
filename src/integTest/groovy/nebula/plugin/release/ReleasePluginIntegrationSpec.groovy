@@ -270,7 +270,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         buildFile << """
             ${applyPlugin(NebulaBintrayPublishingPlugin)}
 
-            repositories { jcenter() }
+            repositories { mavenCentral() }
             dependencies {
                 testImplementation 'junit:junit:4.12'
             }

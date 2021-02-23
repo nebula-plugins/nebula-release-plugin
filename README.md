@@ -18,7 +18,7 @@ This plugin provides opinions and tasks for the release process provided by [gra
 -or-
 
     buildscript {
-        repositories { jcenter() }
+        repositories { mavenCentral() }
         dependencies {
             classpath 'com.netflix.nebula:nebula-release-plugin:15.2.0'
         }
