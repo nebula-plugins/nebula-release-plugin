@@ -1,29 +1,15 @@
 nebula-release-plugin
 =====================
 
-![Support Status](https://img.shields.io/badge/nebula-supported-brightgreen.svg)
-[![Build Status](https://travis-ci.com/nebula-plugins/nebula-release-plugin.svg?branch=master)](https://travis-ci.com/nebula-plugins/nebula-release-plugin)
-[![Coverage Status](https://coveralls.io/repos/nebula-plugins/nebula-release-plugin/badge.svg?branch=master&service=github)](https://coveralls.io/github/nebula-plugins/nebula-release-plugin?branch=master)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nebula-plugins/nebula-release-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+![Support Status](https://img.shields.io/badge/nebula-active-green.svg)
+[![Gradle Plugin Portal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/com.netflix.nebula/nebula-release-plugin/maven-metadata.xml.svg?label=gradlePluginPortal)](https://plugins.gradle.org/plugin/nebula.release)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.netflix.nebula/nebula-release-plugin/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.netflix.nebula/nebula-release-plugin)
+![CI](https://github.com/nebula-plugins/nebula-release-plugin/actions/workflows/ci.yml/badge.svg)
+![Publish](https://github.com/nebula-plugins/nebula-release-plugin/actions/workflows/publish.yml/badge.svg)
 [![Apache 2.0](https://img.shields.io/github/license/nebula-plugins/nebula-release-plugin.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
+
 This plugin provides opinions and tasks for the release process provided by [gradle-git](https://github.com/ajoberstar/gradle-git).
-
-# Applying the plugin
-
-    plugins {
-        id 'nebula.release' version '15.2.0'
-    }
-
--or-
-
-    buildscript {
-        repositories { mavenCentral() }
-        dependencies {
-            classpath 'com.netflix.nebula:nebula-release-plugin:15.2.0'
-        }
-    }
-    apply plugin: 'nebula.release'
 
 # Optional Configuration
 
