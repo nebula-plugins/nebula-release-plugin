@@ -24,13 +24,9 @@ description 'Release opinions on top of gradle-git'
 group = 'com.netflix.nebula'
 
 contacts {
-    'rob.spieldenner@gmail.com' {
-        moniker 'Rob Spieldenner'
-        github 'rspieldenner'
-    }
-    'roberto@perezalcolea.info' {
-        moniker 'Roberto Perez Alcolea'
-        github 'rpalcolea'
+    'nebula-plugins-oss@netflix.com' {
+        moniker 'Nebula Plugins Maintainers'
+        github 'nebula-plugins'
     }
 }
 
