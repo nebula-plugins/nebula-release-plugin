@@ -104,7 +104,7 @@ release {
     }
 
     @Unroll
-    def 'infer #expectedVersion for #task task when not using snapshot strategy with scope #scope'() {
+    def 'infer release version #expectedReleaseVersion and build  version #expectedBuildVersion for #task task when not using snapshot strategy with scope #scope'() {
         when:
         def resultBuild = runTasksSuccessfully('build', "-Prelease.scope=${scope}")
 
