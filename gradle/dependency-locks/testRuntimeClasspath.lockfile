@@ -15,7 +15,7 @@ com.googlecode.javaewah:JavaEWAH:1.1.7
 com.jcraft:jsch:0.1.55
 com.jcraft:jzlib:1.1.1
 com.netflix.nebula:nebula-bintray-plugin:7.4.1
-com.netflix.nebula:nebula-test:7.8.6
+com.netflix.nebula:nebula-test:9.0.0
 com.squareup.moshi:moshi-kotlin:1.8.0
 com.squareup.moshi:moshi:1.8.0
 com.squareup.okhttp3:logging-interceptor:3.12.2
@@ -25,7 +25,7 @@ com.squareup.retrofit2:converter-moshi:2.5.0
 com.squareup.retrofit2:retrofit:2.5.0
 com.thoughtworks.xstream:xstream:1.4.10
 commons-codec:commons-codec:1.8
-commons-io:commons-io:2.5
+commons-io:commons-io:2.2
 commons-lang:commons-lang:2.4
 commons-logging:commons-logging:1.2
 junit:junit:4.12
