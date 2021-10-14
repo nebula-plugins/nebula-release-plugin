@@ -43,12 +43,10 @@ abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
 
         git = Grgit.clone(dir: projectDir, uri: origin.absolutePath) as Grgit
 
-        new File(projectDir, '.gitignore') << '''
-            .gradle-test-kit
-            .gradle
-            build/
-            gradle.properties
-        '''.stripIndent()
+        new File(projectDir, '.gitignore') << '''.gradle-test-kit/
+.gradle/
+build/
+gradle.properties'''.stripIndent()
 
         setupBuild()
 
