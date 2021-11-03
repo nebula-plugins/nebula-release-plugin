@@ -120,7 +120,7 @@ The plugin assumes Git root is in the same location as Gradle root. If this isn'
 
 ### Sanitize versions
 
-Historically, this plugin generated versions using build metadata which comes after the `+` sign. While we suggest using this approach to be semver compliant, some people has raised their need for removing the build medata and make it part of the pre-release string.
+Historically, this plugin generated versions using build metadata which comes after the `+` sign. While we suggest using this approach to be semver compliant, some people have raised their need for removing the build medata and making it part of the pre-release string.
 
 For this, starting on version `11.0.0` we have introduced a `sanitizeVersion` flag. Ex.
 
