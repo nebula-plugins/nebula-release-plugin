@@ -111,7 +111,7 @@ class ReleasePlugin implements Plugin<Project> {
                         builder << "Release of ${version.version}\n\n"
 
                         if (version.previousVersion) {
-                            String previousVersion = "v${version.previousVersion}^{commit}"
+                            String previousVersion = "${project.release.tagStrategy.toTagString(version.previousVersion)}^{commit}"
                             List excludes = []
                             if (tagExists(grgit, previousVersion)) {
                                 excludes << previousVersion
