@@ -881,6 +881,34 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         new File(projectDir, "build/libs/${moduleName}-0.1.0.jar").exists()
     }
 
+    def 'prefixNameWithV is false tag strategy works as expected with build message finding previous tag version'() {
+        buildFile << '''\
+            release {
+              tagStrategy {
+                prefixNameWithV = false
+              }
+            }
+        '''.stripIndent()
+        git.add(patterns: ['build.gradle'] as Set)
+        git.commit(message: 'setting tag strategy')
+
+        git.tag.add(name: '0.2.0')
+
+        new File(projectDir, 'test.txt').text = 'test'
+        git.add(patterns: ['test.txt'])
+        git.commit(message: 'Add file')
+
+        when:
+        runTasksSuccessfully('final')
+
+        then:
+        new File(projectDir, "build/libs/${moduleName}-0.3.0.jar").exists()
+        Tag tag = originGit.tag.list().find { it.name.contains("0.3.0") }
+        tag.shortMessage.contains("Release of 0.3.0")
+        tag.fullMessage.contains("Add file")
+        !tag.fullMessage.contains("setting tag strategy")
+    }
+
     def 'use last tag with custom tag strategy'() {
         buildFile << '''\
             release {
