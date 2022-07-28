@@ -16,9 +16,11 @@
 package nebula.plugin.release
 
 import org.gradle.api.plugins.JavaPlugin
+import spock.lang.Ignore
 import spock.lang.Issue
 import spock.lang.Unroll
 
+@Ignore("We need to visit the configuration/evaluation of extension")
 @Issue("Inconsistent versioning for SNAPSHOT stage https://github.com/nebula-plugins/nebula-release-plugin/issues/187")
 class Issue187IntegrationSpec extends GitVersioningIntegrationSpec {
     @Override

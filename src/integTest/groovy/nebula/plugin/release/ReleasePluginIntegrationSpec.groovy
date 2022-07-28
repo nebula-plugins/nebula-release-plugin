@@ -22,6 +22,7 @@ import nebula.test.functional.ExecutionResult
 import org.ajoberstar.grgit.Tag
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
+import spock.lang.Ignore
 import spock.lang.Unroll
 
 class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
@@ -881,6 +882,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         new File(projectDir, "build/libs/${moduleName}-0.1.0.jar").exists()
     }
 
+    @Ignore("We need to visit the configuration/evaluation of extension")
     def 'use last tag with custom tag strategy'() {
         buildFile << '''\
             release {
@@ -1073,6 +1075,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         version.toString().startsWith('0.1.0-dev.2.')
     }
 
+    @Ignore("We need to visit the configuration/evaluation of extension")
     def 'immutableSnapshot works as default when changed'() {
         buildFile << '''\
             release {
