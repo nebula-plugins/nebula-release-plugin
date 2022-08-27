@@ -16,9 +16,7 @@
 package nebula.plugin.release
 
 import org.gradle.api.plugins.JavaPlugin
-import spock.lang.Ignore
 
-@Ignore
 class DefaultVersionStrategyOverrideViaPropertyIntegrationSpec extends GitVersioningIntegrationSpec {
     @Override
     def setupBuild() {
@@ -60,10 +58,10 @@ tasks.named('final').configure {
         }
         
         dependencies {
-             compileOnly "com.netflix.nebula:nebula-release-plugin:latest.release"
+             implementation "com.netflix.nebula:nebula-release-plugin:latest.release"
              compileOnly localGroovy()
              compileOnly gradleApi()
-             compileOnly ('org.ajoberstar.grgit:grgit-core:4.0.2') {
+             implementation ('org.ajoberstar.grgit:grgit-core:4.0.2') {
                     exclude group: 'org.codehaus.groovy', module: 'groovy'
              }
         }
@@ -119,7 +117,7 @@ gradleEnterprise {
 
         when:
         def resultBuild = runTasksSuccessfully('final',
-                '-Prelease.defaultVersioningStrategy=com.netflix.nebula.custom.versioning.MyCustomVersioningStrategy', '--scan')
+                '-Prelease.defaultVersioningStrategy=com.netflix.nebula.custom.versioning.MyCustomVersioningStrategy', '--scan', '--refresh-dependencies')
 
         then:
         resultBuild.standardOutput.contains('MY VERSION: 0.0.2')
