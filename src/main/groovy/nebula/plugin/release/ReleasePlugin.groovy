@@ -45,6 +45,7 @@ import org.gradle.api.tasks.TaskProvider
 
 class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
+    public static final String DEFAULT_VERSIONING_STRATEGY = 'release.defaultVersioningStrategy'
     Project project
     Grgit git
     static Logger logger = Logging.getLogger(ReleasePlugin)
@@ -91,21 +92,32 @@ class ReleasePlugin implements Plugin<Project> {
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
 
             SemVerStrategy defaultStrategy = replaceDevSnapshots ? NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project) : NetflixOssStrategies.DEVELOPMENT(project)
+            def propertyBasedStrategy
+            if(project.hasProperty(DEFAULT_VERSIONING_STRATEGY)) {
+                propertyBasedStrategy = getPropertyBasedVersioningStrategy()
+            }
             releaseExtension.with {
                 versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
                 versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
+                if(propertyBasedStrategy) {
+                    versionStrategy propertyBasedStrategy
+                }
                 versionStrategy NetflixOssStrategies.SNAPSHOT(project)
                 versionStrategy NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project)
                 versionStrategy NetflixOssStrategies.DEVELOPMENT(project)
                 versionStrategy NetflixOssStrategies.PRE_RELEASE(project)
                 versionStrategy NetflixOssStrategies.FINAL(project)
-                defaultVersionStrategy = defaultStrategy
+                if(propertyBasedStrategy) {
+                    defaultVersionStrategy = propertyBasedStrategy
+                } else {
+                    defaultVersionStrategy = defaultStrategy
+                }
             }
 
             releaseExtension.with {
                 grgit = git
-                tagStrategy { TagStrategy tagStrategy ->
+                    tagStrategy { TagStrategy tagStrategy ->
                     tagStrategy.generateMessage = { ReleaseVersion version ->
                         StringBuilder builder = new StringBuilder()
                         builder << "Release of ${version.version}\n\n"
@@ -200,6 +212,7 @@ class ReleasePlugin implements Plugin<Project> {
             project.version = project.rootProject.version
         }
 
+
         boolean isParent = project.rootProject.subprojects.any { it.parent == project }
         if (!isParent) {
             project.plugins.withType(JavaPlugin) {
@@ -218,6 +231,16 @@ class ReleasePlugin implements Plugin<Project> {
 
         configurePublishingIfPresent()
         configureBintrayTasksIfPresent()
+    }
+
+    private Object getPropertyBasedVersioningStrategy() {
+        String clazzName = project.property(DEFAULT_VERSIONING_STRATEGY).toString()
+        try {
+            return Class.forName(clazzName).getDeclaredConstructor().newInstance()
+        } catch(ClassNotFoundException e) {
+            logger.error("Could not initialize a versioning strategy using class: $clazzName", e)
+            return null
+        }
     }
 
     private void removeReleaseAndPrepLogic(Project project) {
