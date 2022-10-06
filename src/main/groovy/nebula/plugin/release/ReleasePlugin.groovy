@@ -74,7 +74,10 @@ class ReleasePlugin implements Plugin<Project> {
     void apply(Project project) {
         this.project = project
 
-        def gitRoot = project.hasProperty('git.root') ? project.property('git.root') : project.rootProject.projectDir
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file('local.properties').newDataInputStream())
+        
+        def gitRoot = properties.getProperty('git.root') ? (project.hasProperty('git.root') ? project.property('git.root') : project.rootProject.projectDir) : project.rootProject.projectDir
 
         try {
             git = Grgit.open(dir: gitRoot)
