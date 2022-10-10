@@ -55,7 +55,7 @@ pluginBundle {
 gradlePlugin {
     plugins {
         nebulaRelease {
-            id = 'nebula.release'
+            id = 'com.netflix.nebula.release'
             displayName = 'Nebula Release plugin'
             description = project.description
             implementationClass = 'nebula.plugin.release.ReleasePlugin'
