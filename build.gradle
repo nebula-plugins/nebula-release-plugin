@@ -16,7 +16,7 @@
 
 
 plugins {
-    id 'nebula.plugin-plugin' version '17.0.0'
+    id 'com.netflix.nebula.plugin-plugin' version '19.0.1'
 }
 
 description 'Release opinions on top of gradle-git'
