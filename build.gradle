@@ -60,5 +60,11 @@ gradlePlugin {
             description = project.description
             implementationClass = 'nebula.plugin.release.ReleasePlugin'
         }
+        nebulaReleaseLegacy {
+            id = 'nebula.release'
+            displayName = 'Nebula Release plugin'
+            description = project.description
+            implementationClass = 'nebula.plugin.release.ReleasePlugin'
+        }
     }
 }
