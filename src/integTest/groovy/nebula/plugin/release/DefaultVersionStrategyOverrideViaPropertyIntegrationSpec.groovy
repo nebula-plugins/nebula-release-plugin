@@ -61,7 +61,7 @@ tasks.named('final').configure {
              implementation "com.netflix.nebula:nebula-release-plugin:latest.release"
              compileOnly localGroovy()
              compileOnly gradleApi()
-             implementation ('org.ajoberstar.grgit:grgit-core:4.0.2') {
+             implementation ('org.ajoberstar.grgit:grgit-core:4.1.1') {
                     exclude group: 'org.codehaus.groovy', module: 'groovy'
              }
         }
