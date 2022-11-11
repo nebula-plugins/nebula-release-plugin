@@ -16,7 +16,7 @@
 
 
 plugins {
-    id 'com.netflix.nebula.plugin-plugin' version '19.0.2'
+    id 'com.netflix.nebula.plugin-plugin' version '20.0.0'
 }
 
 description 'Release opinions on top of gradle-git'
@@ -48,10 +48,6 @@ dependencies {
     testImplementation 'com.netflix.nebula:nebula-bintray-plugin:7.4.1'
 }
 
-pluginBundle {
-    tags = ['nebula', 'release', 'versioning', 'semver']
-}
-
 gradlePlugin {
     plugins {
         nebulaRelease {
@@ -59,12 +55,14 @@ gradlePlugin {
             displayName = 'Nebula Release plugin'
             description = project.description
             implementationClass = 'nebula.plugin.release.ReleasePlugin'
+            tags.set(['nebula', 'release', 'versioning', 'semver'])
         }
         nebulaReleaseLegacy {
             id = 'nebula.release'
             displayName = 'Nebula Release plugin'
             description = project.description
             implementationClass = 'nebula.plugin.release.ReleasePlugin'
+            tags.set(['nebula', 'release', 'versioning', 'semver'])
         }
     }
 }
