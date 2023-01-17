@@ -16,7 +16,7 @@
 
 
 plugins {
-    id 'com.netflix.nebula.plugin-plugin' version '20.3.0'
+    id 'com.netflix.nebula.plugin-plugin' version '20.4.0'
 }
 
 description 'Release opinions on top of gradle-git'
@@ -30,7 +30,6 @@ contacts {
     }
 }
 
-targetCompatibility = JavaVersion.VERSION_1_8
 
 compileGroovy.groovyOptions.configurationScript = file('src/groovyCompile/groovycConfig.groovy')
 
