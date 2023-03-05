@@ -154,15 +154,14 @@ class ReleasePlugin implements Plugin<Project> {
             TaskProvider immutableSnapshotSetupTask = project.tasks.register(IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME)
             TaskProvider devSnapshotSetupTask = project.tasks.register(DEV_SNAPSHOT_SETUP_TASK_NAME)
             TaskProvider candidateSetupTask = project.tasks.register(CANDIDATE_SETUP_TASK_NAME) {
-                it.doLast {
+                it.configure {
                     project.allprojects.each { it.status = 'candidate' }
                 }
             }
             TaskProvider finalSetupTask = project.tasks.register(FINAL_SETUP_TASK_NAME) {
-                it.doLast {
+                it.configure {
                     project.allprojects.each { it.status = 'release' }
                 }
-
             }
             [snapshotSetupTask, immutableSnapshotSetupTask, devSnapshotSetupTask, candidateSetupTask, finalSetupTask].each {
                 it.configure {
