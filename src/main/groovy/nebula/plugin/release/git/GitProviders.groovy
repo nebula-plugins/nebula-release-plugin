@@ -13,12 +13,30 @@ class GitProviders {
         abstract ExecOperations getExecOperations()
 
         String obtain() {
-            ByteArrayOutputStream output = new ByteArrayOutputStream()
-            execOperations.exec {
-                it.commandLine "git", "status", "--porcelain"
-                it.standardOutput = output
-            }
-            return new String(output.toByteArray(), Charset.defaultCharset())
+            return executeGitCommand(execOperations, "git", "status", "--porcelain")
         }
+    }
+
+    static abstract class CurrentBranchNameProvider implements ValueSource<String, ValueSourceParameters.None> {
+        @Inject
+        abstract ExecOperations getExecOperations()
+
+        String obtain() {
+           try {
+               return executeGitCommand(execOperations, "git", "rev-parse", "--abbrev-ref", "HEAD")
+                       .replaceAll("\n", "").trim()
+           } catch (Exception e) {
+               return null
+           }
+        }
+    }
+
+    static String executeGitCommand(ExecOperations execOperations, Object... args) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream()
+        execOperations.exec {
+            it.commandLine args
+            it.standardOutput = output
+        }
+        return new String(output.toByteArray(), Charset.defaultCharset())
     }
 }

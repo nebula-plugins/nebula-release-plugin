@@ -22,7 +22,6 @@ import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.TagStrategy
 import nebula.plugin.release.git.semver.SemVerStrategy
-import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.Commit
 import org.ajoberstar.grgit.Grgit
 import org.eclipse.jgit.errors.RepositoryNotFoundException
@@ -76,11 +75,13 @@ class ReleasePlugin implements Plugin<Project> {
 
     private final ProviderFactory providers
     private final Provider gitStatusProvider
+    private final Provider gitBranchNameProvider
 
     @Inject
     ReleasePlugin(ProviderFactory providerFactory) {
         this.providers = providerFactory
         this.gitStatusProvider = providers.of(GitProviders.GitStatusProvider.class) {}
+        this.gitBranchNameProvider = providers.of(GitProviders.CurrentBranchNameProvider.class) {}
     }
 
     @CompileDynamic
@@ -154,7 +155,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP
-                it.branchName = releaseExtension.grgit.branch.current().name
+                it.branchName = gitBranchNameProvider.get()
                 it.patterns = nebulaReleaseExtension
             }
 
@@ -426,11 +427,14 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void checkForBadBranchNames() {
-        Branch currentBranch = git.branch.current()
-        if(currentBranch.name.endsWith('-')) {
+        String currentBranch = gitBranchNameProvider.getOrNull()
+        if(!currentBranch) {
+            return
+        }
+        if(currentBranch.endsWith('-')) {
             throw new GradleException('Nebula Release plugin does not support branches that end with dash (-)')
         }
-        if (currentBranch.name ==~ /release\/\d+(\.\d+)?/) {
+        if (currentBranch ==~ /release\/\d+(\.\d+)?/) {
             throw new GradleException('Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>')
         }
     }
