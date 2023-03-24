@@ -17,6 +17,7 @@ package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.util.ConfigureUtil
+import nebula.plugin.release.git.GitOps
 import org.ajoberstar.grgit.Grgit
 
 import org.gradle.api.GradleException
@@ -57,6 +58,11 @@ class ReleasePluginExtension {
      * The repository to infer the version from.
      */
     Grgit grgit
+
+    /**
+     * Used to execute git operations
+     */
+    GitOps gitOps
 
     /**
      * The remote to fetch changes from and push changes to.

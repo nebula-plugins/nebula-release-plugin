@@ -16,11 +16,11 @@
 package nebula.plugin.release
 
 import groovy.transform.CompileDynamic
-import nebula.plugin.release.git.GitProviders
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.TagStrategy
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.semver.SemVerStrategy
 import org.ajoberstar.grgit.Commit
 import org.ajoberstar.grgit.Grgit
@@ -33,8 +33,6 @@ import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.provider.Provider
-import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.publish.ivy.IvyPublication
 import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
@@ -43,6 +41,7 @@ import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.TaskCollection
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.process.ExecOperations
 
 import javax.inject.Inject
 
@@ -73,15 +72,11 @@ class ReleasePlugin implements Plugin<Project> {
     static final String POST_RELEASE_TASK_NAME = 'postRelease'
     static final String GROUP = 'Nebula Release'
 
-    private final ProviderFactory providers
-    private final Provider gitStatusProvider
-    private final Provider gitBranchNameProvider
+    private final GitOps gitOperations
 
     @Inject
-    ReleasePlugin(ProviderFactory providerFactory) {
-        this.providers = providerFactory
-        this.gitStatusProvider = providers.of(GitProviders.GitStatusProvider.class) {}
-        this.gitBranchNameProvider = providers.of(GitProviders.CurrentBranchNameProvider.class) {}
+    ReleasePlugin(ExecOperations execOperations) {
+        this.gitOperations = new GitOps(execOperations)
     }
 
     @CompileDynamic
@@ -94,7 +89,7 @@ class ReleasePlugin implements Plugin<Project> {
         try {
             git = Grgit.open(dir: gitRoot)
         }
-        catch(RepositoryNotFoundException e) {
+        catch (RepositoryNotFoundException e) {
             this.project.version = '0.1.0-dev.0.uncommitted'
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
             return
@@ -107,14 +102,14 @@ class ReleasePlugin implements Plugin<Project> {
 
             SemVerStrategy defaultStrategy = replaceDevSnapshots ? NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project) : NetflixOssStrategies.DEVELOPMENT(project)
             def propertyBasedStrategy
-            if(project.hasProperty(DEFAULT_VERSIONING_STRATEGY)) {
+            if (project.hasProperty(DEFAULT_VERSIONING_STRATEGY)) {
                 propertyBasedStrategy = getPropertyBasedVersioningStrategy()
             }
             releaseExtension.with {
                 versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
                 versionStrategy new OverrideStrategies.GradlePropertyStrategy(project)
-                if(propertyBasedStrategy) {
+                if (propertyBasedStrategy) {
                     versionStrategy propertyBasedStrategy
                 }
                 versionStrategy NetflixOssStrategies.SNAPSHOT(project)
@@ -122,16 +117,17 @@ class ReleasePlugin implements Plugin<Project> {
                 versionStrategy NetflixOssStrategies.DEVELOPMENT(project)
                 versionStrategy NetflixOssStrategies.PRE_RELEASE(project)
                 versionStrategy NetflixOssStrategies.FINAL(project)
-                if(propertyBasedStrategy) {
+                if (propertyBasedStrategy) {
                     defaultVersionStrategy = propertyBasedStrategy
                 } else {
                     defaultVersionStrategy = defaultStrategy
                 }
             }
 
-            releaseExtension.with {
+            releaseExtension.with {extension ->
                 grgit = git
-                    tagStrategy { TagStrategy tagStrategy ->
+                gitOps = gitOperations
+                tagStrategy { TagStrategy tagStrategy ->
                     tagStrategy.generateMessage = { ReleaseVersion version ->
                         StringBuilder builder = new StringBuilder()
                         builder << "Release of ${version.version}\n\n"
@@ -139,10 +135,10 @@ class ReleasePlugin implements Plugin<Project> {
                         if (version.previousVersion) {
                             String previousVersion = "v${version.previousVersion}^{commit}"
                             List excludes = []
-                            if (tagExists(grgit, previousVersion)) {
+                            if (gitOps.tagExists(previousVersion)) {
                                 excludes << previousVersion
                             }
-                            grgit.log([includes: ['HEAD'], excludes: excludes]).inject(builder) { bldr, Commit commit ->
+                            extension.grgit.log([includes: ['HEAD'], excludes: excludes]).inject(builder) { bldr, Commit commit ->
                                 bldr << "- ${commit.id}: ${commit.shortMessage}\n"
                             }
                         }
@@ -155,7 +151,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP
-                it.branchName = gitBranchNameProvider.get()
+                it.branchName = gitOperations.currentBranch()
                 it.patterns = nebulaReleaseExtension
             }
 
@@ -216,7 +212,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             project.gradle.taskGraph.whenReady { TaskExecutionGraph g ->
-                if(!nebulaReleaseExtension.checkRemoteBranchOnRelease) {
+                if (!nebulaReleaseExtension.checkRemoteBranchOnRelease) {
                     removePrepLogic(project)
                 }
             }
@@ -237,7 +233,7 @@ class ReleasePlugin implements Plugin<Project> {
 
         project.gradle.taskGraph.whenReady { TaskExecutionGraph g ->
             List<String> tasks = [DEV_SNAPSHOT_TASK_NAME, SNAPSHOT_TASK_NAME].collect { project.getPath() + it }
-            if(tasks.any { g.hasTask(it) }) {
+            if (tasks.any { g.hasTask(it) }) {
                 removeReleaseAndPrepLogic(project)
             }
         }
@@ -250,7 +246,7 @@ class ReleasePlugin implements Plugin<Project> {
         String clazzName = project.property(DEFAULT_VERSIONING_STRATEGY).toString()
         try {
             return Class.forName(clazzName).getDeclaredConstructor().newInstance()
-        } catch(ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             logger.error("Could not initialize a versioning strategy using class: $clazzName", e)
             return null
         }
@@ -277,7 +273,7 @@ class ReleasePlugin implements Plugin<Project> {
         def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME) || cliTasks.contains(SNAPSHOT_TASK_NAME_OPTIONAL_COLON)
         def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME) || cliTasks.contains(DEV_SNAPSHOT_SETUP_TASK_NAME_OPTIONAL_COLON)
         def hasImmutableSnapshot = cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME) || cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME_OPTIONAL_COLON)
-        def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME) ||  cliTasks.contains(CANDIDATE_TASK_NAME_OPTIONAL_COLON)
+        def hasCandidate = cliTasks.contains(CANDIDATE_TASK_NAME) || cliTasks.contains(CANDIDATE_TASK_NAME_OPTIONAL_COLON)
         def hasFinal = cliTasks.contains(FINAL_TASK_NAME) || cliTasks.contains(FINAL_TASK_NAME_WITH_OPTIONAL_COLON)
         if ([hasSnapshot, hasImmutableSnapshot, hasDevSnapshot, hasCandidate, hasFinal].count { it } > 2) {
             throw new GradleException('Only one of snapshot, immutableSnapshot, devSnapshot, candidate, or final can be specified.')
@@ -312,7 +308,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     private void checkStateForStage(boolean isSnapshotRelease) {
         if (!isSnapshotRelease) {
-            String status = gitStatusProvider.get()
+            String status = gitOperations.status()
             if (!status.empty) {
                 String message = new ErrorMessageFormatter().format(status)
                 throw new GradleException(message)
@@ -408,14 +404,6 @@ class ReleasePlugin implements Plugin<Project> {
         }
     }
 
-    private boolean tagExists(Grgit grgit, String revStr) {
-        try {
-            return grgit.resolve.toCommit(revStr)
-        } catch (e) {
-            return false
-        }
-    }
-
     boolean isClassPresent(String name) {
         try {
             Class.forName(name)
@@ -427,11 +415,11 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void checkForBadBranchNames() {
-        String currentBranch = gitBranchNameProvider.getOrNull()
-        if(!currentBranch) {
+        String currentBranch = gitOperations.currentBranch()
+        if (!currentBranch) {
             return
         }
-        if(currentBranch.endsWith('-')) {
+        if (currentBranch.endsWith('-')) {
             throw new GradleException('Nebula Release plugin does not support branches that end with dash (-)')
         }
         if (currentBranch ==~ /release\/\d+(\.\d+)?/) {
