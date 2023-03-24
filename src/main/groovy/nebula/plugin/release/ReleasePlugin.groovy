@@ -16,6 +16,7 @@
 package nebula.plugin.release
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.GitProviders
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
@@ -24,7 +25,6 @@ import nebula.plugin.release.git.semver.SemVerStrategy
 import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.Commit
 import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Status
 import org.eclipse.jgit.errors.RepositoryNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -34,6 +34,8 @@ import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.publish.ivy.IvyPublication
 import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
@@ -42,6 +44,8 @@ import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.TaskCollection
 import org.gradle.api.tasks.TaskProvider
+
+import javax.inject.Inject
 
 class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
@@ -69,6 +73,15 @@ class ReleasePlugin implements Plugin<Project> {
     static final String NEBULA_RELEASE_EXTENSION_NAME = 'nebulaRelease'
     static final String POST_RELEASE_TASK_NAME = 'postRelease'
     static final String GROUP = 'Nebula Release'
+
+    private final ProviderFactory providers
+    private final Provider gitStatusProvider
+
+    @Inject
+    ReleasePlugin(ProviderFactory providerFactory) {
+        this.providers = providerFactory
+        this.gitStatusProvider = providers.of(GitProviders.GitStatusProvider.class) {}
+    }
 
     @CompileDynamic
     @Override
@@ -298,8 +311,8 @@ class ReleasePlugin implements Plugin<Project> {
 
     private void checkStateForStage(boolean isSnapshotRelease) {
         if (!isSnapshotRelease) {
-            Status status = git.status()
-            if (!status.isClean()) {
+            String status = gitStatusProvider.get()
+            if (!status.empty) {
                 String message = new ErrorMessageFormatter().format(status)
                 throw new GradleException(message)
             }
