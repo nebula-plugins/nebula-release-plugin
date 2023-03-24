@@ -16,7 +16,7 @@
 package nebula.plugin.release.git.semver
 
 import com.github.zafarkhaja.semver.Version
-
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleaseVersion
 import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.Grgit
@@ -31,6 +31,7 @@ import spock.lang.Specification
 class SemVerStrategySpec extends Specification {
     Project project = GroovyMock()
     Grgit grgit = GroovyMock()
+    GitOps gitOps = GroovyMock()
 
     def 'selector returns false if stage is not set to valid value'() {
         given:
@@ -47,7 +48,7 @@ class SemVerStrategySpec extends Specification {
         given:
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: false)
         mockStage('one')
-        mockRepoClean(false)
+        mockRepoCleanLegacy(false)
         expect:
         !strategy.selector(project, grgit)
     }
@@ -56,7 +57,7 @@ class SemVerStrategySpec extends Specification {
         given:
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: true)
         mockStage('one')
-        mockRepoClean(false)
+        mockRepoCleanLegacy(false)
         mockBranchService()
         expect:
         strategy.selector(project, grgit)
@@ -66,7 +67,7 @@ class SemVerStrategySpec extends Specification {
         given:
         def strategy = new SemVerStrategy(stages: ['one', 'and'] as SortedSet, allowDirtyRepo: false)
         mockStage('one')
-        mockRepoClean(true)
+        mockRepoCleanLegacy(true)
         mockBranchService()
         expect:
         strategy.selector(project, grgit)
@@ -77,7 +78,7 @@ class SemVerStrategySpec extends Specification {
         def strategy = new SemVerStrategy(stages: ['one', 'two'] as SortedSet)
         mockStage('test')
         expect:
-        !strategy.defaultSelector(project, grgit)
+        !strategy.defaultSelector(project, gitOps)
     }
 
     def 'default selector returns true if stage is not defined'() {
@@ -86,16 +87,16 @@ class SemVerStrategySpec extends Specification {
         mockStage(null)
         mockRepoClean(true)
         expect:
-        strategy.defaultSelector(project, grgit)
+        strategy.defaultSelector(project, gitOps)
     }
 
     def 'default selector returns false if repo is dirty and not allowed to be'() {
         given:
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: false)
         mockStage(stageProp)
-        mockRepoClean(false)
+        mockRepoCleanLegacy(false)
         expect:
-        !strategy.defaultSelector(project, grgit)
+        !strategy.defaultSelector(project, gitOps)
         where:
         stageProp << [null, 'one']
     }
@@ -104,10 +105,10 @@ class SemVerStrategySpec extends Specification {
         given:
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: true)
         mockStage('one')
-        mockRepoClean(false)
+        mockRepoCleanLegacy(false)
         mockBranchService()
         expect:
-        strategy.defaultSelector(project, grgit)
+        strategy.defaultSelector(project, gitOps)
     }
 
     def 'default selector returns true if all criteria met'() {
@@ -117,14 +118,14 @@ class SemVerStrategySpec extends Specification {
         mockRepoClean(true)
         mockBranchService()
         expect:
-        strategy.defaultSelector(project, grgit)
+        strategy.defaultSelector(project, gitOps)
     }
 
     def 'infer returns correct version'() {
         given:
         mockScope(scope)
         mockStage(stage)
-        mockRepoClean(false)
+        mockRepoCleanLegacy(false)
         mockBranchService()
         def nearest = new NearestVersion(
             normal: Version.valueOf('1.2.2'),
@@ -153,7 +154,7 @@ class SemVerStrategySpec extends Specification {
 
     def 'infer fails if precedence enforced and violated'() {
         given:
-        mockRepoClean(false)
+        mockRepoCleanLegacy(false)
         mockBranchService()
         def nearest = new NearestVersion(any: Version.valueOf('1.2.3'))
         def locator = mockLocator(nearest)
@@ -174,11 +175,15 @@ class SemVerStrategySpec extends Specification {
         (0..1) * project.property('release.stage') >> stageProp
     }
 
-    private def mockRepoClean(boolean isClean) {
+    private def mockRepoCleanLegacy(boolean isClean) {
         Status status = GroovyMock()
         (0..2) * status.clean >> isClean
         (0..2) * grgit.status() >> status
         0 * status._
+    }
+
+    private def mockRepoClean(boolean isClean) {
+        (0..2) * gitOps.isCleanStatus() >> isClean
     }
 
     private def mockBranchService() {

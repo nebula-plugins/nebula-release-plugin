@@ -112,7 +112,7 @@ class ReleasePluginExtension {
             if (!selectedStrategy) {
                 boolean useDefault
                 if (defaultVersionStrategy instanceof DefaultVersionStrategy) {
-                    useDefault = defaultVersionStrategy.defaultSelector(project, grgit)
+                    useDefault = defaultVersionStrategy.defaultSelector(project, gitOps)
                 } else {
                     useDefault = defaultVersionStrategy?.selector(project, grgit)
                 }

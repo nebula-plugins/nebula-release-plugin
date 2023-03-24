@@ -21,6 +21,7 @@ import groovy.transform.PackageScope
 
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.VersionSanitizerUtil
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.DefaultVersionStrategy
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
@@ -89,25 +90,17 @@ final class SemVerStrategy implements DefaultVersionStrategy {
      */
     boolean enforcePrecedence
 
-    /**
-     * Determines whether this strategy can be used to infer the version as a default.
-     * <ul>
-     * <li>Return {@code false}, if the {@code release.stage} is not one listed in the {@code stages} property.</li>
-     * <li>Return {@code false}, if the repository has uncommitted changes and {@code allowDirtyRepo} is {@code false}.</li>
-     * <li>Return {@code true}, otherwise.</li>
-     * </ul>
-     */
     @Override
-    boolean defaultSelector(Project project, Grgit grgit) {
+    boolean defaultSelector(Project project, GitOps gitOps) {
         String stage = getPropertyOrNull(project, STAGE_PROP)
         if (stage != null && !stages.contains(stage)) {
             logger.info('Skipping {} default strategy because stage ({}) is not one of: {}', name, stage, stages)
             return false
-        } else if (!allowDirtyRepo && !grgit.status().clean) {
+        } else if (!allowDirtyRepo && !gitOps.isCleanStatus()) {
             logger.info('Skipping {} default strategy because repo is dirty.', name)
             return false
         } else {
-            String status = grgit.status().clean ? 'clean' : 'dirty'
+            String status = gitOps.isCleanStatus() ? 'clean' : 'dirty'
             logger.info('Using {} default strategy because repo is {} and no stage defined', name, status)
             return true
         }

@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
+import nebula.plugin.release.git.GitOps
 import org.ajoberstar.grgit.Grgit
 
 import org.gradle.api.GradleException
@@ -29,6 +30,7 @@ class ReleasePluginExtensionSpec extends Specification {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
         extension.grgit = GroovyMock(Grgit)
+        extension.gitOps = GroovyMock(GitOps)
         extension.versionStrategy([
             getName: { 'b' },
             selector: { proj, grgit -> false },
@@ -78,6 +80,7 @@ class ReleasePluginExtensionSpec extends Specification {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
         extension.grgit = GroovyMock(Grgit)
+        extension.gitOps = GroovyMock(GitOps)
         extension.versionStrategy([
             getName: { 'b' },
             selector: { proj, grgit -> false },
@@ -85,7 +88,7 @@ class ReleasePluginExtensionSpec extends Specification {
         extension.defaultVersionStrategy = [
             getName: { 'a' },
             selector: { proj, grgit -> false },
-            defaultSelector: { proj, grgit -> true },
+            defaultSelector: { proj, gitOps -> true },
             infer: { proj, grgit -> new ReleaseVersion('1.2.3', null, true) }] as DefaultVersionStrategy
         expect:
         project.version.toString() == '1.2.3'

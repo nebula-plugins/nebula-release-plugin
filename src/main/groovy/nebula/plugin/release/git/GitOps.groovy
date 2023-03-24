@@ -7,9 +7,18 @@ import java.nio.charset.Charset
 class GitOps implements Serializable {
 
     private final ExecOperations execOperations
+    private File rootDir
 
     GitOps(ExecOperations execOperations) {
         this.execOperations = execOperations
+    }
+
+    void setRootDir(File rootDir) {
+        this.rootDir = rootDir
+    }
+
+    String isCleanStatus() {
+        return executeGitCommand( "git", "status", "--porcelain").replaceAll("\n", "").trim().empty
     }
 
     String status() {
@@ -38,6 +47,7 @@ class GitOps implements Serializable {
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         execOperations.exec {
             it.commandLine args
+            it.workingDir = rootDir
             it.standardOutput = output
         }
         return new String(output.toByteArray(), Charset.defaultCharset())
