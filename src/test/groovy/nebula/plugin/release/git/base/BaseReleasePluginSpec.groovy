@@ -50,16 +50,14 @@ class BaseReleasePluginSpec extends Specification {
 
         then:
         notThrown(GradleException)
-        1 * repo.branch >> branch
         1 * gitOps.fetch('origin')
-
+        1 * gitOps.isCurrentBranchBehindRemote('origin') >> false
     }
 
     def 'prepare task fails if branch is behind'() {
         given:
         Grgit repo = GroovyMock()
         GitOps gitOps = GroovyMock()
-        BranchService branch = GroovyMock()
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
         releaseExtension.grgit = repo
         releaseExtension.gitOps = gitOps
@@ -70,10 +68,7 @@ class BaseReleasePluginSpec extends Specification {
         then:
         thrown(GradleException)
         1 * gitOps.fetch('origin')
-        _ * repo.branch >> branch
-        1 * branch.status([name: 'refs/heads/master']) >> new BranchStatus(behindCount: 2)
-        1 * branch.current() >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
-
+        1 * gitOps.isCurrentBranchBehindRemote('origin') >> true
     }
 
     def 'release task pushes branch and tag if created'() {

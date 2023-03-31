@@ -1,6 +1,5 @@
 package nebula.plugin.release.git
 
-import org.ajoberstar.grgit.Commit
 import org.ajoberstar.grgit.Tag
 import org.gradle.process.ExecOperations
 
@@ -19,49 +18,68 @@ class GitOps implements Serializable {
         this.rootDir = rootDir
     }
 
-    public File getRootDir() {
+    File getRootDir() {
         return this.rootDir
     }
 
     boolean isCleanStatus() {
-        return executeGitCommand( "git", "status", "--porcelain").replaceAll("\n", "").trim().empty
+        return executeGitCommand("git", "status", "--porcelain").replaceAll("\n", "").trim().empty
+    }
+
+    boolean isCurrentBranchBehindRemote(String remote) {
+        if (!isTrackingRemoteBranch(remote)) {
+            return true
+        }
+        try {
+            return executeGitCommand("git", "rev-list", "--count", "--left-only", "@{u}...HEAD").replaceAll("\n", "").trim() != "0"
+        } catch (Exception e) {
+            return false
+        }
+    }
+
+    boolean isTrackingRemoteBranch(String remote) {
+        try {
+            return executeGitCommand("git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}").contains("${remote}/")
+        } catch (Exception e) {
+            return false
+        }
     }
 
     boolean hasCommit() {
-       try {
-           String describe = executeGitCommand( "git", "describe", "--tags", "--always")
-           return describe != null && !describe.contains("fatal:")
-       } catch (Exception e) {
-           return false
-       }
+        try {
+            String describe = executeGitCommand("git", "describe", "--tags", "--always")
+            return describe != null && !describe.contains("fatal:")
+        } catch (Exception e) {
+            return false
+        }
     }
 
     String head() {
-        return executeGitCommand( "git", "rev-parse", "HEAD")
+        return executeGitCommand("git", "rev-parse", "HEAD")
     }
 
     List<Tag> headTags() {
-        return executeGitCommand( "git", "tag", "--points-at", "HEAD")
+        return executeGitCommand("git", "tag", "--points-at", "HEAD")
                 .split("\n")
                 .collect { new Tag(fullName: it) }
     }
 
     String status() {
-        return executeGitCommand( "git", "status", "--porcelain")
+        return executeGitCommand("git", "status", "--porcelain")
     }
 
     String currentBranch() {
-       try {
-           return executeGitCommand( "git", "rev-parse", "--abbrev-ref", "HEAD")
-                   .replaceAll("\n", "").trim()
-       } catch (Exception e) {
-           return null
-       }
+        try {
+            return executeGitCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
+                    .replaceAll("\n", "").trim()
+        } catch (Exception e) {
+            return null
+        }
     }
 
     boolean tagExists(String tag) {
         try {
-            return executeGitCommand( "git", "tag", "-l", "\"${tag}\"")
+            return executeGitCommand("git", "tag", "-l", "\"${tag}\"")
                     .replaceAll("\n", "").trim().contains(tag)
         } catch (Exception e) {
             return false
@@ -69,7 +87,7 @@ class GitOps implements Serializable {
     }
 
     void fetch(String remote) {
-        executeGitCommand( "git", "fetch", remote)
+        executeGitCommand("git", "fetch", remote)
     }
 
     String executeGitCommand(Object... args) {

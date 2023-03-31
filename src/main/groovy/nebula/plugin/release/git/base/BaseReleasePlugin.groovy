@@ -81,13 +81,12 @@ class BaseReleasePlugin implements Plugin<Project> {
 
     protected static void prepare(ReleasePluginExtension extension) {
         logger.info('Fetching changes from remote: {}', extension.remote)
-        Grgit grgit = extension.grgit
         GitOps gitOps = extension.gitOps
         gitOps.fetch(extension.remote)
 
+        boolean currentBranchIsBehindRemote = gitOps.isCurrentBranchBehindRemote(extension.remote)
         // if branch is tracking another, make sure it's not behind
-        def currentBranch = grgit.branch.current()
-        if (currentBranch.trackingBranch && grgit.branch.status(name: currentBranch.fullName).behindCount > 0) {
+        if (currentBranchIsBehindRemote) {
             throw new GradleException('Current branch is behind the tracked branch. Cannot release.')
         }
     }
