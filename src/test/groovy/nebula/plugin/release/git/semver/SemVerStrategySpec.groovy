@@ -38,7 +38,7 @@ class SemVerStrategySpec extends Specification {
         def strategy = new SemVerStrategy(stages: ['one', 'two'] as SortedSet)
         mockStage(stageProp)
         expect:
-        !strategy.selector(project, grgit)
+        !strategy.selector(project, gitOps)
         where:
         stageProp << [null, 'test']
     }
@@ -48,29 +48,29 @@ class SemVerStrategySpec extends Specification {
         given:
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: false)
         mockStage('one')
-        mockRepoCleanLegacy(false)
+        mockRepoClean(false)
         expect:
-        !strategy.selector(project, grgit)
+        !strategy.selector(project, gitOps)
     }
 
     def 'selector returns true if repo is dirty and allowed and other criteria met'() {
         given:
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: true)
         mockStage('one')
-        mockRepoCleanLegacy(false)
+        mockRepoClean(false)
         mockBranchService()
         expect:
-        strategy.selector(project, grgit)
+        strategy.selector(project, gitOps)
     }
 
     def 'selector returns true if all criteria met'() {
         given:
         def strategy = new SemVerStrategy(stages: ['one', 'and'] as SortedSet, allowDirtyRepo: false)
         mockStage('one')
-        mockRepoCleanLegacy(true)
+        mockRepoClean(true)
         mockBranchService()
         expect:
-        strategy.selector(project, grgit)
+        strategy.selector(project, gitOps)
     }
 
     def 'default selector returns false if stage is defined but not set to valid value'() {

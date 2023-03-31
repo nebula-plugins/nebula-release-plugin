@@ -106,7 +106,7 @@ class ReleasePluginExtension {
         @CompileDynamic
         private void infer() {
             VersionStrategy selectedStrategy = versionStrategies.find {  strategy ->
-                strategy.selector(project, grgit)
+                strategy.selector(project, gitOps)
             }
 
             if (!selectedStrategy) {
@@ -114,7 +114,7 @@ class ReleasePluginExtension {
                 if (defaultVersionStrategy instanceof DefaultVersionStrategy) {
                     useDefault = defaultVersionStrategy.defaultSelector(project, gitOps)
                 } else {
-                    useDefault = defaultVersionStrategy?.selector(project, grgit)
+                    useDefault = defaultVersionStrategy?.selector(project, gitOps)
                 }
 
                 if (useDefault) {

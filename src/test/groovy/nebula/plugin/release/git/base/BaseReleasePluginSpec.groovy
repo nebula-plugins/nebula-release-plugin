@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
+import nebula.plugin.release.git.GitOps
 import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.BranchStatus
 import org.ajoberstar.grgit.Grgit
@@ -81,9 +82,11 @@ class BaseReleasePluginSpec extends Specification {
         BranchService branch = GroovyMock()
         repo.branch >> branch
         TagService tag = GroovyMock()
+        GitOps gitOps = GroovyMock()
 
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
         releaseExtension.grgit = repo
+        releaseExtension.gitOps = gitOps
         releaseExtension.versionStrategy(strategy)
 
         when:

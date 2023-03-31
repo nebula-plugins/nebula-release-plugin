@@ -1,5 +1,7 @@
 package nebula.plugin.release.git
 
+import org.ajoberstar.grgit.Commit
+import org.ajoberstar.grgit.Tag
 import org.gradle.process.ExecOperations
 
 import java.nio.charset.Charset
@@ -17,8 +19,27 @@ class GitOps implements Serializable {
         this.rootDir = rootDir
     }
 
-    String isCleanStatus() {
+    boolean isCleanStatus() {
         return executeGitCommand( "git", "status", "--porcelain").replaceAll("\n", "").trim().empty
+    }
+
+    boolean hasCommit() {
+       try {
+           String describe = executeGitCommand( "git", "describe", "--tags", "--always")
+           return describe != null && !describe.contains("fatal:")
+       } catch (Exception e) {
+           return false
+       }
+    }
+
+    String head() {
+        return executeGitCommand( "git", "rev-parse", "HEAD")
+    }
+
+    List<Tag> headTags() {
+        return executeGitCommand( "git", "tag", "--points-at", "HEAD")
+                .split("\n")
+                .collect { new Tag(fullName: it) }
     }
 
     String status() {

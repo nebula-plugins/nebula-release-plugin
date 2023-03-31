@@ -47,13 +47,14 @@ class ReleasePluginExtensionSpec extends Specification {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
         extension.grgit = GroovyMock(Grgit)
+        extension.gitOps = GroovyMock(GitOps)
         extension.versionStrategy([
             getName: { 'b' },
-            selector: { proj, grgit -> false },
+            selector: { proj, gitOps -> false },
             infer: { proj, grgit -> new ReleaseVersion('1.0.0', null, true) }] as VersionStrategy)
         extension.versionStrategy([
             getName: { 'a' },
-            selector: { proj, grgit -> true },
+            selector: { proj, gitOps -> true },
             infer: { proj, grgit -> new ReleaseVersion('1.2.3', null, true) }] as VersionStrategy)
         expect:
         project.version.toString() == '1.2.3'
@@ -63,13 +64,14 @@ class ReleasePluginExtensionSpec extends Specification {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
         extension.grgit = GroovyMock(Grgit)
+        extension.gitOps = GroovyMock(GitOps)
         extension.versionStrategy([
             getName: { 'b' },
-            selector: { proj, grgit -> true },
+            selector: { proj, gitOps -> true },
             infer: { proj, grgit -> new ReleaseVersion('1.0.0', null, true) }] as VersionStrategy)
         extension.versionStrategy([
             getName: { 'a' },
-            selector: { proj, grgit -> true },
+            selector: { proj, gitOps -> true },
             infer: { proj, grgit -> new ReleaseVersion('1.2.3', null, true) }] as VersionStrategy)
         expect:
         project.version.toString() == '1.0.0'
@@ -83,11 +85,11 @@ class ReleasePluginExtensionSpec extends Specification {
         extension.gitOps = GroovyMock(GitOps)
         extension.versionStrategy([
             getName: { 'b' },
-            selector: { proj, grgit -> false },
+            selector: { proj, gitOps -> false },
             infer: { proj, grgit -> new ReleaseVersion('1.0.0', null, true) }] as VersionStrategy)
         extension.defaultVersionStrategy = [
             getName: { 'a' },
-            selector: { proj, grgit -> false },
+            selector: { proj, gitOps -> false },
             defaultSelector: { proj, gitOps -> true },
             infer: { proj, grgit -> new ReleaseVersion('1.2.3', null, true) }] as DefaultVersionStrategy
         expect:
@@ -99,13 +101,14 @@ class ReleasePluginExtensionSpec extends Specification {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
         extension.grgit = GroovyMock(Grgit)
+        extension.gitOps = GroovyMock(GitOps)
         extension.versionStrategy([
             getName: { 'b' },
-            selector: { proj, grgit -> false },
+            selector: { proj, gitOps -> false },
             infer: { proj, grgit -> new ReleaseVersion('1.0.0', null, true) }] as VersionStrategy)
         extension.defaultVersionStrategy = [
             getName: { 'a' },
-            selector: { proj, grgit -> false },
+            selector: { proj, gitOps -> false },
             infer: { proj, grgit -> new ReleaseVersion('1.2.3', null, true) }] as VersionStrategy
         when:
         project.version.toString()
@@ -117,13 +120,14 @@ class ReleasePluginExtensionSpec extends Specification {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
         extension.grgit = GroovyMock(Grgit)
+        extension.gitOps = GroovyMock(GitOps)
         extension.versionStrategy([
             getName: { 'b' },
-            selector: { proj, grgit -> false },
+            selector: { proj, gitOps -> false },
             infer: { proj, grgit -> new ReleaseVersion('1.0.0', null, true) }] as VersionStrategy)
         extension.versionStrategy([
             getName: { 'a' },
-            selector: { proj, grgit -> false },
+            selector: { proj, gitOps -> false },
             infer: { proj, grgit -> new ReleaseVersion('1.2.3', null, true) }] as VersionStrategy)
         when:
         project.version.toString()

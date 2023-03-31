@@ -17,6 +17,7 @@ package nebula.plugin.release
 
 import com.github.zafarkhaja.semver.UnexpectedCharacterException
 import com.github.zafarkhaja.semver.Version
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
@@ -55,7 +56,7 @@ class OverrideStrategies {
         }
 
         @Override
-        boolean selector(Project project, Grgit grgit) {
+        boolean selector(Project project, GitOps gitOps) {
             def shouldSelect = project.hasProperty(propertyName) ? project.property(propertyName).toString().toBoolean() : false
 
             if (shouldSelect) {
@@ -136,7 +137,7 @@ class OverrideStrategies {
         }
 
         @Override
-        boolean selector(Project project, Grgit grgit) {
+        boolean selector(Project project, GitOps gitOps) {
             project.hasProperty(propertyName)
         }
 
@@ -181,14 +182,8 @@ class OverrideStrategies {
         }
 
         @Override
-        boolean selector(Project project, Grgit grgit) {
-            try {
-                grgit.describe()
-            } catch (RefNotFoundException ignore) {
-                return true
-            }
-
-            return false
+        boolean selector(Project project, GitOps gitOps) {
+            return !gitOps.hasCommit()
         }
 
         @Override

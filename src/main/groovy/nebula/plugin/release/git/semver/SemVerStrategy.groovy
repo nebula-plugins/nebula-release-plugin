@@ -106,6 +106,7 @@ final class SemVerStrategy implements DefaultVersionStrategy {
         }
     }
 
+
     /**
      * Determines whether this strategy should be used to infer the version.
      * <ul>
@@ -115,12 +116,12 @@ final class SemVerStrategy implements DefaultVersionStrategy {
      * </ul>
      */
     @Override
-    boolean selector(Project project, Grgit grgit) {
+    boolean selector(Project project, GitOps gitOps) {
         String stage = getPropertyOrNull(project, STAGE_PROP)
         if (stage == null || !stages.contains(stage)) {
             logger.info('Skipping {} strategy because stage ({}) is not one of: {}', name, stage, stages)
             return false
-        } else if (!allowDirtyRepo && !grgit.status().clean) {
+        } else if (!allowDirtyRepo && !gitOps.isCleanStatus()) {
             logger.info('Skipping {} strategy because repo is dirty.', name)
             return false
         } else {

@@ -16,6 +16,7 @@
 package nebula.plugin.release.git.semver
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
@@ -53,10 +54,10 @@ class RebuildVersionStrategy implements VersionStrategy {
      * </ul>
      */
     @Override
-    boolean selector(Project project, Grgit grgit) {
-        def clean = grgit.status().clean
+    boolean selector(Project project, GitOps gitOps) {
+        def clean = gitOps.isCleanStatus()
         def propsSpecified = project.hasProperty(SemVerStrategy.SCOPE_PROP) || project.hasProperty(SemVerStrategy.STAGE_PROP)
-        def headVersion = getHeadVersion(project, grgit)
+        def headVersion = getHeadVersion(project, gitOps)
 
         if (clean && !propsSpecified && headVersion) {
             logger.info('Using {} strategy because repo is clean, no "release." properties found and head version is {}', name, headVersion)
@@ -85,6 +86,15 @@ class RebuildVersionStrategy implements VersionStrategy {
         return grgit.tag.list().findAll {
             it.commit == head
         }.collect {
+            tagStrategy.parseTag(it)
+        }.findAll {
+            it != null
+        }.max()?.toString()
+    }
+
+    private String getHeadVersion(Project project, GitOps gitOps) {
+        def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
+        return gitOps.headTags().collect {
             tagStrategy.parseTag(it)
         }.findAll {
             it != null
