@@ -125,7 +125,7 @@ class ReleasePluginExtension {
                 }
             }
 
-            inferredVersion = selectedStrategy.infer(project, grgit)
+            inferredVersion = selectedStrategy.infer(project, gitOps)
         }
 
         @Override

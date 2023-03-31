@@ -17,6 +17,7 @@ package nebula.plugin.release
 
 import com.github.zafarkhaja.semver.UnexpectedCharacterException
 import com.github.zafarkhaja.semver.Version
+import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
@@ -66,8 +67,11 @@ class OverrideStrategies {
             shouldSelect
         }
 
+
+        @CompileDynamic
         @Override
-        ReleaseVersion infer(Project project, Grgit grgit) {
+        ReleaseVersion infer(Project project, GitOps gitOps) {
+            Grgit grgit = Grgit.open(dir: gitOps.rootDir)
             def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
             def locate = new NearestVersionLocator(tagStrategy).locate(grgit)
             String releaseStage
@@ -141,8 +145,9 @@ class OverrideStrategies {
             project.hasProperty(propertyName)
         }
 
+
         @Override
-        ReleaseVersion infer(Project project, Grgit grgit) {
+        ReleaseVersion infer(Project project, GitOps gitOps) {
             String requestedVersion = project.property(propertyName).toString()
             if (requestedVersion == null || requestedVersion.isEmpty()) {
                 throw new GradleException('Supplied release.version is empty')
@@ -187,7 +192,7 @@ class OverrideStrategies {
         }
 
         @Override
-        ReleaseVersion infer(Project project, Grgit grgit) {
+        ReleaseVersion infer(Project project, GitOps gitOps) {
             boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
             if(replaceDevSnapshots) {
                 new ReleaseVersion("0.1.0-snapshot.${TimestampUtil.getUTCFormattedTimestamp()}.uncommitted", null, false)

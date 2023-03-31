@@ -136,8 +136,10 @@ final class SemVerStrategy implements DefaultVersionStrategy {
      * first value in the {@code stages} set (i.e. the one with the lowest precedence). After inferring
      * the version precedence will be enforced, if required by this strategy.
      */
+    @CompileDynamic
     @Override
-    ReleaseVersion infer(Project project, Grgit grgit) {
+    ReleaseVersion infer(Project project, GitOps gitOps) {
+        Grgit grgit = Grgit.open(dir: gitOps.rootDir)
         def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
         return doInfer(project, grgit, new NearestVersionLocator(tagStrategy))
     }

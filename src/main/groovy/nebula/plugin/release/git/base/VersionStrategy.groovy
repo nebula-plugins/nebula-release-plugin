@@ -16,7 +16,6 @@
 package nebula.plugin.release.git.base
 
 import nebula.plugin.release.git.GitOps
-import org.ajoberstar.grgit.Grgit
 
 import org.gradle.api.Project
 
@@ -38,16 +37,17 @@ interface VersionStrategy {
      * A return of {@code false} does not mean that the strategy cannot be used
      * as the default.
      * @param project the project the version should be inferred for
-     * @param grgit the repository the version should be inferred from
+     * @param gitOps the Git operations to use
      * @return {@code true} if the strategy should be used to infer the version
      */
     boolean selector(Project project, GitOps gitOps)
 
+
     /**
      * Infers the project version from the repository.
      * @param project the project the version should be inferred for
-     * @param grgit the repository the version should be inferred from
+     * @param gitOps the Git operations to use
      * @return the inferred version
      */
-    ReleaseVersion infer(Project project, Grgit grgit)
+    ReleaseVersion infer(Project project, GitOps gitOps)
 }

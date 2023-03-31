@@ -73,8 +73,8 @@ class RebuildVersionStrategy implements VersionStrategy {
      * highest precendence.
      */
     @Override
-    ReleaseVersion infer(Project project, Grgit grgit) {
-        String version = getHeadVersion(project, grgit)
+    ReleaseVersion infer(Project project, GitOps gitOps) {
+        String version = getHeadVersion(project, gitOps)
         def releaseVersion = new ReleaseVersion(version, version, false)
         logger.debug('Inferred version {} by strategy {}', releaseVersion, name)
         return releaseVersion

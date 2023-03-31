@@ -19,6 +19,10 @@ class GitOps implements Serializable {
         this.rootDir = rootDir
     }
 
+    public File getRootDir() {
+        return this.rootDir
+    }
+
     boolean isCleanStatus() {
         return executeGitCommand( "git", "status", "--porcelain").replaceAll("\n", "").trim().empty
     }

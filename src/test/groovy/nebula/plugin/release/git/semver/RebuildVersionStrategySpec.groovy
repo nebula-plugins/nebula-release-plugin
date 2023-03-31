@@ -80,9 +80,9 @@ class RebuildVersionStrategySpec extends Specification {
         given:
         mockClean(true)
         Project project = getProject([:])
-        mockTagsAtHeadLegacy('v0.1.1', 'v1.0.0', '0.19.1')
+        mockTagsAtHead('v0.1.1', 'v1.0.0', '0.19.1')
         expect:
-        strategy.infer(project, grgit) == new ReleaseVersion('1.0.0', '1.0.0', false)
+        strategy.infer(project, gitOps) == new ReleaseVersion('1.0.0', '1.0.0', false)
     }
 
     private void mockTagsAtHead(String... tagNames) {
@@ -90,13 +90,6 @@ class RebuildVersionStrategySpec extends Specification {
         gitOps.headTags() >>  tagNames.collect { new Tag(commit: head, fullName: "refs/heads/${it}") }
     }
 
-    private void mockTagsAtHeadLegacy(String... tagNames) {
-        Commit head = new Commit()
-        grgit.head() >> head
-        TagService tag = GroovyMock()
-        grgit.tag >> tag
-        tag.list() >> tagNames.collect { new Tag(commit: head, fullName: "refs/heads/${it}") }
-    }
 
     private void mockClean(boolean clean) {
         gitOps.isCleanStatus() >> clean
