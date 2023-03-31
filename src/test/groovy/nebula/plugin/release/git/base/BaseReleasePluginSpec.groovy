@@ -77,13 +77,9 @@ class BaseReleasePluginSpec extends Specification {
                 getName: { 'a' },
                 selector: {proj, repo2 -> true },
                 infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, true)}] as VersionStrategy
-        Grgit repo = GroovyMock()
-        BranchService branch = GroovyMock()
-        repo.branch >> branch
         GitOps gitOps = GroovyMock()
 
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
-        releaseExtension.grgit = repo
         releaseExtension.gitOps = gitOps
         releaseExtension.versionStrategy(strategy)
 
@@ -91,9 +87,7 @@ class BaseReleasePluginSpec extends Specification {
         BaseReleasePlugin.release(project, project.ext, releaseExtension)
 
         then:
-        1 * repo.push([remote: 'origin', refsOrSpecs: ['v1.2.3']])
-        _ * repo.branch >> branch
-        _ * branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
         1 * gitOps.createTag(*_)
+        1 * gitOps.pushTag('origin', 'v1.2.3')
     }
 }

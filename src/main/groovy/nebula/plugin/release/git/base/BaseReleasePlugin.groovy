@@ -94,24 +94,16 @@ class BaseReleasePlugin implements Plugin<Project> {
     protected static void release(Project project, ext, ReleasePluginExtension extension) {
         // force version inference if it hasn't happened already
         project.version.toString()
-
-        Grgit grgit = extension.grgit
         GitOps gitOps = extension.gitOps
-        ext.grgit = grgit
-        ext.toPush = []
 
         if(project.version instanceof String) {
             throw new GradleException("version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter")
         }
 
-        ext.tagName = extension.tagStrategy.maybeCreateTag(gitOps, project.version.inferredVersion)
-        if (ext.tagName) {
-            ext.toPush << ext.tagName
-        }
-
-        if (ext.toPush) {
-            logger.warn('Pushing changes in {} to {}', ext.toPush, extension.remote)
-            grgit.push(remote: extension.remote, refsOrSpecs: ext.toPush)
+        String tagName = extension.tagStrategy.maybeCreateTag(gitOps, project.version.inferredVersion)
+        if (tagName) {
+            logger.warn('Pushing changes in {} to {}', tagName, extension.remote)
+            gitOps.pushTag(extension.remote, tagName)
         } else {
             logger.warn('Nothing to push.')
         }

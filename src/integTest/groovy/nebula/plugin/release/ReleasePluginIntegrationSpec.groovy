@@ -1247,7 +1247,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         then:
         result.wasExecuted('final')
         result.standardOutput.contains('Tagging repository as v0.1.0')
-        result.standardOutput.contains('Pushing changes in [v0.1.0] to origin')
+        result.standardOutput.contains('Pushing changes in v0.1.0 to origin')
     }
 
     def 'Can create devSnapshot with scope patch if candidate for next minor is present'() {

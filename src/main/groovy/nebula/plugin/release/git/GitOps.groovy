@@ -22,6 +22,46 @@ class GitOps implements Serializable {
         return this.rootDir
     }
 
+    void createTag(String name, String message) {
+        try {
+            executeGitCommand("git", "tag", "-a", name, "-m", message)
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create tag ${name} with message ${message}", e)
+        }
+    }
+
+    String currentBranch() {
+        try {
+            return executeGitCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
+                    .replaceAll("\n", "").trim()
+        } catch (Exception e) {
+            return null
+        }
+    }
+
+    void fetch(String remote) {
+        executeGitCommand("git", "fetch", remote)
+    }
+
+    boolean hasCommit() {
+        try {
+            String describe = executeGitCommand("git", "describe", "--tags", "--always")
+            return describe != null && !describe.contains("fatal:")
+        } catch (Exception e) {
+            return false
+        }
+    }
+
+    String head() {
+        return executeGitCommand("git", "rev-parse", "HEAD")
+    }
+
+    List<Tag> headTags() {
+        return executeGitCommand("git", "tag", "--points-at", "HEAD")
+                .split("\n")
+                .collect { new Tag(fullName: it) }
+    }
+
     boolean isCleanStatus() {
         return executeGitCommand("git", "status", "--porcelain").replaceAll("\n", "").trim().empty
     }
@@ -45,36 +85,16 @@ class GitOps implements Serializable {
         }
     }
 
-    boolean hasCommit() {
+    void pushTag(String remote, String tag) {
         try {
-            String describe = executeGitCommand("git", "describe", "--tags", "--always")
-            return describe != null && !describe.contains("fatal:")
+            executeGitCommand("git", "push", remote, tag)
         } catch (Exception e) {
-            return false
+            throw new RuntimeException("Failed to push tag ${tag} to remote ${remote}", e)
         }
-    }
-
-    String head() {
-        return executeGitCommand("git", "rev-parse", "HEAD")
-    }
-
-    List<Tag> headTags() {
-        return executeGitCommand("git", "tag", "--points-at", "HEAD")
-                .split("\n")
-                .collect { new Tag(fullName: it) }
     }
 
     String status() {
         return executeGitCommand("git", "status", "--porcelain")
-    }
-
-    String currentBranch() {
-        try {
-            return executeGitCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
-                    .replaceAll("\n", "").trim()
-        } catch (Exception e) {
-            return null
-        }
     }
 
     boolean tagExists(String tag) {
@@ -86,17 +106,6 @@ class GitOps implements Serializable {
         }
     }
 
-    void fetch(String remote) {
-        executeGitCommand("git", "fetch", remote)
-    }
-
-    void createTag(String name, String message) {
-        try {
-            executeGitCommand("git", "tag", "-a", name, "-m", message)
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create tag ${name} with message ${message}", e)
-        }
-    }
 
     String executeGitCommand(Object... args) {
         ByteArrayOutputStream output = new ByteArrayOutputStream()
