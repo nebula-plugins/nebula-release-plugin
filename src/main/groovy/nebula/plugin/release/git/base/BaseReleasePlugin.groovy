@@ -16,6 +16,7 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.GitOps
 import org.ajoberstar.grgit.Grgit
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -81,7 +82,8 @@ class BaseReleasePlugin implements Plugin<Project> {
     protected static void prepare(ReleasePluginExtension extension) {
         logger.info('Fetching changes from remote: {}', extension.remote)
         Grgit grgit = extension.grgit
-        grgit.fetch(remote: extension.remote)
+        GitOps gitOps = extension.gitOps
+        gitOps.fetch(extension.remote)
 
         // if branch is tracking another, make sure it's not behind
         def currentBranch = grgit.branch.current()

@@ -68,6 +68,10 @@ class GitOps implements Serializable {
         }
     }
 
+    void fetch(String remote) {
+        executeGitCommand( "git", "fetch", remote)
+    }
+
     String executeGitCommand(Object... args) {
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         execOperations.exec {

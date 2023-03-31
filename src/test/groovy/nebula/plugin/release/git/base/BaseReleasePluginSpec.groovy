@@ -37,11 +37,13 @@ class BaseReleasePluginSpec extends Specification {
     def 'prepare task succeeds if branch is up to date'() {
         given:
         Grgit repo = GroovyMock()
+        GitOps gitOps = GroovyMock()
         BranchService branch = GroovyMock()
         branch.current() >> new Branch(fullName: 'refs/heads/master')
         branch.status([branch: 'refs/heads/master']) >> new BranchStatus(behindCount: 0)
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
         releaseExtension.grgit = repo
+        releaseExtension.gitOps = gitOps
 
         when:
         BaseReleasePlugin.prepare(releaseExtension)
@@ -49,23 +51,25 @@ class BaseReleasePluginSpec extends Specification {
         then:
         notThrown(GradleException)
         1 * repo.branch >> branch
-        1 * repo.fetch([remote: 'origin'])
+        1 * gitOps.fetch('origin')
 
     }
 
     def 'prepare task fails if branch is behind'() {
         given:
         Grgit repo = GroovyMock()
+        GitOps gitOps = GroovyMock()
         BranchService branch = GroovyMock()
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
         releaseExtension.grgit = repo
+        releaseExtension.gitOps = gitOps
 
         when:
         BaseReleasePlugin.prepare(releaseExtension)
 
         then:
         thrown(GradleException)
-        1 * repo.fetch([remote: 'origin'])
+        1 * gitOps.fetch('origin')
         _ * repo.branch >> branch
         1 * branch.status([name: 'refs/heads/master']) >> new BranchStatus(behindCount: 2)
         1 * branch.current() >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
