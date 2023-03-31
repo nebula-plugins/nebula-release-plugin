@@ -92,6 +92,7 @@ class GitOps implements Serializable {
     List<Tag> headTags() {
         return executeGitCommand( "tag", "--points-at", "HEAD")
                 .split("\n")
+                .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
                 .collect { new Tag(fullName: it) }
     }
 

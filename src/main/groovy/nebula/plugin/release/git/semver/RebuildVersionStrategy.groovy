@@ -79,18 +79,7 @@ class RebuildVersionStrategy implements VersionStrategy {
         logger.debug('Inferred version {} by strategy {}', releaseVersion, name)
         return releaseVersion
     }
-
-    private String getHeadVersion(Project project, Grgit grgit) {
-        def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
-        Commit head = grgit.head()
-        return grgit.tag.list().findAll {
-            it.commit == head
-        }.collect {
-            tagStrategy.parseTag(it)
-        }.findAll {
-            it != null
-        }.max()?.toString()
-    }
+    
 
     private String getHeadVersion(Project project, GitOps gitOps) {
         def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy

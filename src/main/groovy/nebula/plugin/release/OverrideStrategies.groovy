@@ -113,7 +113,7 @@ class OverrideStrategies {
                 logger.debug("Using version ${inferredVersion} with ${releaseStage == NOT_SUPPLIED ? "a non-supplied release strategy" : "${releaseStage} release strategy"}")
                 return new ReleaseVersion(inferredVersion, null, false)
             } else {
-                List<Tag> headTags = grgit.tag.list().findAll { it.commit == grgit.head()}
+                List<Tag> headTags = gitOps.headTags()
                 if (headTags.isEmpty()) {
                     throw new GradleException("Current commit does not have a tag")
                 } else {
