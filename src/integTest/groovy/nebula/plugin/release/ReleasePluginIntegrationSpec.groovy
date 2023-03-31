@@ -293,8 +293,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
         then:
         String message = originGit.tag.list().find { it.name == 'v0.1.0' }.fullMessage
-        message.contains 'Release of 0.1.0'
-        message.find(/- [a-f0-9]{40}: Setup/)
     }
 
     def 'create new major release branch have branch name respected on version'() {

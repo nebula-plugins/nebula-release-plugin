@@ -138,9 +138,6 @@ class ReleasePlugin implements Plugin<Project> {
                             if (gitOps.tagExists(previousVersion)) {
                                 excludes << previousVersion
                             }
-                            extension.grgit.log([includes: ['HEAD'], excludes: excludes]).inject(builder) { bldr, Commit commit ->
-                                bldr << "- ${commit.id}: ${commit.shortMessage}\n"
-                            }
                         }
                         builder.toString()
                     }
