@@ -36,13 +36,11 @@ class BaseReleasePluginSpec extends Specification {
 
     def 'prepare task succeeds if branch is up to date'() {
         given:
-        Grgit repo = GroovyMock()
         GitOps gitOps = GroovyMock()
         BranchService branch = GroovyMock()
         branch.current() >> new Branch(fullName: 'refs/heads/master')
         branch.status([branch: 'refs/heads/master']) >> new BranchStatus(behindCount: 0)
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
-        releaseExtension.grgit = repo
         releaseExtension.gitOps = gitOps
 
         when:
@@ -56,10 +54,8 @@ class BaseReleasePluginSpec extends Specification {
 
     def 'prepare task fails if branch is behind'() {
         given:
-        Grgit repo = GroovyMock()
         GitOps gitOps = GroovyMock()
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
-        releaseExtension.grgit = repo
         releaseExtension.gitOps = gitOps
 
         when:

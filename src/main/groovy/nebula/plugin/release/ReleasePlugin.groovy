@@ -22,9 +22,6 @@ import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.TagStrategy
 import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.semver.SemVerStrategy
-import org.ajoberstar.grgit.Commit
-import org.ajoberstar.grgit.Grgit
-import org.eclipse.jgit.errors.RepositoryNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -49,7 +46,6 @@ class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
     public static final String DEFAULT_VERSIONING_STRATEGY = 'release.defaultVersioningStrategy'
     Project project
-    Grgit git
     static Logger logger = Logging.getLogger(ReleasePlugin)
 
     static final String SNAPSHOT_TASK_NAME = 'snapshot'
@@ -86,10 +82,8 @@ class ReleasePlugin implements Plugin<Project> {
 
         def gitRoot = project.hasProperty('git.root') ? project.property('git.root') : project.rootProject.projectDir
         this.gitOperations.setRootDir(gitRoot instanceof File ? gitRoot : new File(gitRoot))
-        try {
-            git = Grgit.open(dir: gitRoot)
-        }
-        catch (RepositoryNotFoundException e) {
+        boolean isGitRepo = this.gitOperations.isGitRepo()
+        if(!isGitRepo) {
             this.project.version = '0.1.0-dev.0.uncommitted'
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
             return
@@ -125,7 +119,6 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             releaseExtension.with {extension ->
-                grgit = git
                 gitOps = gitOperations
                 tagStrategy { TagStrategy tagStrategy ->
                     tagStrategy.generateMessage = { ReleaseVersion version ->

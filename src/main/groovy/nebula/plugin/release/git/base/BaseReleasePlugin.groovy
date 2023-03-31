@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory
  * </p>
  *
  * @see nebula.plugin.release.git.opinion.Strategies
- * @see nebula.plugin.release.git.opinion.OpinionReleasePlugin
  * @see <a href="https://github.com/ajoberstar/gradle-git/wiki/org.ajoberstar.release-base">Wiki Doc</a>
  */
 @CompileDynamic
@@ -47,16 +46,12 @@ class BaseReleasePlugin implements Plugin<Project> {
         def extension = project.extensions.create('release', ReleasePluginExtension, project)
         addPrepareTask(project, extension)
         addReleaseTask(project, extension)
-        project.plugins.withId('org.ajoberstar.grgit') {
-            extension.grgit = project.grgit
-        }
     }
 
     private void addPrepareTask(Project project, ReleasePluginExtension extension) {
         project.tasks.register(PREPARE_TASK_NAME) {
             it.description = 'Verifies that the project could be released.'
             it.doLast {
-                project.ext.grgit = extension.grgit
                 prepare(extension)
             }
         }

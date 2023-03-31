@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory
  * </p>
  *
  * @see BaseReleasePlugin
- * @see nebula.plugin.release.git.opinion.OpinionReleasePlugin
  */
 class ReleasePluginExtension {
     private static final Logger logger = LoggerFactory.getLogger(ReleasePluginExtension)
@@ -53,11 +52,6 @@ class ReleasePluginExtension {
      * not required to be, one from {@code versionStrategies}.
      */
     VersionStrategy defaultVersionStrategy
-
-    /**
-     * The repository to infer the version from.
-     */
-    Grgit grgit
 
     /**
      * Used to execute git operations
