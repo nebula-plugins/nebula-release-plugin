@@ -90,6 +90,14 @@ class GitOps implements Serializable {
         executeGitCommand("git", "fetch", remote)
     }
 
+    void createTag(String name, String message) {
+        try {
+            executeGitCommand("git", "tag", "-a", name, "-m", message)
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create tag ${name} with message ${message}", e)
+        }
+    }
+
     String executeGitCommand(Object... args) {
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         execOperations.exec {

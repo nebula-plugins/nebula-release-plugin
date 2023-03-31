@@ -80,7 +80,6 @@ class BaseReleasePluginSpec extends Specification {
         Grgit repo = GroovyMock()
         BranchService branch = GroovyMock()
         repo.branch >> branch
-        TagService tag = GroovyMock()
         GitOps gitOps = GroovyMock()
 
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
@@ -95,6 +94,6 @@ class BaseReleasePluginSpec extends Specification {
         1 * repo.push([remote: 'origin', refsOrSpecs: ['v1.2.3']])
         _ * repo.branch >> branch
         _ * branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
-        1 * repo.tag >> tag
+        1 * gitOps.createTag(*_)
     }
 }
