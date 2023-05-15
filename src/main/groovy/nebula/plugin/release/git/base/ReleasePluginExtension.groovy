@@ -16,12 +16,11 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
-
+import nebula.plugin.release.util.ConfigureUtil
 import org.ajoberstar.grgit.Grgit
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.util.ConfigureUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
