@@ -15,7 +15,6 @@
  */
 package nebula.plugin.release
 
-import nebula.plugin.bintray.BintrayPlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.publish.plugins.PublishingPlugin
 import spock.lang.Unroll
@@ -103,7 +102,6 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         buildFile << """\
             allprojects {
                 ${applyPlugin(PublishingPlugin)}
-                ${applyPlugin(BintrayPlugin)}
                 ${applyPlugin(JavaPlugin)}
             }
         """.stripIndent()
@@ -119,21 +117,19 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
             buildscript {
                 repositories { mavenCentral() }
                 dependencies {
-                    classpath 'com.netflix.nebula:nebula-publishing-plugin:14.0.0'
+                    classpath 'com.netflix.nebula:nebula-publishing-plugin:20.3.0'
                 }
             }
 
             allprojects {
                 ${applyPlugin(PublishingPlugin)}
-                ${applyPlugin(BintrayPlugin)}
                 ${applyPlugin(JavaPlugin)}
             }
 
             subprojects { sub ->
-                ${applyPlugin(BintrayPlugin)}
-                apply plugin: 'nebula.ivy-publish'
-                apply plugin: 'nebula.javadoc-jar'
-                apply plugin: 'nebula.source-jar'
+                apply plugin: 'com.netflix.nebula.ivy-publish'
+                apply plugin: 'com.netflix.nebula.javadoc-jar'
+                apply plugin: 'com.netflix.nebula.source-jar'
 
 
                 publishing {
@@ -144,8 +140,6 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
                         }
                     }
                 }
-
-                sub.tasks.findByName('artifactoryPublish').dependsOn ":\${sub.name}:generateDescriptorFileForNebulaIvyPublication"
             }
         """.stripIndent()
 

@@ -43,8 +43,6 @@ dependencies {
     implementation platform("com.fasterxml.jackson:jackson-bom:2.14.2")
 
     compileOnly platform("com.fasterxml.jackson:jackson-bom:2.11.0")
-    compileOnly 'com.netflix.nebula:nebula-bintray-plugin:latest.release'
-    testImplementation 'com.netflix.nebula:nebula-bintray-plugin:7.4.1'
 }
 
 gradlePlugin {

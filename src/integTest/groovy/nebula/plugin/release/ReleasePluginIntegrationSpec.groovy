@@ -16,7 +16,6 @@
 package nebula.plugin.release
 
 import com.github.zafarkhaja.semver.Version
-import nebula.plugin.bintray.NebulaBintrayPublishingPlugin
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.test.functional.ExecutionResult
 import org.ajoberstar.grgit.Tag
@@ -269,8 +268,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
     def 'release does not run if tests fail'() {
         buildFile << """
-            ${applyPlugin(NebulaBintrayPublishingPlugin)}
-
             repositories { mavenCentral() }
             dependencies {
                 testImplementation 'junit:junit:4.12'
