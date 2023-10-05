@@ -20,6 +20,7 @@ import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
+import org.gradle.api.GradleException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -40,6 +41,9 @@ class TagStrategy {
      */
     Closure<Version> parseTag = { Tag tag ->
         try {
+            if(tag.name == 'v') {
+                throw new GradleException("Tag name 'v' is invalid. 'v' should be use as prefix for semver versions only, example: v1.0.0")
+            }
             Version.valueOf(tag.name[0] == 'v' ? tag.name[1..-1] : tag.name)
         } catch (ParseException e) {
             null

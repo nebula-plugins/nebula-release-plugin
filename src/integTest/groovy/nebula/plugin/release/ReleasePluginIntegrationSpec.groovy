@@ -682,6 +682,18 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
+    def 'using v as tag fails when running tasks'() {
+        git.tag.add(name: "v3.1.2")
+        git.tag.add(name: "v")
+
+        when:
+        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+
+        then:
+        result.standardError.contains "Tag name 'v' is invalid. 'v' should be use as prefix for semver versions only, example: v1.0.0"
+        !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
+    }
+
     def 'useLastTag uses release tag when running "final"'() {
         git.tag.add(name: "v3.1.2-rc.1")
         git.tag.add(name: "v3.1.2")
