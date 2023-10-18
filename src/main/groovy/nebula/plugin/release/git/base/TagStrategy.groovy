@@ -19,7 +19,6 @@ import com.github.zafarkhaja.semver.ParseException
 import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.GitOps
-import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

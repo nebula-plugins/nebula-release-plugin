@@ -17,7 +17,8 @@ package nebula.plugin.release.git.semver
 
 import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
-
+import nebula.plugin.release.git.GitOps
+import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.base.TagStrategy
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
@@ -47,9 +48,11 @@ class NearestVersionLocator {
     private static final Version UNKNOWN = Version.valueOf('0.0.0')
 
     final TagStrategy strategy
+    final GitOps gitOps
 
-    NearestVersionLocator(TagStrategy strategy) {
+    NearestVersionLocator(GitOps gitOps, TagStrategy strategy) {
         this.strategy = strategy
+        this.gitOps = gitOps
     }
 
     /**
@@ -84,6 +87,84 @@ class NearestVersionLocator {
      * Defaults to {@code HEAD}.
      * @return the version corresponding to the nearest tag
      */
+    NearestVersion locate() {
+        logger.debug('Locate beginning on branch: {}', gitOps.currentBranch())
+        // Reuse a single walk to make use of caching.
+        List<String> tagRefs = gitOps.refTags()
+        List allTags = tagRefs.collect { ref ->
+            TagRef.fromRef(ref)
+        }.findAll {
+            it.version
+        }
+
+        List normalTags = allTags.findAll { !it.version.preReleaseVersion }
+        def normal = findNearestVersion(normalTags)
+        def any = findNearestVersion(allTags)
+
+        logger.debug('Nearest release: {}, nearest any: {}.', normal, any)
+        return new NearestVersion(any.version, normal.version, any.distance, normal.distance)
+    }
+
+    private Map findNearestVersion(List<TagRef> tagList) {
+        List<Map> tagsWithDistance = tagList.collect { TagRef tag ->
+            getTagWithDistance(tag)
+        }
+        if (tagsWithDistance) {
+            tagsWithDistance.sort {}
+            return tagsWithDistance.min { a, b ->
+                def distanceCompare = a.distance <=> b.distance
+                def versionCompare =  (a.version <=> b.version) * -1
+                distanceCompare == 0 ? versionCompare : distanceCompare
+            }
+        } else {
+            return [version: UNKNOWN, distance: gitOps.getCommitCountForHead()]
+        }
+    }
+
+    private getTagWithDistance(TagRef tag) {
+        try {
+            String result = gitOps.describeTagForHead(tag.name)
+            if(!result) {
+                return [version: UNKNOWN, distance: gitOps.getCommitCountForHead()]
+            }
+
+            String[] parts = result.split('-')
+            if(parts.size() < 3) {
+                return [version: tag.version, distance: 0]
+            }
+            return [version: tag.version, distance: parts[parts.size() - 2]?.toInteger()]
+        } catch (Exception e) {
+            return [version: UNKNOWN, distance: gitOps.getCommitCountForHead()]
+        }
+    }
+
+    private Map findNearestVersion(RevWalk walk, RevCommit head, List versionTags) {
+        walk.reset()
+        walk.markStart(head)
+        Map versionTagsByRev = versionTags.groupBy { it.rev }
+
+        def reachableVersionTags = walk.collectMany { rev ->
+            def matches = versionTagsByRev[rev]
+            if (matches) {
+                // Parents can't be "nearer". Exclude them to avoid extra walking.
+                rev.parents.each { walk.markUninteresting(it) }
+            }
+            matches ?: []
+        }.each { versionTag ->
+            versionTag.distance = RevWalkUtils.count(walk, head, versionTag.rev)
+        }
+
+        if (reachableVersionTags) {
+            return reachableVersionTags.min { a, b ->
+                def distanceCompare = a.distance <=> b.distance
+                def versionCompare = (a.version <=> b.version) * -1
+                distanceCompare == 0 ? versionCompare : distanceCompare
+            }
+        } else {
+            return [version: UNKNOWN, distance: RevWalkUtils.count(walk, head, null)]
+        }
+    }
+
     NearestVersion locate(Grgit grgit) {
         logger.debug('Locate beginning on branch: {}', grgit.branch.current.fullName)
 
@@ -118,30 +199,5 @@ class NearestVersionLocator {
         }
     }
 
-    private Map findNearestVersion(RevWalk walk, RevCommit head, List versionTags) {
-        walk.reset()
-        walk.markStart(head)
-        Map versionTagsByRev = versionTags.groupBy { it.rev }
 
-        def reachableVersionTags = walk.collectMany { rev ->
-            def matches = versionTagsByRev[rev]
-            if (matches) {
-                // Parents can't be "nearer". Exclude them to avoid extra walking.
-                rev.parents.each { walk.markUninteresting(it) }
-            }
-            matches ?: []
-        }.each { versionTag ->
-            versionTag.distance = RevWalkUtils.count(walk, head, versionTag.rev)
-        }
-
-        if (reachableVersionTags) {
-            return reachableVersionTags.min { a, b ->
-                def distanceCompare = a.distance <=> b.distance
-                def versionCompare = (a.version <=> b.version) * -1
-                distanceCompare == 0 ? versionCompare : distanceCompare
-            }
-        } else {
-            return [version: UNKNOWN, distance: RevWalkUtils.count(walk, head, null)]
-        }
-    }
 }

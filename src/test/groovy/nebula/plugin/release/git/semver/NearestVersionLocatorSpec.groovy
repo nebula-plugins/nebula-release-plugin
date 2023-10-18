@@ -104,7 +104,7 @@ class NearestVersionLocatorSpec extends Specification {
         given:
         grgit.checkout(branch: head)
         expect:
-        def nearest = new NearestVersionLocator(new TagStrategy()).locate(grgit)
+        def nearest = new NearestVersionLocator(null, new TagStrategy()).locate(grgit)
         nearest.any == Version.valueOf(any)
         nearest.normal == Version.valueOf(normal)
         nearest.distanceFromAny == anyDistance

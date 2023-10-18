@@ -24,9 +24,7 @@ import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.plugin.release.git.semver.NearestVersionLocator
-import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
-import org.eclipse.jgit.api.errors.RefNotFoundException
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.slf4j.Logger
@@ -71,9 +69,8 @@ class OverrideStrategies {
         @CompileDynamic
         @Override
         ReleaseVersion infer(Project project, GitOps gitOps) {
-            Grgit grgit = Grgit.open(dir: gitOps.rootDir)
             def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
-            def locate = new NearestVersionLocator(tagStrategy).locate(grgit)
+            def locate = new NearestVersionLocator(gitOps, tagStrategy).locate()
             String releaseStage
             try {
                 releaseStage = project.property('release.stage')

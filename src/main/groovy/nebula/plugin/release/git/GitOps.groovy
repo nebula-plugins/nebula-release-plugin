@@ -1,7 +1,10 @@
 package nebula.plugin.release.git
 
+import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
+import org.ajoberstar.grgit.Commit
 import org.ajoberstar.grgit.Tag
+import org.eclipse.jgit.revwalk.RevWalkUtils
 import org.gradle.process.ExecOperations
 
 import java.nio.charset.Charset
@@ -83,7 +86,7 @@ class GitOps implements Serializable {
      * Returns the current HEAD commit
      */
     String head() {
-        return executeGitCommand( "rev-parse", "HEAD")
+        return executeGitCommand( "rev-parse", "HEAD")?.replaceAll("\n", "")
     }
 
     /**
@@ -94,6 +97,41 @@ class GitOps implements Serializable {
                 .split("\n")
                 .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
                 .collect { new Tag(fullName: it) }
+    }
+
+    /**
+     * Returns the tags that point to the current HEAD
+     */
+    List<String> refTags() {
+        try {
+            return executeGitCommand("show-ref", "--tags")
+                    .split("\n")
+                    .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
+                    .toList()
+        } catch (Exception e) {
+            return Collections.emptyList()
+        }
+    }
+
+
+    String describeTagForHead(String tagName) {
+        try {
+            return executeGitCommand( "describe", "HEAD", "--tags", "--match", tagName)
+                    .split("\n")
+                    .first()?.replaceAll("\n", "")?.toString()
+        } catch(Exception e) {
+            return null
+        }
+    }
+
+    Integer getCommitCountForHead() {
+        try {
+            return executeGitCommand( "rev-list", "--count", "HEAD")
+                    .split("\n")
+                    .first()?.replaceAll("\n", "")?.trim()?.toInteger()
+        } catch(Exception e) {
+            return 0
+        }
     }
 
     /**
