@@ -18,13 +18,13 @@ package nebula.plugin.release.git.opinion
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleaseVersion
+import nebula.plugin.release.git.model.Branch
 import nebula.plugin.release.git.model.Commit
 import nebula.plugin.release.git.semver.ChangeScope
 import nebula.plugin.release.git.semver.NearestVersion
 import nebula.plugin.release.git.semver.NearestVersionLocator
 import nebula.plugin.release.git.semver.SemVerStrategyState
 import nebula.plugin.release.git.semver.StrategyUtil
-import org.ajoberstar.grgit.Branch
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project

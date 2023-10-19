@@ -24,7 +24,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Locates the nearest {@link org.ajoberstar.grgit.Tag tag}s whose names can be
+ * Locates the nearest {@link nebula.plugin.release.git.model.TagRef}s whose names can be
  * parsed as a {@link com.github.zafarkhaja.semver.Version version}. Both the
  * absolute nearest version tag and the nearest "normal version" tag are
  * included.
@@ -76,8 +76,6 @@ class NearestVersionLocator {
      * tagged version that does not include a pre-release segment.
      * </p>
      *
-     * @param grgit the repository to locate the tag in
-     * @param fromRevStr the revision to consider current.
      * Defaults to {@code HEAD}.
      * @return the version corresponding to the nearest tag
      */

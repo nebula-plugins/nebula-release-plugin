@@ -25,8 +25,8 @@ import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.DefaultVersionStrategy
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
+import nebula.plugin.release.git.model.Branch
 import nebula.plugin.release.git.model.Commit
-import org.ajoberstar.grgit.Branch
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 

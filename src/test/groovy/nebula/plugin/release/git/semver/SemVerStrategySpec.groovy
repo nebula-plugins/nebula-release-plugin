@@ -18,8 +18,7 @@ package nebula.plugin.release.git.semver
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleaseVersion
-import org.ajoberstar.grgit.Branch
-
+import nebula.plugin.release.git.model.Branch
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import spock.lang.Specification

@@ -25,7 +25,6 @@ import nebula.plugin.release.git.base.VersionStrategy
 import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.plugin.release.git.semver.NearestVersionLocator
-import org.ajoberstar.grgit.Tag
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.slf4j.Logger
