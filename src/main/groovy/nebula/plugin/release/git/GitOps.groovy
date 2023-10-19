@@ -6,6 +6,10 @@ import org.gradle.process.ExecOperations
 
 import java.nio.charset.Charset
 
+/**
+ * Responsible for executing native Git commands via Gradle's ExecOperations
+ * This replaced grgit/jgit need and it is useful to be configuration cache compliant
+ */
 class GitOps implements Serializable {
 
     private final ExecOperations execOperations

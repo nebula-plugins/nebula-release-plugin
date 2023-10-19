@@ -186,7 +186,7 @@ final class SemVerStrategy implements DefaultVersionStrategy {
         return new ReleaseVersion(versionAsString, nearestVersion.normal.toString(), createTag)
     }
 
-    private String getPropertyOrNull(Project project, String name) {
+    private static String getPropertyOrNull(Project project, String name) {
         return project.hasProperty(name) ? project.property(name) : null
     }
 }
