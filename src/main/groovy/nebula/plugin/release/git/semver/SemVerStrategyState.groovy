@@ -20,8 +20,8 @@ import groovy.transform.CompileDynamic
 
 import groovy.transform.Immutable
 import groovy.transform.ToString
+import nebula.plugin.release.git.model.Commit
 import org.ajoberstar.grgit.Branch
-import org.ajoberstar.grgit.Commit
 
 /**
  * Working state used by {@link PartialSemVerStrategy}.
