@@ -1,7 +1,7 @@
 package nebula.plugin.release.git
 
 import groovy.transform.CompileDynamic
-import org.ajoberstar.grgit.Tag
+import nebula.plugin.release.git.model.TagRef
 import org.gradle.process.ExecOperations
 
 import java.nio.charset.Charset
@@ -89,11 +89,11 @@ class GitOps implements Serializable {
     /**
      * Returns the tags that point to the current HEAD
      */
-    List<Tag> headTags() {
+    List<TagRef> headTags() {
         return executeGitCommand( "tag", "--points-at", "HEAD")
                 .split("\n")
                 .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
-                .collect { new Tag(fullName: it) }
+                .collect { new TagRef(it) }
     }
 
     /**

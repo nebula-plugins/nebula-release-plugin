@@ -18,17 +18,13 @@ package nebula.plugin.release.git.semver
 import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleaseVersion
-import org.ajoberstar.grgit.Commit
-import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Tag
-import org.ajoberstar.grgit.service.TagService
+import nebula.plugin.release.git.model.TagRef
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import spock.lang.Specification
 
 class RebuildVersionStrategySpec extends Specification {
     RebuildVersionStrategy strategy = new RebuildVersionStrategy()
-    Grgit grgit = GroovyMock()
     GitOps gitOps = GroovyMock()
 
     def getProject(Map properties) {
@@ -86,17 +82,11 @@ class RebuildVersionStrategySpec extends Specification {
     }
 
     private void mockTagsAtHead(String... tagNames) {
-        Commit head = new Commit()
-        gitOps.headTags() >>  tagNames.collect { new Tag(commit: head, fullName: "refs/heads/${it}") }
+        gitOps.headTags() >>  tagNames.collect { new TagRef("refs/tags/${it}") }
     }
 
 
     private void mockClean(boolean clean) {
         gitOps.isCleanStatus() >> clean
-    }
-
-    private void mockProperties(Map props) {
-        project.properties.clear()
-        project.properties.putAll(props)
     }
 }

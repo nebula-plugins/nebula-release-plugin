@@ -1,9 +1,11 @@
 package nebula.plugin.release.git.model
 
 import com.github.zafarkhaja.semver.Version
+import groovy.transform.Sortable
 import nebula.plugin.release.git.base.ShortenRefUtil
 
-class TagRef {
+@Sortable(includes = ['version'])
+class TagRef  {
 
     String name
     Version version
@@ -13,6 +15,12 @@ class TagRef {
         this.name = name
         this.commit = commit
         this.version = parseTag(name)
+    }
+
+    TagRef(String name) {
+        String tag = ShortenRefUtil.shortenRefName(name)
+        this.name = tag
+        this.version = parseTag(tag)
     }
 
     static fromRef(String ref) {

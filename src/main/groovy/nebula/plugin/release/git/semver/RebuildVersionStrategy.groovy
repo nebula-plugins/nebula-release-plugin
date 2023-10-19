@@ -80,11 +80,8 @@ class RebuildVersionStrategy implements VersionStrategy {
     
 
     private String getHeadVersion(Project project, GitOps gitOps) {
-        def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
-        return gitOps.headTags().collect {
-            tagStrategy.parseTag(it)
-        }.findAll {
+        return gitOps.headTags().findAll {
             it != null
-        }.max()?.toString()
+        }.max()?.version?.toString()
     }
 }

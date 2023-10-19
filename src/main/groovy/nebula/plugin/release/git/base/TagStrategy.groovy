@@ -15,11 +15,8 @@
  */
 package nebula.plugin.release.git.base
 
-import com.github.zafarkhaja.semver.ParseException
-import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.GitOps
-import org.ajoberstar.grgit.Tag
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -34,17 +31,6 @@ class TagStrategy {
      */
     Closure<String> toTagString
 
-    /**
-     * Closure taking a {@link Tag tag} as an argument and returning a {@link Version version} if the tag could be
-     * parsed, else '<code>null</code>'
-     */
-    Closure<Version> parseTag = { Tag tag ->
-        try {
-            Version.valueOf(tag.name[0] == 'v' ? tag.name[1..-1] : tag.name)
-        } catch (ParseException e) {
-            null
-        }
-    }
 
     TagStrategy() {
         setPrefixNameWithV(true)

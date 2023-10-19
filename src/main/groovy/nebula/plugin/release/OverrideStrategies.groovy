@@ -22,6 +22,7 @@ import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
+import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.plugin.release.git.semver.NearestVersionLocator
 import org.ajoberstar.grgit.Tag
@@ -110,7 +111,7 @@ class OverrideStrategies {
                 logger.debug("Using version ${inferredVersion} with ${releaseStage == NOT_SUPPLIED ? "a non-supplied release strategy" : "${releaseStage} release strategy"}")
                 return new ReleaseVersion(inferredVersion, null, false)
             } else {
-                List<Tag> headTags = gitOps.headTags()
+                List<TagRef> headTags = gitOps.headTags()
                 if (headTags.isEmpty()) {
                     throw new GradleException("Current commit does not have a tag")
                 } else {
