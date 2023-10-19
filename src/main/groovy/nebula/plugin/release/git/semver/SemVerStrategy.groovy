@@ -21,11 +21,12 @@ import groovy.transform.PackageScope
 
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.VersionSanitizerUtil
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.DefaultVersionStrategy
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
-import org.ajoberstar.grgit.Grgit
-
+import nebula.plugin.release.git.model.Branch
+import nebula.plugin.release.git.model.Commit
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
@@ -89,29 +90,22 @@ final class SemVerStrategy implements DefaultVersionStrategy {
      */
     boolean enforcePrecedence
 
-    /**
-     * Determines whether this strategy can be used to infer the version as a default.
-     * <ul>
-     * <li>Return {@code false}, if the {@code release.stage} is not one listed in the {@code stages} property.</li>
-     * <li>Return {@code false}, if the repository has uncommitted changes and {@code allowDirtyRepo} is {@code false}.</li>
-     * <li>Return {@code true}, otherwise.</li>
-     * </ul>
-     */
     @Override
-    boolean defaultSelector(Project project, Grgit grgit) {
+    boolean defaultSelector(Project project, GitOps gitOps) {
         String stage = getPropertyOrNull(project, STAGE_PROP)
         if (stage != null && !stages.contains(stage)) {
             logger.info('Skipping {} default strategy because stage ({}) is not one of: {}', name, stage, stages)
             return false
-        } else if (!allowDirtyRepo && !grgit.status().clean) {
+        } else if (!allowDirtyRepo && !gitOps.isCleanStatus()) {
             logger.info('Skipping {} default strategy because repo is dirty.', name)
             return false
         } else {
-            String status = grgit.status().clean ? 'clean' : 'dirty'
+            String status = gitOps.isCleanStatus() ? 'clean' : 'dirty'
             logger.info('Using {} default strategy because repo is {} and no stage defined', name, status)
             return true
         }
     }
+
 
     /**
      * Determines whether this strategy should be used to infer the version.
@@ -122,12 +116,12 @@ final class SemVerStrategy implements DefaultVersionStrategy {
      * </ul>
      */
     @Override
-    boolean selector(Project project, Grgit grgit) {
+    boolean selector(Project project, GitOps gitOps) {
         String stage = getPropertyOrNull(project, STAGE_PROP)
         if (stage == null || !stages.contains(stage)) {
             logger.info('Skipping {} strategy because stage ({}) is not one of: {}', name, stage, stages)
             return false
-        } else if (!allowDirtyRepo && !grgit.status().clean) {
+        } else if (!allowDirtyRepo && !gitOps.isCleanStatus()) {
             logger.info('Skipping {} strategy because repo is dirty.', name)
             return false
         } else {
@@ -142,14 +136,15 @@ final class SemVerStrategy implements DefaultVersionStrategy {
      * first value in the {@code stages} set (i.e. the one with the lowest precedence). After inferring
      * the version precedence will be enforced, if required by this strategy.
      */
+    @CompileDynamic
     @Override
-    ReleaseVersion infer(Project project, Grgit grgit) {
+    ReleaseVersion infer(Project project, GitOps gitOps) {
         def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
-        return doInfer(project, grgit, new NearestVersionLocator(tagStrategy))
+        return doInfer(project, gitOps, new NearestVersionLocator(gitOps, tagStrategy))
     }
 
     @PackageScope
-    ReleaseVersion doInfer(Project project, Grgit grgit, NearestVersionLocator locator) {
+    ReleaseVersion doInfer(Project project, GitOps gitOps, NearestVersionLocator locator) {
         ChangeScope scope = getPropertyOrNull(project, SCOPE_PROP).with { scope ->
             scope == null ? null : ChangeScope.valueOf(scope.toUpperCase())
         }
@@ -159,20 +154,21 @@ final class SemVerStrategy implements DefaultVersionStrategy {
         }
         logger.info('Beginning version inference using {} strategy and input scope ({}) and stage ({})', name, scope, stage)
 
-        NearestVersion nearestVersion = locator.locate(grgit)
+        NearestVersion nearestVersion = locator.locate()
         logger.debug('Located nearest version: {}', nearestVersion)
 
+        String currentHead = gitOps.head()
         SemVerStrategyState state = new SemVerStrategyState(
-            scopeFromProp: scope,
-            stageFromProp: stage,
-            currentHead: grgit.head(),
-            currentBranch: grgit.branch.current,
-            repoDirty: !grgit.status().clean,
-            nearestVersion: nearestVersion
+                scopeFromProp: scope,
+                stageFromProp: stage,
+                currentHead: new Commit(id: currentHead, abbreviatedId: currentHead.take(7)),
+                currentBranch: new Branch(fullName: gitOps.currentBranch()),
+                repoDirty: !gitOps.cleanStatus,
+                nearestVersion: nearestVersion
         )
 
         Version version = StrategyUtil.all(
-            normalStrategy, preReleaseStrategy, buildMetadataStrategy).infer(state).toVersion()
+                normalStrategy, preReleaseStrategy, buildMetadataStrategy).infer(state).toVersion()
 
 
         String versionAsString = version.toString()
@@ -190,7 +186,7 @@ final class SemVerStrategy implements DefaultVersionStrategy {
         return new ReleaseVersion(versionAsString, nearestVersion.normal.toString(), createTag)
     }
 
-    private String getPropertyOrNull(Project project, String name) {
+    private static String getPropertyOrNull(Project project, String name) {
         return project.hasProperty(name) ? project.property(name) : null
     }
 }

@@ -16,11 +16,10 @@
 package nebula.plugin.release.git.semver
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
-import org.ajoberstar.grgit.Commit
-import org.ajoberstar.grgit.Grgit
 
 import org.gradle.api.Project
 import org.slf4j.Logger
@@ -53,10 +52,10 @@ class RebuildVersionStrategy implements VersionStrategy {
      * </ul>
      */
     @Override
-    boolean selector(Project project, Grgit grgit) {
-        def clean = grgit.status().clean
+    boolean selector(Project project, GitOps gitOps) {
+        def clean = gitOps.isCleanStatus()
         def propsSpecified = project.hasProperty(SemVerStrategy.SCOPE_PROP) || project.hasProperty(SemVerStrategy.STAGE_PROP)
-        def headVersion = getHeadVersion(project, grgit)
+        def headVersion = getHeadVersion(project, gitOps)
 
         if (clean && !propsSpecified && headVersion) {
             logger.info('Using {} strategy because repo is clean, no "release." properties found and head version is {}', name, headVersion)
@@ -72,22 +71,17 @@ class RebuildVersionStrategy implements VersionStrategy {
      * highest precendence.
      */
     @Override
-    ReleaseVersion infer(Project project, Grgit grgit) {
-        String version = getHeadVersion(project, grgit)
+    ReleaseVersion infer(Project project, GitOps gitOps) {
+        String version = getHeadVersion(project, gitOps)
         def releaseVersion = new ReleaseVersion(version, version, false)
         logger.debug('Inferred version {} by strategy {}', releaseVersion, name)
         return releaseVersion
     }
+    
 
-    private String getHeadVersion(Project project, Grgit grgit) {
-        def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
-        Commit head = grgit.head()
-        return grgit.tag.list().findAll {
-            it.commit == head
-        }.collect {
-            tagStrategy.parseTag(it)
-        }.findAll {
+    private String getHeadVersion(Project project, GitOps gitOps) {
+        return gitOps.headTags().findAll {
             it != null
-        }.max()?.toString()
+        }.max()?.version?.toString()
     }
 }

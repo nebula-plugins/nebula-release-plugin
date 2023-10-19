@@ -15,46 +15,38 @@
  */
 package nebula.plugin.release.git.base
 
-import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.service.TagService
+import nebula.plugin.release.git.GitOps
 import spock.lang.Specification
 
 class TagStrategySpec extends Specification {
     def 'maybeCreateTag with version create tag true will create a tag'() {
         given:
-        Grgit grgit = GroovyMock()
-        TagService tag = GroovyMock()
-        grgit.tag >> tag
-        1 * tag.add([name: 'v1.2.3', message: 'Release of 1.2.3'])
-        0 * tag._
+        GitOps gitOps = GroovyMock()
+        1 * gitOps.createTag('v1.2.3', 'Release of 1.2.3')
+
         expect:
-        new TagStrategy().maybeCreateTag(grgit, new ReleaseVersion('1.2.3', null, true)) == 'v1.2.3'
+        new TagStrategy().maybeCreateTag(gitOps, new ReleaseVersion('1.2.3', null, true)) == 'v1.2.3'
     }
 
     def 'maybeCreateTag with version create tag false does not create a tag'() {
         given:
-        Grgit grgit = GroovyMock()
-        TagService tag = GroovyMock()
-        grgit.tag >> tag
-        0 * tag._
+        GitOps gitOps = GroovyMock()
+        0 * gitOps.createTag(*_)
+
         expect:
-        new TagStrategy().maybeCreateTag(grgit, new ReleaseVersion('1.2.3', null, false)) == null
+        new TagStrategy().maybeCreateTag(gitOps, new ReleaseVersion('1.2.3', null, false)) == null
     }
 
     def 'maybeCreateTag with version create tag true and prefix name with v false will create a tag'() {
         setup:
-        Grgit grgit = GroovyMock()
-        TagService tag = GroovyMock()
-        grgit.tag >> tag
+        GitOps gitOps = GroovyMock()
 
         when:
         def strategy = new TagStrategy()
         strategy.prefixNameWithV = false
-        strategy.maybeCreateTag(grgit, new ReleaseVersion('1.2.3', null, true)) == '1.2.3'
+        strategy.maybeCreateTag(gitOps, new ReleaseVersion('1.2.3', null, true)) == '1.2.3'
 
         then:
-
-        1 * tag.add([name: '1.2.3', message: 'Release of 1.2.3'])
-        0 * tag._
+        1 * gitOps.createTag('1.2.3', 'Release of 1.2.3')
     }
 }

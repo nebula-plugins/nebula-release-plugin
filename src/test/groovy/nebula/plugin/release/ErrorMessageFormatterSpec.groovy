@@ -8,68 +8,33 @@ class ErrorMessageFormatterSpec extends Specification {
 
     def 'should not have a message for clean status'() {
         given:
-        def status = new Status()
+        def status = ""
 
         expect:
-        status.isClean()
         formatter.format(status) == ""
     }
 
-    def 'should list staged files'() {
+    def 'should list pending changes'() {
         given:
-        def status = new Status(['staged':['added': ['add.txt'], 'modified': ['path/to/mod.txt', 'mod.b.txt'], 'removed': ['folder/rm.txt']]])
+        def status = """
+ M src/main/groovy/nebula/plugin/release/ErrorMessageFormatter.groovy
+ M src/main/groovy/nebula/plugin/release/ReleasePlugin.groovy
+AM src/main/groovy/nebula/plugin/release/git/GitProviders.groovy
+ M src/test/groovy/nebula/plugin/release/ErrorMessageFormatterSpec.groovy
+"""
         String expected = [
                 ErrorMessageFormatter.ROOT_CAUSE,
-                "Found staged changes:",
-                "  [+] add.txt",
-                "  [M] path/to/mod.txt",
-                "  [M] mod.b.txt",
-                "  [-] folder/rm.txt",
+                " M src/main/groovy/nebula/plugin/release/ErrorMessageFormatter.groovy\n" +
+                        " M src/main/groovy/nebula/plugin/release/ReleasePlugin.groovy\n" +
+                        "AM src/main/groovy/nebula/plugin/release/git/GitProviders.groovy\n" +
+                        " M src/test/groovy/nebula/plugin/release/ErrorMessageFormatterSpec.groovy\n",
         ].join(sprintf(ErrorMessageFormatter.NEW_LINE))
 
         when:
         String message = formatter.format(status)
 
         then:
-        !status.isClean()
-        message == expected
+        message.stripIndent().replaceAll("\n",'') == expected.stripIndent().replaceAll("\n",'')
     }
 
-    def 'should list unstaged files'() {
-        given:
-        def status = new Status(['unstaged':['added': ['z.txt'], 'modified': ['a/b/c.txt'], 'removed': ['sub/folder/file.txt', 'version.txt']]])
-        String expected = [
-                ErrorMessageFormatter.ROOT_CAUSE,
-                "Found unstaged changes:",
-                "  [+] z.txt",
-                "  [M] a/b/c.txt",
-                "  [-] sub/folder/file.txt",
-                "  [-] version.txt",
-        ].join(sprintf(ErrorMessageFormatter.NEW_LINE))
-
-        when:
-        String message = formatter.format(status)
-
-        then:
-        !status.isClean()
-        message == expected
-    }
-
-    def 'should list conflict files'() {
-        given:
-        def status = new Status(['conflicts':['a.txt', 'b.java']])
-        String expected = [
-                ErrorMessageFormatter.ROOT_CAUSE,
-                "Found conflicts:",
-                "  a.txt",
-                "  b.java",
-        ].join(sprintf(ErrorMessageFormatter.NEW_LINE))
-
-        when:
-        String message = formatter.format(status)
-
-        then:
-        !status.isClean()
-        message == expected
-    }
 }

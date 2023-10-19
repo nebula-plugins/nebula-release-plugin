@@ -15,11 +15,8 @@
  */
 package nebula.plugin.release.git.base
 
-import com.github.zafarkhaja.semver.ParseException
-import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
-import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Tag
+import nebula.plugin.release.git.GitOps
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -34,17 +31,6 @@ class TagStrategy {
      */
     Closure<String> toTagString
 
-    /**
-     * Closure taking a {@link Tag tag} as an argument and returning a {@link Version version} if the tag could be
-     * parsed, else '<code>null</code>'
-     */
-    Closure<Version> parseTag = { Tag tag ->
-        try {
-            Version.valueOf(tag.name[0] == 'v' ? tag.name[1..-1] : tag.name)
-        } catch (ParseException e) {
-            null
-        }
-    }
 
     TagStrategy() {
         setPrefixNameWithV(true)
@@ -66,21 +52,21 @@ class TagStrategy {
      */
     Closure generateMessage = { ReleaseVersion version -> "Release of ${version.version}" }
 
-    /**
+   /**
      * If the release version specifies a tag should be created, create a tag
      * using the provided {@code Grgit} instance and this instance's state to
      * determine the tag name and message.
-     * @param grgit the repository to create the tag in
+     * @param gitOps the git operations to use
      * @param version the version to create the tag for
      * @return the name of the tag created, or {@code null} if it wasn't
      */
-    String maybeCreateTag(Grgit grgit, ReleaseVersion version) {
+    String maybeCreateTag(GitOps gitOps, ReleaseVersion version) {
         if (version.createTag) {
             String name = toTagString(version.version)
             String message = generateMessage(version)
 
             logger.warn('Tagging repository as {}', name)
-            grgit.tag.add(name: name, message: message)
+            gitOps.createTag(name, message)
             return name
         } else {
             return null

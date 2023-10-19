@@ -16,18 +16,15 @@
 package nebula.plugin.release.git.opinion
 
 import com.github.zafarkhaja.semver.Version
-
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleaseVersion
+import nebula.plugin.release.git.model.Branch
+import nebula.plugin.release.git.model.Commit
 import nebula.plugin.release.git.semver.ChangeScope
 import nebula.plugin.release.git.semver.NearestVersion
 import nebula.plugin.release.git.semver.NearestVersionLocator
 import nebula.plugin.release.git.semver.SemVerStrategyState
 import nebula.plugin.release.git.semver.StrategyUtil
-import org.ajoberstar.grgit.Branch
-import org.ajoberstar.grgit.Commit
-import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Status
-import org.ajoberstar.grgit.service.BranchService
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -337,10 +334,10 @@ class StrategiesSpec extends Specification {
     def 'SNAPSHOT works as expected'() {
         given:
         def project = mockProject(scope, stage)
-        def grgit = mockGrgit(repoDirty)
+        def gitOps = mockGitOps(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
-        Strategies.SNAPSHOT.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, false)
+        Strategies.SNAPSHOT.doInfer(project, gitOps, locator) == new ReleaseVersion(expected, nearestNormal, false)
         where:
         scope   | stage      | nearestNormal | nearestAny   | repoDirty | expected
         null    | null       | '1.0.0'       | '1.0.0'      | false     | '1.1.0-SNAPSHOT'
@@ -355,10 +352,10 @@ class StrategiesSpec extends Specification {
     def 'DEVELOPMENT works as expected'() {
         given:
         def project = mockProject(scope, stage)
-        def grgit = mockGrgit(repoDirty)
+        def gitOps = mockGitOps(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
-        Strategies.DEVELOPMENT.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, false)
+        Strategies.DEVELOPMENT.doInfer(project, gitOps, locator) == new ReleaseVersion(expected, nearestNormal, false)
         where:
         scope   | stage | nearestNormal | nearestAny      | repoDirty | expected
         null    | null  | '1.0.0'       | '1.0.0'         | false     | '1.0.1-dev.2+5e9b2a1'
@@ -374,13 +371,13 @@ class StrategiesSpec extends Specification {
     def 'IMMUTABLE_SNAPSHOT works as expected'() {
         given:
         def project = mockProject(scope, stage)
-        def grgit = mockGrgit(repoDirty)
+        def gitOps = mockGitOps(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         GroovyMock(TimestampUtil, global: true)
         TimestampUtil.getUTCFormattedTimestamp() >> '20190705103502'
 
         expect:
-        Strategies.IMMUTABLE_SNAPSHOT.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, false)
+        Strategies.IMMUTABLE_SNAPSHOT.doInfer(project, gitOps, locator) == new ReleaseVersion(expected, nearestNormal, false)
 
         where:
         scope   | stage      | nearestNormal | nearestAny      | repoDirty | expected
@@ -396,10 +393,10 @@ class StrategiesSpec extends Specification {
 
     def 'PRE_RELEASE works as expected'() {
         def project = mockProject(scope, stage)
-        def grgit = mockGrgit(repoDirty)
+        def gitOps = mockGitOps(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
-        Strategies.PRE_RELEASE.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, true)
+        Strategies.PRE_RELEASE.doInfer(project, gitOps, locator) == new ReleaseVersion(expected, nearestNormal, true)
         where:
         scope   | stage       | nearestNormal | nearestAny          | repoDirty | expected
         null    | null        | '1.0.0'       | '1.0.0'             | false     | '1.0.1-milestone.1'
@@ -416,10 +413,10 @@ class StrategiesSpec extends Specification {
 
     def 'Strategies.FINAL works as expected'() {
         def project = mockProject(scope, stage)
-        def grgit = mockGrgit(repoDirty)
+        def gitOps = mockGitOps(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
-        Strategies.FINAL.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, true)
+        Strategies.FINAL.doInfer(project, gitOps, locator) == new ReleaseVersion(expected, nearestNormal, true)
         where:
         scope   | stage   | nearestNormal | nearestAny      | repoDirty | expected
         null    | null    | '1.0.0'       | '1.0.0'         | false     | '1.0.1'
@@ -432,10 +429,10 @@ class StrategiesSpec extends Specification {
 
     def 'PRE_RELEASE_ALPHA_BETA works as expected'() {
         def project = mockProject(scope, stage)
-        def grgit = mockGrgit(repoDirty)
+        def gitOps = mockGitOps(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
-        Strategies.PRE_RELEASE_ALPHA_BETA.doInfer(project, grgit, locator) == new ReleaseVersion(expected, nearestNormal, true)
+        Strategies.PRE_RELEASE_ALPHA_BETA.doInfer(project, gitOps, locator) == new ReleaseVersion(expected, nearestNormal, true)
         where:
         scope   | stage   | nearestNormal | nearestAny         | repoDirty | expected
         null    | null    | '1.0.0'       | '1.0.0'            | false     | '1.0.1-alpha.1'
@@ -466,25 +463,17 @@ class StrategiesSpec extends Specification {
         return project
     }
 
-    def mockGrgit(boolean repoDirty, String branchName = 'master') {
-        Grgit grgit = GroovyMock()
-
-        Status status = Mock()
-        status.clean >> !repoDirty
-        grgit.status() >> status
-
-        grgit.head() >> new Commit(id: '5e9b2a1e98b5670a90a9ed382a35f0d706d5736c', abbreviatedId: '5e9b2a1')
-
-        BranchService branch = GroovyMock()
-        branch.current() >> new Branch(fullName: "refs/heads/${branchName}")
-        grgit.branch >> branch
-
-        return grgit
+    def mockGitOps(boolean repoDirty, String branchName = 'master') {
+        GitOps gitOps = GroovyMock()
+        gitOps.isCleanStatus() >> !repoDirty
+        gitOps.head() >> "5e9b2a1e98b5670a90a9ed382a35f0d706d5736c"
+        gitOps.currentBranch() >> "refs/heads/${branchName}"
+        return gitOps
     }
 
     def mockLocator(String nearestNormal, String nearestAny) {
         NearestVersionLocator locator = Mock()
-        locator.locate(_) >> new NearestVersion(
+        locator.locate() >> new NearestVersion(
                 normal: Version.valueOf(nearestNormal),
                 distanceFromNormal: 5,
                 any: Version.valueOf(nearestAny),

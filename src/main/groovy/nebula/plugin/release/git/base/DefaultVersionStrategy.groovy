@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
-import org.ajoberstar.grgit.Grgit
+import nebula.plugin.release.git.GitOps
 
 import org.gradle.api.Project
 
@@ -27,13 +27,14 @@ import org.gradle.api.Project
  * @see nebula.plugin.release.git.opinion.Strategies
  */
 interface DefaultVersionStrategy extends VersionStrategy {
+
     /**
      * Determines if the strategy can be used as a default strategy for inferring
      * the project's version. A return of {@code false} does not mean that the
      * strategy cannot be used as the default.
      * @param project the project the version should be inferred for
-     * @param grgit the repository the version should be inferred from
+     * @param gitOps the class to talk to git using native git calls
      * @return {@code true} if the strategy can be used to infer the version
      */
-    boolean defaultSelector(Project project, Grgit grgit)
+    boolean defaultSelector(Project project, GitOps gitOps)
 }

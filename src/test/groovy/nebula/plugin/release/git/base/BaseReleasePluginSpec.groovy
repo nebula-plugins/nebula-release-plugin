@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
+import nebula.plugin.release.git.GitOps
 import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.BranchStatus
 import org.ajoberstar.grgit.Grgit
@@ -35,40 +36,35 @@ class BaseReleasePluginSpec extends Specification {
 
     def 'prepare task succeeds if branch is up to date'() {
         given:
-        Grgit repo = GroovyMock()
+        GitOps gitOps = GroovyMock()
         BranchService branch = GroovyMock()
         branch.current() >> new Branch(fullName: 'refs/heads/master')
         branch.status([branch: 'refs/heads/master']) >> new BranchStatus(behindCount: 0)
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
-        releaseExtension.grgit = repo
+        releaseExtension.gitOps = gitOps
 
         when:
         BaseReleasePlugin.prepare(releaseExtension)
 
         then:
         notThrown(GradleException)
-        1 * repo.branch >> branch
-        1 * repo.fetch([remote: 'origin'])
-
+        1 * gitOps.fetch('origin')
+        1 * gitOps.isCurrentBranchBehindRemote('origin') >> false
     }
 
     def 'prepare task fails if branch is behind'() {
         given:
-        Grgit repo = GroovyMock()
-        BranchService branch = GroovyMock()
+        GitOps gitOps = GroovyMock()
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
-        releaseExtension.grgit = repo
+        releaseExtension.gitOps = gitOps
 
         when:
         BaseReleasePlugin.prepare(releaseExtension)
 
         then:
         thrown(GradleException)
-        1 * repo.fetch([remote: 'origin'])
-        _ * repo.branch >> branch
-        1 * branch.status([name: 'refs/heads/master']) >> new BranchStatus(behindCount: 2)
-        1 * branch.current() >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
-
+        1 * gitOps.fetch('origin')
+        1 * gitOps.isCurrentBranchBehindRemote('origin') >> true
     }
 
     def 'release task pushes branch and tag if created'() {
@@ -77,22 +73,17 @@ class BaseReleasePluginSpec extends Specification {
                 getName: { 'a' },
                 selector: {proj, repo2 -> true },
                 infer: {proj, repo2 -> new ReleaseVersion('1.2.3', null, true)}] as VersionStrategy
-        Grgit repo = GroovyMock()
-        BranchService branch = GroovyMock()
-        repo.branch >> branch
-        TagService tag = GroovyMock()
+        GitOps gitOps = GroovyMock()
 
         ReleasePluginExtension releaseExtension = new ReleasePluginExtension(project)
-        releaseExtension.grgit = repo
+        releaseExtension.gitOps = gitOps
         releaseExtension.versionStrategy(strategy)
 
         when:
         BaseReleasePlugin.release(project, project.ext, releaseExtension)
 
         then:
-        1 * repo.push([remote: 'origin', refsOrSpecs: ['v1.2.3']])
-        _ * repo.branch >> branch
-        _ * branch.current >> new Branch(fullName: 'refs/heads/master', trackingBranch: new Branch(fullName: 'refs/remotes/origin/master'))
-        1 * repo.tag >> tag
+        1 * gitOps.createTag(*_)
+        1 * gitOps.pushTag('origin', 'v1.2.3')
     }
 }

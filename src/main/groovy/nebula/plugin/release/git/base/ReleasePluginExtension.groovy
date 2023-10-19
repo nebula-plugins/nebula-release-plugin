@@ -17,7 +17,7 @@ package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.util.ConfigureUtil
-import org.ajoberstar.grgit.Grgit
+import nebula.plugin.release.git.GitOps
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory
  * </p>
  *
  * @see BaseReleasePlugin
- * @see nebula.plugin.release.git.opinion.OpinionReleasePlugin
  */
 class ReleasePluginExtension {
     private static final Logger logger = LoggerFactory.getLogger(ReleasePluginExtension)
@@ -54,9 +53,9 @@ class ReleasePluginExtension {
     VersionStrategy defaultVersionStrategy
 
     /**
-     * The repository to infer the version from.
+     * Used to execute git operations
      */
-    Grgit grgit
+    GitOps gitOps
 
     /**
      * The remote to fetch changes from and push changes to.
@@ -100,15 +99,15 @@ class ReleasePluginExtension {
         @CompileDynamic
         private void infer() {
             VersionStrategy selectedStrategy = versionStrategies.find {  strategy ->
-                strategy.selector(project, grgit)
+                strategy.selector(project, gitOps)
             }
 
             if (!selectedStrategy) {
                 boolean useDefault
                 if (defaultVersionStrategy instanceof DefaultVersionStrategy) {
-                    useDefault = defaultVersionStrategy.defaultSelector(project, grgit)
+                    useDefault = defaultVersionStrategy.defaultSelector(project, gitOps)
                 } else {
-                    useDefault = defaultVersionStrategy?.selector(project, grgit)
+                    useDefault = defaultVersionStrategy?.selector(project, gitOps)
                 }
 
                 if (useDefault) {
@@ -119,7 +118,7 @@ class ReleasePluginExtension {
                 }
             }
 
-            inferredVersion = selectedStrategy.infer(project, grgit)
+            inferredVersion = selectedStrategy.infer(project, gitOps)
         }
 
         @Override

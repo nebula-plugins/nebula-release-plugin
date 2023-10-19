@@ -16,7 +16,7 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
-import org.ajoberstar.grgit.Grgit
+import nebula.plugin.release.git.GitOps
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory
  * </p>
  *
  * @see nebula.plugin.release.git.opinion.Strategies
- * @see nebula.plugin.release.git.opinion.OpinionReleasePlugin
  * @see <a href="https://github.com/ajoberstar/gradle-git/wiki/org.ajoberstar.release-base">Wiki Doc</a>
  */
 @CompileDynamic
@@ -46,16 +45,12 @@ class BaseReleasePlugin implements Plugin<Project> {
         def extension = project.extensions.create('release', ReleasePluginExtension, project)
         addPrepareTask(project, extension)
         addReleaseTask(project, extension)
-        project.plugins.withId('org.ajoberstar.grgit') {
-            extension.grgit = project.grgit
-        }
     }
 
     private void addPrepareTask(Project project, ReleasePluginExtension extension) {
         project.tasks.register(PREPARE_TASK_NAME) {
             it.description = 'Verifies that the project could be released.'
             it.doLast {
-                project.ext.grgit = extension.grgit
                 prepare(extension)
             }
         }
@@ -80,12 +75,12 @@ class BaseReleasePlugin implements Plugin<Project> {
 
     protected static void prepare(ReleasePluginExtension extension) {
         logger.info('Fetching changes from remote: {}', extension.remote)
-        Grgit grgit = extension.grgit
-        grgit.fetch(remote: extension.remote)
+        GitOps gitOps = extension.gitOps
+        gitOps.fetch(extension.remote)
 
+        boolean currentBranchIsBehindRemote = gitOps.isCurrentBranchBehindRemote(extension.remote)
         // if branch is tracking another, make sure it's not behind
-        def currentBranch = grgit.branch.current()
-        if (currentBranch.trackingBranch && grgit.branch.status(name: currentBranch.fullName).behindCount > 0) {
+        if (currentBranchIsBehindRemote) {
             throw new GradleException('Current branch is behind the tracked branch. Cannot release.')
         }
     }
@@ -93,23 +88,16 @@ class BaseReleasePlugin implements Plugin<Project> {
     protected static void release(Project project, ext, ReleasePluginExtension extension) {
         // force version inference if it hasn't happened already
         project.version.toString()
-
-        Grgit grgit = extension.grgit
-        ext.grgit = grgit
-        ext.toPush = []
+        GitOps gitOps = extension.gitOps
 
         if(project.version instanceof String) {
             throw new GradleException("version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter")
         }
 
-        ext.tagName = extension.tagStrategy.maybeCreateTag(grgit, project.version.inferredVersion)
-        if (ext.tagName) {
-            ext.toPush << ext.tagName
-        }
-
-        if (ext.toPush) {
-            logger.warn('Pushing changes in {} to {}', ext.toPush, extension.remote)
-            grgit.push(remote: extension.remote, refsOrSpecs: ext.toPush)
+        String tagName = extension.tagStrategy.maybeCreateTag(gitOps, project.version.inferredVersion)
+        if (tagName) {
+            logger.warn('Pushing changes in {} to {}', tagName, extension.remote)
+            gitOps.pushTag(extension.remote, tagName)
         } else {
             logger.warn('Nothing to push.')
         }

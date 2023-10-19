@@ -20,14 +20,14 @@ import groovy.transform.CompileDynamic
 
 import groovy.transform.Immutable
 import groovy.transform.ToString
-import org.ajoberstar.grgit.Branch
-import org.ajoberstar.grgit.Commit
+import nebula.plugin.release.git.model.Branch
+import nebula.plugin.release.git.model.Commit
 
 /**
  * Working state used by {@link PartialSemVerStrategy}.
  */
 @Immutable(copyWith = true, knownImmutableClasses = [Commit, Branch, NearestVersion])
-@ToString(includeNames = true)
+@ToString(includeNames = true, excludes = ['currentHead'])
 @CompileDynamic
 final class SemVerStrategyState {
     ChangeScope scopeFromProp

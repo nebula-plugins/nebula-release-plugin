@@ -15,21 +15,17 @@
  */
 package nebula.plugin.release.git.semver
 
+import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleaseVersion
-import org.ajoberstar.grgit.Commit
-import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Status
-import org.ajoberstar.grgit.Tag
-import org.ajoberstar.grgit.service.TagService
-
+import nebula.plugin.release.git.model.TagRef
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import spock.lang.Specification
 
 class RebuildVersionStrategySpec extends Specification {
     RebuildVersionStrategy strategy = new RebuildVersionStrategy()
-    Grgit grgit = GroovyMock()
+    GitOps gitOps = GroovyMock()
 
     def getProject(Map properties) {
         Project p = ProjectBuilder.builder().withName("testproject").build()
@@ -46,7 +42,7 @@ class RebuildVersionStrategySpec extends Specification {
         Project project = getProject([:])
         mockTagsAtHead('v1.0.0')
         expect:
-        !strategy.selector(project, grgit)
+        !strategy.selector(project, gitOps)
     }
 
     def 'selector returns false if any release properties are set'() {
@@ -55,7 +51,7 @@ class RebuildVersionStrategySpec extends Specification {
         Project project = getProject('release.scope': 'value')
         mockTagsAtHead('v1.0.0')
         expect:
-        !strategy.selector(project, grgit)
+        !strategy.selector(project, gitOps)
     }
 
     def 'selector returns false if no version tag at HEAD'() {
@@ -64,7 +60,7 @@ class RebuildVersionStrategySpec extends Specification {
         Project project = getProject([:])
         mockTagsAtHead('non-version-tag')
         expect:
-        !strategy.selector(project, grgit)
+        !strategy.selector(project, gitOps)
     }
 
     def 'selector returns true if rebuild is attempted'() {
@@ -73,7 +69,7 @@ class RebuildVersionStrategySpec extends Specification {
         Project project = getProject([:])
         mockTagsAtHead('v0.1.1', 'v1.0.0', '0.19.1')
         expect:
-        strategy.selector(project, grgit)
+        strategy.selector(project, gitOps)
     }
 
     def 'infer returns HEAD version is inferred and previous with create tag false'() {
@@ -82,25 +78,15 @@ class RebuildVersionStrategySpec extends Specification {
         Project project = getProject([:])
         mockTagsAtHead('v0.1.1', 'v1.0.0', '0.19.1')
         expect:
-        strategy.infer(project, grgit) == new ReleaseVersion('1.0.0', '1.0.0', false)
+        strategy.infer(project, gitOps) == new ReleaseVersion('1.0.0', '1.0.0', false)
     }
 
     private void mockTagsAtHead(String... tagNames) {
-        Commit head = new Commit()
-        grgit.head() >> head
-        TagService tag = GroovyMock()
-        grgit.tag >> tag
-        tag.list() >> tagNames.collect { new Tag(commit: head, fullName: "refs/heads/${it}") }
+        gitOps.headTags() >>  tagNames.collect { new TagRef("refs/tags/${it}") }
     }
+
 
     private void mockClean(boolean clean) {
-        Status status = GroovyMock()
-        grgit.status() >> status
-        status.clean >> clean
-    }
-
-    private void mockProperties(Map props) {
-        project.properties.clear()
-        project.properties.putAll(props)
+        gitOps.isCleanStatus() >> clean
     }
 }
