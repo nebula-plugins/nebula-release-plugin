@@ -17,7 +17,6 @@ package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.GitOps
-import org.ajoberstar.grgit.Grgit
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project

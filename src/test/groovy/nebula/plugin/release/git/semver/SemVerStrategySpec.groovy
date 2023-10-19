@@ -19,18 +19,13 @@ import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleaseVersion
 import org.ajoberstar.grgit.Branch
-import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Status
-import org.ajoberstar.grgit.service.BranchService
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-
 import spock.lang.Specification
 
 class SemVerStrategySpec extends Specification {
     Project project = GroovyMock()
-    Grgit grgit = GroovyMock()
     GitOps gitOps = GroovyMock()
 
     def 'selector returns false if stage is not set to valid value'() {
@@ -58,7 +53,7 @@ class SemVerStrategySpec extends Specification {
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: true)
         mockStage('one')
         mockRepoClean(false)
-        mockBranchService()
+        mockCurrentBranch()
         expect:
         strategy.selector(project, gitOps)
     }
@@ -68,7 +63,7 @@ class SemVerStrategySpec extends Specification {
         def strategy = new SemVerStrategy(stages: ['one', 'and'] as SortedSet, allowDirtyRepo: false)
         mockStage('one')
         mockRepoClean(true)
-        mockBranchService()
+        mockCurrentBranch()
         expect:
         strategy.selector(project, gitOps)
     }
@@ -94,7 +89,7 @@ class SemVerStrategySpec extends Specification {
         given:
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: false)
         mockStage(stageProp)
-        mockRepoCleanLegacy(false)
+        mockRepoClean(false)
         expect:
         !strategy.defaultSelector(project, gitOps)
         where:
@@ -105,8 +100,8 @@ class SemVerStrategySpec extends Specification {
         given:
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: true)
         mockStage('one')
-        mockRepoCleanLegacy(false)
-        mockBranchService()
+        mockRepoClean(false)
+        mockCurrentBranch()
         expect:
         strategy.defaultSelector(project, gitOps)
     }
@@ -116,7 +111,7 @@ class SemVerStrategySpec extends Specification {
         def strategy = new SemVerStrategy(stages: ['one', 'and'] as SortedSet, allowDirtyRepo: false)
         mockStage('one')
         mockRepoClean(true)
-        mockBranchService()
+        mockCurrentBranch()
         expect:
         strategy.defaultSelector(project, gitOps)
     }
@@ -125,15 +120,15 @@ class SemVerStrategySpec extends Specification {
         given:
         mockScope(scope)
         mockStage(stage)
-        mockRepoCleanLegacy(false)
-        mockBranchService()
+        mockRepoClean(false)
+        mockCurrentBranch()
         def nearest = new NearestVersion(
             normal: Version.valueOf('1.2.2'),
             any: Version.valueOf(nearestAny))
         def locator = mockLocator(nearest)
         def strategy = mockStrategy(scope, stage, nearest, createTag, enforcePrecedence)
         expect:
-        strategy.doInfer(project, grgit, locator) == new ReleaseVersion('1.2.3-beta.1+abc123', '1.2.2', createTag)
+        strategy.doInfer(project, gitOps, locator) == new ReleaseVersion('1.2.3-beta.1+abc123', '1.2.2', createTag)
         where:
         scope   | stage | nearestAny | createTag | enforcePrecedence
         'patch' | 'one' | '1.2.3'    | true      | false
@@ -147,20 +142,20 @@ class SemVerStrategySpec extends Specification {
         mockStage('other')
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet)
         when:
-        strategy.doInfer(project, grgit, null)
+        strategy.doInfer(project, gitOps, null)
         then:
         thrown(GradleException)
     }
 
     def 'infer fails if precedence enforced and violated'() {
         given:
-        mockRepoCleanLegacy(false)
-        mockBranchService()
+        mockRepoClean(false)
+        mockCurrentBranch()
         def nearest = new NearestVersion(any: Version.valueOf('1.2.3'))
         def locator = mockLocator(nearest)
         def strategy = mockStrategy(null, 'and', nearest, false, true)
         when:
-        strategy.doInfer(project, grgit, locator)
+        strategy.doInfer(project, gitOps, locator)
         then:
         thrown(GradleException)
     }
@@ -175,27 +170,18 @@ class SemVerStrategySpec extends Specification {
         (0..1) * project.property('release.stage') >> stageProp
     }
 
-    private def mockRepoCleanLegacy(boolean isClean) {
-        Status status = GroovyMock()
-        (0..2) * status.clean >> isClean
-        (0..2) * grgit.status() >> status
-        0 * status._
-    }
-
     private def mockRepoClean(boolean isClean) {
         (0..2) * gitOps.isCleanStatus() >> isClean
     }
 
-    private def mockBranchService() {
-        BranchService branchService = GroovyMock()
-        (0..1) * branchService.current >> new Branch(fullName: 'refs/heads/master')
-        (0..2) * grgit.getBranch() >> branchService
-        0 * branchService._
+    private def mockCurrentBranch() {
+        (0..1) * gitOps.currentBranch() >> 'refs/heads/master'
+        (0..1) * gitOps.head() >> 'refs/heads/master'
     }
 
     private def mockLocator(NearestVersion nearest) {
         NearestVersionLocator locator = Mock()
-        locator.locate(grgit) >> nearest
+        locator.locate() >> nearest
         return locator
     }
 
@@ -214,12 +200,10 @@ class SemVerStrategySpec extends Specification {
         SemVerStrategyState afterPreRelease = afterNormal.copyWith(inferredPreRelease: 'beta.1')
         SemVerStrategyState afterBuildMetadata = afterPreRelease.copyWith(inferredBuildMetadata: 'abc123')
 
-        1 * normal.infer(initial) >> afterNormal
-        1 * preRelease.infer(afterNormal) >> afterPreRelease
-        1 * buildMetadata.infer(afterPreRelease) >> afterBuildMetadata
-        0 * normal._
-        0 * preRelease._
-        0 * buildMetadata._
+        1 * normal.infer(_) >> afterNormal
+        1 * preRelease.infer(_) >> afterPreRelease
+        1 * buildMetadata.infer(_) >> afterBuildMetadata
+
 
         return new SemVerStrategy(
             stages: ['one', 'and'] as SortedSet,

@@ -20,12 +20,6 @@ import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.base.TagStrategy
-import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.Tag
-import org.eclipse.jgit.lib.ObjectId
-import org.eclipse.jgit.revwalk.RevCommit
-import org.eclipse.jgit.revwalk.RevWalk
-import org.eclipse.jgit.revwalk.RevWalkUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -137,67 +131,4 @@ class NearestVersionLocator {
             return [version: UNKNOWN, distance: gitOps.getCommitCountForHead()]
         }
     }
-
-    private Map findNearestVersion(RevWalk walk, RevCommit head, List versionTags) {
-        walk.reset()
-        walk.markStart(head)
-        Map versionTagsByRev = versionTags.groupBy { it.rev }
-
-        def reachableVersionTags = walk.collectMany { rev ->
-            def matches = versionTagsByRev[rev]
-            if (matches) {
-                // Parents can't be "nearer". Exclude them to avoid extra walking.
-                rev.parents.each { walk.markUninteresting(it) }
-            }
-            matches ?: []
-        }.each { versionTag ->
-            versionTag.distance = RevWalkUtils.count(walk, head, versionTag.rev)
-        }
-
-        if (reachableVersionTags) {
-            return reachableVersionTags.min { a, b ->
-                def distanceCompare = a.distance <=> b.distance
-                def versionCompare = (a.version <=> b.version) * -1
-                distanceCompare == 0 ? versionCompare : distanceCompare
-            }
-        } else {
-            return [version: UNKNOWN, distance: RevWalkUtils.count(walk, head, null)]
-        }
-    }
-
-    NearestVersion locate(Grgit grgit) {
-        logger.debug('Locate beginning on branch: {}', grgit.branch.current.fullName)
-
-        // Reuse a single walk to make use of caching.
-        RevWalk walk = new RevWalk(grgit.repository.jgit.repository)
-        try {
-            walk.retainBody = false
-
-            def toRev = { obj ->
-                def commit = grgit.resolve.toCommit(obj)
-                def id = ObjectId.fromString(commit.id)
-                walk.parseCommit(id)
-            }
-
-            List tagRefs = grgit.repository.jgit.tagList().call()
-            List tags = tagRefs.collect { ref ->
-                [version: strategy.parseTag(new Tag(fullName: ref.name)), rev: walk.parseCommit(ref.getObjectId())]
-            }.findAll {
-                it.version
-            }
-
-            List normalTags = tags.findAll { !it.version.preReleaseVersion }
-            RevCommit head = toRev(grgit.head())
-
-            def normal = findNearestVersion(walk, head, normalTags)
-            def any = findNearestVersion(walk, head, tags)
-
-            logger.debug('Nearest release: {}, nearest any: {}.', normal, any)
-            return new NearestVersion(any.version, normal.version, any.distance, normal.distance)
-        } finally {
-            walk.close()
-        }
-    }
-
-
 }

@@ -20,8 +20,6 @@ import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
-import org.ajoberstar.grgit.Commit
-import org.ajoberstar.grgit.Grgit
 
 import org.gradle.api.Project
 import org.slf4j.Logger

@@ -27,7 +27,7 @@ import org.ajoberstar.grgit.Commit
  * Working state used by {@link PartialSemVerStrategy}.
  */
 @Immutable(copyWith = true, knownImmutableClasses = [Commit, Branch, NearestVersion])
-@ToString(includeNames = true)
+@ToString(includeNames = true, excludes = ['currentHead'])
 @CompileDynamic
 final class SemVerStrategyState {
     ChangeScope scopeFromProp

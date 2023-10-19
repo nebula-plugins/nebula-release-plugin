@@ -27,7 +27,6 @@ import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.Commit
-import org.ajoberstar.grgit.Grgit
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
@@ -170,47 +169,6 @@ final class SemVerStrategy implements DefaultVersionStrategy {
 
         Version version = StrategyUtil.all(
                 normalStrategy, preReleaseStrategy, buildMetadataStrategy).infer(state).toVersion()
-
-
-        String versionAsString = version.toString()
-        if(VersionSanitizerUtil.hasSanitizeFlag(project)) {
-            versionAsString = VersionSanitizerUtil.sanitize(version.toString())
-        }
-
-        logger.warn('Inferred project: {}, version: {}', project.name, versionAsString)
-
-        if (enforcePrecedence && version < nearestVersion.any) {
-            throw new GradleException("Based on previous tags in this branch the nearest version is ${nearestVersion.any} You're attempting to release ${version} based on the tag recently pushed. Please look at https://github.com/nebula-plugins/nebula-release-plugin/wiki/Error-Messages-Explained#orggradleapigradleexception-inferred-version-cannot-be-lower-than-nearest-required-by-selected-strategy")
-        }
-
-
-        return new ReleaseVersion(versionAsString, nearestVersion.normal.toString(), createTag)
-    }
-    @PackageScope
-    ReleaseVersion doInfer(Project project, Grgit grgit, NearestVersionLocator locator) {
-        ChangeScope scope = getPropertyOrNull(project, SCOPE_PROP).with { scope ->
-            scope == null ? null : ChangeScope.valueOf(scope.toUpperCase())
-        }
-        String stage = getPropertyOrNull(project, STAGE_PROP) ?: stages.first()
-        if (!stages.contains(stage)) {
-            throw new GradleException("Stage ${stage} is not one of ${stages} allowed for strategy ${name}.")
-        }
-        logger.info('Beginning version inference using {} strategy and input scope ({}) and stage ({})', name, scope, stage)
-
-        NearestVersion nearestVersion = locator.locate(grgit)
-        logger.debug('Located nearest version: {}', nearestVersion)
-
-        SemVerStrategyState state = new SemVerStrategyState(
-            scopeFromProp: scope,
-            stageFromProp: stage,
-            currentHead: grgit.head(),
-            currentBranch: grgit.branch.current,
-            repoDirty: !grgit.status().clean,
-            nearestVersion: nearestVersion
-        )
-
-        Version version = StrategyUtil.all(
-            normalStrategy, preReleaseStrategy, buildMetadataStrategy).infer(state).toVersion()
 
 
         String versionAsString = version.toString()

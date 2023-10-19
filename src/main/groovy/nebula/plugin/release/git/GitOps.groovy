@@ -1,10 +1,7 @@
 package nebula.plugin.release.git
 
-import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
-import org.ajoberstar.grgit.Commit
 import org.ajoberstar.grgit.Tag
-import org.eclipse.jgit.revwalk.RevWalkUtils
 import org.gradle.process.ExecOperations
 
 import java.nio.charset.Charset
