@@ -2,7 +2,10 @@ package nebula.plugin.release.git
 
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.model.TagRef
+import org.gradle.api.GradleException
 import org.gradle.process.ExecOperations
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import java.nio.charset.Charset
 
@@ -11,6 +14,7 @@ import java.nio.charset.Charset
  * This replaced grgit/jgit need and it is useful to be configuration cache compliant
  */
 class GitOps implements Serializable {
+    private static final Logger logger = LoggerFactory.getLogger(GitOps)
 
     private final ExecOperations execOperations
     private File rootDir
@@ -182,7 +186,7 @@ class GitOps implements Serializable {
         try {
             executeGitCommand("push", remote, tag)
         } catch (Exception e) {
-            throw new RuntimeException("Failed to push tag ${tag} to remote ${remote}", e)
+            logger.error("Failed to push tag ${tag} to remote ${remote}", e)
         }
     }
 
@@ -211,11 +215,18 @@ class GitOps implements Serializable {
     @CompileDynamic
     String executeGitCommand(Object... args) {
         ByteArrayOutputStream output = new ByteArrayOutputStream()
+        ByteArrayOutputStream error = new ByteArrayOutputStream()
         List<String> commandLineArgs = ["git", "--git-dir=${rootDir.absolutePath}/.git".toString(), "--work-tree=${rootDir.absolutePath}".toString()]
         commandLineArgs.addAll(args)
         execOperations.exec {
+            ignoreExitValue = true
             it.setCommandLine(commandLineArgs)
             it.standardOutput = output
+            it.errorOutput = error
+        }
+        def errorMsg = new String(error.toByteArray(), Charset.defaultCharset())
+        if(errorMsg) {
+            throw new GradleException(errorMsg)
         }
         return new String(output.toByteArray(), Charset.defaultCharset())
     }
