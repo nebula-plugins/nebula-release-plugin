@@ -16,8 +16,8 @@
 package nebula.plugin.release.git.semver
 
 import com.github.zafarkhaja.semver.Version
-import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.ReleaseVersion
+import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.model.Branch
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -25,14 +25,14 @@ import spock.lang.Specification
 
 class SemVerStrategySpec extends Specification {
     Project project = GroovyMock()
-    GitOps gitOps = GroovyMock()
+    GitReadOnlyCommandUtil gitReadOnlyCommandUtil = GroovyMock()
 
     def 'selector returns false if stage is not set to valid value'() {
         given:
         def strategy = new SemVerStrategy(stages: ['one', 'two'] as SortedSet)
         mockStage(stageProp)
         expect:
-        !strategy.selector(project, gitOps)
+        !strategy.selector(project, gitReadOnlyCommandUtil)
         where:
         stageProp << [null, 'test']
     }
@@ -44,7 +44,7 @@ class SemVerStrategySpec extends Specification {
         mockStage('one')
         mockRepoClean(false)
         expect:
-        !strategy.selector(project, gitOps)
+        !strategy.selector(project, gitReadOnlyCommandUtil)
     }
 
     def 'selector returns true if repo is dirty and allowed and other criteria met'() {
@@ -54,7 +54,7 @@ class SemVerStrategySpec extends Specification {
         mockRepoClean(false)
         mockCurrentBranch()
         expect:
-        strategy.selector(project, gitOps)
+        strategy.selector(project, gitReadOnlyCommandUtil)
     }
 
     def 'selector returns true if all criteria met'() {
@@ -64,7 +64,7 @@ class SemVerStrategySpec extends Specification {
         mockRepoClean(true)
         mockCurrentBranch()
         expect:
-        strategy.selector(project, gitOps)
+        strategy.selector(project, gitReadOnlyCommandUtil)
     }
 
     def 'default selector returns false if stage is defined but not set to valid value'() {
@@ -72,7 +72,7 @@ class SemVerStrategySpec extends Specification {
         def strategy = new SemVerStrategy(stages: ['one', 'two'] as SortedSet)
         mockStage('test')
         expect:
-        !strategy.defaultSelector(project, gitOps)
+        !strategy.defaultSelector(project, gitReadOnlyCommandUtil)
     }
 
     def 'default selector returns true if stage is not defined'() {
@@ -81,7 +81,7 @@ class SemVerStrategySpec extends Specification {
         mockStage(null)
         mockRepoClean(true)
         expect:
-        strategy.defaultSelector(project, gitOps)
+        strategy.defaultSelector(project, gitReadOnlyCommandUtil)
     }
 
     def 'default selector returns false if repo is dirty and not allowed to be'() {
@@ -90,7 +90,7 @@ class SemVerStrategySpec extends Specification {
         mockStage(stageProp)
         mockRepoClean(false)
         expect:
-        !strategy.defaultSelector(project, gitOps)
+        !strategy.defaultSelector(project, gitReadOnlyCommandUtil)
         where:
         stageProp << [null, 'one']
     }
@@ -102,7 +102,7 @@ class SemVerStrategySpec extends Specification {
         mockRepoClean(false)
         mockCurrentBranch()
         expect:
-        strategy.defaultSelector(project, gitOps)
+        strategy.defaultSelector(project, gitReadOnlyCommandUtil)
     }
 
     def 'default selector returns true if all criteria met'() {
@@ -112,7 +112,7 @@ class SemVerStrategySpec extends Specification {
         mockRepoClean(true)
         mockCurrentBranch()
         expect:
-        strategy.defaultSelector(project, gitOps)
+        strategy.defaultSelector(project, gitReadOnlyCommandUtil)
     }
 
     def 'infer returns correct version'() {
@@ -127,7 +127,7 @@ class SemVerStrategySpec extends Specification {
         def locator = mockLocator(nearest)
         def strategy = mockStrategy(scope, stage, nearest, createTag, enforcePrecedence)
         expect:
-        strategy.doInfer(project, gitOps, locator) == new ReleaseVersion('1.2.3-beta.1+abc123', '1.2.2', createTag)
+        strategy.doInfer(project, gitReadOnlyCommandUtil, locator) == new ReleaseVersion('1.2.3-beta.1+abc123', '1.2.2', createTag)
         where:
         scope   | stage | nearestAny | createTag | enforcePrecedence
         'patch' | 'one' | '1.2.3'    | true      | false
@@ -141,7 +141,7 @@ class SemVerStrategySpec extends Specification {
         mockStage('other')
         def strategy = new SemVerStrategy(stages: ['one'] as SortedSet)
         when:
-        strategy.doInfer(project, gitOps, null)
+        strategy.doInfer(project, gitReadOnlyCommandUtil, null)
         then:
         thrown(GradleException)
     }
@@ -154,7 +154,7 @@ class SemVerStrategySpec extends Specification {
         def locator = mockLocator(nearest)
         def strategy = mockStrategy(null, 'and', nearest, false, true)
         when:
-        strategy.doInfer(project, gitOps, locator)
+        strategy.doInfer(project, gitReadOnlyCommandUtil, locator)
         then:
         thrown(GradleException)
     }
@@ -170,12 +170,12 @@ class SemVerStrategySpec extends Specification {
     }
 
     private def mockRepoClean(boolean isClean) {
-        (0..2) * gitOps.isCleanStatus() >> isClean
+        (0..2) * gitReadOnlyCommandUtil.isCleanStatus() >> isClean
     }
 
     private def mockCurrentBranch() {
-        (0..1) * gitOps.currentBranch() >> 'refs/heads/master'
-        (0..1) * gitOps.head() >> 'refs/heads/master'
+        (0..1) * gitReadOnlyCommandUtil.currentBranch() >> 'refs/heads/master'
+        (0..1) * gitReadOnlyCommandUtil.head() >> 'refs/heads/master'
     }
 
     private def mockLocator(NearestVersion nearest) {

@@ -16,11 +16,9 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
-import nebula.plugin.release.git.GitOps
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -37,22 +35,20 @@ import org.slf4j.LoggerFactory
  */
 @CompileDynamic
 class BaseReleasePlugin implements Plugin<Project> {
-    private static final Logger logger = LoggerFactory.getLogger(BaseReleasePlugin)
+
     private static final String PREPARE_TASK_NAME = 'prepare'
     private static final String RELEASE_TASK_NAME = 'release'
 
     void apply(Project project) {
-        def extension = project.extensions.create('release', ReleasePluginExtension, project)
-        addPrepareTask(project, extension)
-        addReleaseTask(project, extension)
+        ReleasePluginExtension releasePluginExtension = project.extensions.create('release', ReleasePluginExtension, project)
+        addPrepareTask(project, releasePluginExtension)
+        addReleaseTask(project, releasePluginExtension)
     }
 
     private void addPrepareTask(Project project, ReleasePluginExtension extension) {
-        project.tasks.register(PREPARE_TASK_NAME) {
+        def prepareTask = project.tasks.register(PREPARE_TASK_NAME, PrepareTask)
+        prepareTask.configure {
             it.description = 'Verifies that the project could be released.'
-            it.doLast {
-                prepare(extension)
-            }
         }
 
         project.tasks.configureEach { task ->
@@ -60,46 +56,36 @@ class BaseReleasePlugin implements Plugin<Project> {
                 task.shouldRunAfter PREPARE_TASK_NAME
             }
         }
-    }
 
-
-    private void addReleaseTask(Project project, ReleasePluginExtension extension) {
-        project.tasks.register(RELEASE_TASK_NAME) {
-            it.description = 'Releases this project.'
-            it.dependsOn PREPARE_TASK_NAME
-            it.doLast {
-                release(project, project.ext, extension)
+        project.afterEvaluate {
+            prepareTask.configure {
+                it.remote.set(extension.remote)
+                it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
+                it.gitCommandUtil.set(extension.gitReadCommands)
             }
         }
     }
 
-    protected static void prepare(ReleasePluginExtension extension) {
-        logger.info('Fetching changes from remote: {}', extension.remote)
-        GitOps gitOps = extension.gitOps
-        gitOps.fetch(extension.remote)
 
-        boolean currentBranchIsBehindRemote = gitOps.isCurrentBranchBehindRemote(extension.remote)
-        // if branch is tracking another, make sure it's not behind
-        if (currentBranchIsBehindRemote) {
-            throw new GradleException('Current branch is behind the tracked branch. Cannot release.')
+    private void addReleaseTask(Project project, ReleasePluginExtension extension) {
+        def releaseTask = project.tasks.register(RELEASE_TASK_NAME, ReleaseTask)
+        releaseTask.configure {
+            it.description = 'Releases this project.'
+            it.dependsOn project.tasks.named(PREPARE_TASK_NAME)
         }
-    }
+        project.afterEvaluate {
+            releaseTask.configure {
+                // Force version inference if it hasn't happened already
+                project.version.toString()
+                if(project.version instanceof String) {
+                    throw new GradleException("version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter")
+                }
 
-    protected static void release(Project project, ext, ReleasePluginExtension extension) {
-        // force version inference if it hasn't happened already
-        project.version.toString()
-        GitOps gitOps = extension.gitOps
-
-        if(project.version instanceof String) {
-            throw new GradleException("version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter")
-        }
-
-        String tagName = extension.tagStrategy.maybeCreateTag(gitOps, project.version.inferredVersion)
-        if (tagName) {
-            logger.warn('Pushing changes in {} to {}', tagName, extension.remote)
-            gitOps.pushTag(extension.remote, tagName)
-        } else {
-            logger.warn('Nothing to push.')
+                it.projectVersion.set(project.version.inferredVersion)
+                it.tagStrategy.set(extension.tagStrategy)
+                it.remote.set(extension.remote)
+                it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
+            }
         }
     }
 }

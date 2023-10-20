@@ -21,10 +21,10 @@ import groovy.transform.PackageScope
 
 import com.github.zafarkhaja.semver.Version
 import nebula.plugin.release.VersionSanitizerUtil
-import nebula.plugin.release.git.GitOps
 import nebula.plugin.release.git.base.DefaultVersionStrategy
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
+import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.model.Branch
 import nebula.plugin.release.git.model.Commit
 import org.gradle.api.GradleException
@@ -91,16 +91,16 @@ final class SemVerStrategy implements DefaultVersionStrategy {
     boolean enforcePrecedence
 
     @Override
-    boolean defaultSelector(Project project, GitOps gitOps) {
+    boolean defaultSelector(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
         String stage = getPropertyOrNull(project, STAGE_PROP)
         if (stage != null && !stages.contains(stage)) {
             logger.info('Skipping {} default strategy because stage ({}) is not one of: {}', name, stage, stages)
             return false
-        } else if (!allowDirtyRepo && !gitOps.isCleanStatus()) {
+        } else if (!allowDirtyRepo && !gitCommandUtil.isCleanStatus()) {
             logger.info('Skipping {} default strategy because repo is dirty.', name)
             return false
         } else {
-            String status = gitOps.isCleanStatus() ? 'clean' : 'dirty'
+            String status = gitCommandUtil.isCleanStatus() ? 'clean' : 'dirty'
             logger.info('Using {} default strategy because repo is {} and no stage defined', name, status)
             return true
         }
@@ -116,12 +116,12 @@ final class SemVerStrategy implements DefaultVersionStrategy {
      * </ul>
      */
     @Override
-    boolean selector(Project project, GitOps gitOps) {
+    boolean selector(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
         String stage = getPropertyOrNull(project, STAGE_PROP)
         if (stage == null || !stages.contains(stage)) {
             logger.info('Skipping {} strategy because stage ({}) is not one of: {}', name, stage, stages)
             return false
-        } else if (!allowDirtyRepo && !gitOps.isCleanStatus()) {
+        } else if (!allowDirtyRepo && !gitCommandUtil.isCleanStatus()) {
             logger.info('Skipping {} strategy because repo is dirty.', name)
             return false
         } else {
@@ -138,13 +138,13 @@ final class SemVerStrategy implements DefaultVersionStrategy {
      */
     @CompileDynamic
     @Override
-    ReleaseVersion infer(Project project, GitOps gitOps) {
+    ReleaseVersion infer(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
         def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
-        return doInfer(project, gitOps, new NearestVersionLocator(gitOps, tagStrategy))
+        return doInfer(project, gitCommandUtil, new NearestVersionLocator(gitCommandUtil, tagStrategy))
     }
 
     @PackageScope
-    ReleaseVersion doInfer(Project project, GitOps gitOps, NearestVersionLocator locator) {
+    ReleaseVersion doInfer(Project project, GitReadOnlyCommandUtil gitCommandUtil, NearestVersionLocator locator) {
         ChangeScope scope = getPropertyOrNull(project, SCOPE_PROP).with { scope ->
             scope == null ? null : ChangeScope.valueOf(scope.toUpperCase())
         }
@@ -157,13 +157,13 @@ final class SemVerStrategy implements DefaultVersionStrategy {
         NearestVersion nearestVersion = locator.locate()
         logger.debug('Located nearest version: {}', nearestVersion)
 
-        String currentHead = gitOps.head()
+        String currentHead = gitCommandUtil.head()
         SemVerStrategyState state = new SemVerStrategyState(
                 scopeFromProp: scope,
                 stageFromProp: stage,
                 currentHead: new Commit(id: currentHead, abbreviatedId: currentHead.take(7)),
-                currentBranch: new Branch(fullName: gitOps.currentBranch()),
-                repoDirty: !gitOps.cleanStatus,
+                currentBranch: new Branch(fullName: gitCommandUtil.currentBranch()),
+                repoDirty: !gitCommandUtil.cleanStatus,
                 nearestVersion: nearestVersion
         )
 

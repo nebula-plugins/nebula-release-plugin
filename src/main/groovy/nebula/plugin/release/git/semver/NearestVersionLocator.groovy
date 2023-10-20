@@ -17,7 +17,7 @@ package nebula.plugin.release.git.semver
 
 import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
-import nebula.plugin.release.git.GitOps
+import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.base.TagStrategy
 import org.slf4j.Logger
@@ -42,11 +42,11 @@ class NearestVersionLocator {
     private static final Version UNKNOWN = Version.valueOf('0.0.0')
 
     final TagStrategy strategy
-    final GitOps gitOps
+    final GitReadOnlyCommandUtil gitCommandUtil
 
-    NearestVersionLocator(GitOps gitOps, TagStrategy strategy) {
+    NearestVersionLocator(GitReadOnlyCommandUtil gitCommandUtil, TagStrategy strategy) {
         this.strategy = strategy
-        this.gitOps = gitOps
+        this.gitCommandUtil = gitCommandUtil
     }
 
     /**
@@ -80,9 +80,9 @@ class NearestVersionLocator {
      * @return the version corresponding to the nearest tag
      */
     NearestVersion locate() {
-        logger.debug('Locate beginning on branch: {}', gitOps.currentBranch())
+        logger.debug('Locate beginning on branch: {}', gitCommandUtil.currentBranch())
         // Reuse a single walk to make use of caching.
-        List<String> tagRefs = gitOps.refTags()
+        List<String> tagRefs = gitCommandUtil.refTags()
         List allTags = tagRefs.collect { ref ->
             TagRef.fromRef(ref)
         }.findAll {
@@ -109,15 +109,15 @@ class NearestVersionLocator {
                 distanceCompare == 0 ? versionCompare : distanceCompare
             }
         } else {
-            return [version: UNKNOWN, distance: gitOps.getCommitCountForHead()]
+            return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
         }
     }
 
     private getTagWithDistance(TagRef tag) {
         try {
-            String result = gitOps.describeTagForHead(tag.name)
+            String result = gitCommandUtil.describeTagForHead(tag.name)
             if(!result) {
-                return [version: UNKNOWN, distance: gitOps.getCommitCountForHead()]
+                return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
             }
 
             String[] parts = result.split('-')
@@ -126,7 +126,7 @@ class NearestVersionLocator {
             }
             return [version: tag.version, distance: parts[parts.size() - 2]?.toInteger()]
         } catch (Exception e) {
-            return [version: UNKNOWN, distance: gitOps.getCommitCountForHead()]
+            return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
         }
     }
 }
