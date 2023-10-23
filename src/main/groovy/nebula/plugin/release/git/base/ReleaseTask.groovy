@@ -28,7 +28,7 @@ abstract class ReleaseTask extends DefaultTask {
             logger.warn('Pushing changes in {} to {}', tagName, remote.get())
             gitCommands.pushTag(remote.get(), tagName)
         } else {
-            logger.warn('Nothing to push.')
+            logger.warn('No new tags to push for {}', remote.get())
         }
     }
 }
