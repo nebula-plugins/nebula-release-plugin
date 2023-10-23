@@ -59,6 +59,11 @@ class BaseReleasePlugin implements Plugin<Project> {
 
         project.afterEvaluate {
             prepareTask.configure {
+                // Force version inference if it hasn't happened already
+                project.version.toString()
+                if(!(project.version instanceof String) && project.version.inferredVersion) {
+                    it.projectVersion.set(project.version.inferredVersion)
+                }
                 it.remote.set(extension.remote)
                 it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
                 it.gitCommandUtil.set(extension.gitReadCommands)
@@ -77,11 +82,9 @@ class BaseReleasePlugin implements Plugin<Project> {
             releaseTask.configure {
                 // Force version inference if it hasn't happened already
                 project.version.toString()
-                if(project.version instanceof String) {
-                    throw new GradleException("version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter")
+                if(!(project.version instanceof String) && project.version.inferredVersion) {
+                    it.projectVersion.set(project.version.inferredVersion)
                 }
-
-                it.projectVersion.set(project.version.inferredVersion)
                 it.tagStrategy.set(extension.tagStrategy)
                 it.remote.set(extension.remote)
                 it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
