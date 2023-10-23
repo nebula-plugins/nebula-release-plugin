@@ -4,6 +4,8 @@ import groovy.transform.CompileDynamic
 import org.gradle.api.GradleException
 import org.gradle.api.provider.ValueSource
 import org.gradle.process.ExecOperations
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import javax.inject.Inject
 import java.nio.charset.Charset
@@ -13,7 +15,6 @@ import java.nio.charset.Charset
  * @see {@link https://docs.gradle.org/8.4/userguide/configuration_cache.html#config_cache:requirements:external_processes}
  */
 abstract class GitReadCommand implements ValueSource<String, GitCommandParameters> {
-
     @Inject
     abstract ExecOperations getExecOperations()
 
@@ -217,3 +218,37 @@ abstract class StatusPorcelain extends GitReadCommand {
         }
     }
 }
+
+/**
+ * Retrieves a given Git config key with its value for a given scope
+ */
+abstract class GetGitConfigValue extends GitReadCommand {
+    private static final Logger logger = LoggerFactory.getLogger(GetGitConfigValue)
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand( "config", parameters.getGitConfigScope().get(), parameters.getGitConfigKey().get())
+        } catch (Exception e) {
+            logger.debug("Could not get git config {} {} {}", parameters.getGitConfigScope().get(), parameters.getGitConfigKey().get())
+            return null
+        }
+    }
+}
+
+
+/**
+ * Set a given Git config key with its value for a given scope
+ */
+abstract class SetGitConfigValue extends GitReadCommand {
+    private static final Logger logger = LoggerFactory.getLogger(SetGitConfigValue)
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand( "config", parameters.getGitConfigKey().get(), parameters.getGitConfigValue().get())
+        } catch (Exception e) {
+            logger.debug("Could not set git config {} {} {}", parameters.getGitConfigKey().get(), parameters.getGitConfigValue().get())
+            return null
+        }
+    }
+}
+

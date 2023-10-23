@@ -25,6 +25,7 @@ class GitWriteCommandsUtil implements Serializable {
         this.rootDir = gitRoot
     }
 
+
     /**
      * Pushes a Tag to a remote repository
      * @param remote

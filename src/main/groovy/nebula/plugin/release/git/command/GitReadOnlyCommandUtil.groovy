@@ -3,8 +3,11 @@ package nebula.plugin.release.git.command
 import nebula.plugin.release.git.model.TagRef
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class GitReadOnlyCommandUtil implements Serializable {
+    private static final Logger logger = LoggerFactory.getLogger(GitReadOnlyCommandUtil)
     private final ProviderFactory providers
 
     private Provider currentBranchProvider
@@ -30,6 +33,7 @@ class GitReadOnlyCommandUtil implements Serializable {
      */
     void configure(File gitRoot) {
         this.rootDir = gitRoot
+        configureCommitterIfNecessary()
         currentBranchProvider = providers.of(CurrentBranch.class) {
             it.parameters.rootDir.set(rootDir)
         }
@@ -61,6 +65,19 @@ class GitReadOnlyCommandUtil implements Serializable {
             it.parameters.rootDir.set(rootDir)
         }
 
+    }
+
+    private void configureCommitterIfNecessary() {
+        String globalUsername = getGitConfig('--global', 'user.name')
+        String globalEmail = getGitConfig('--global', 'user.email')
+        String localUsername = getGitConfig('--local', 'user.name')
+        String localEmail = getGitConfig('--local', 'user.email')
+        if(!globalUsername && !localUsername) {
+            setGitConfig("user.name", "\"\$(git --no-pager log --format=format:'%an' -n 1)\"")
+        }
+        if(!globalEmail && !localEmail) {
+            setGitConfig("user.email", "\"\$(git --no-pager log --format=format:'%ae' -n 1)\"")
+        }
     }
 
     Boolean isGitRepo() {
@@ -179,6 +196,47 @@ class GitReadOnlyCommandUtil implements Serializable {
             return isTrackingRemoteBranchProvider.get().toString().contains("${remote}/")
         } catch (Exception e) {
             return false
+        }
+    }
+
+    /**
+     * Returns a git config value for a given scope
+     * @param scope
+     * @param configKey
+     * @return
+     */
+    String getGitConfig(String scope, String configKey) {
+        try {
+            def getConfigValueProvider = providers.of(GetGitConfigValue.class) {
+                it.parameters.rootDir.set(rootDir)
+                it.parameters.gitConfigScope.set(scope)
+                it.parameters.gitConfigKey.set(configKey)
+            }
+            return getConfigValueProvider.get().toString()?.
+                    replaceAll("\n", "")?.toString()
+        } catch(Exception e) {
+            logger.debug("Could not get git config {} {} {}", scope, configKey)
+            return null
+        }
+    }
+
+    /**
+     * Returns a git config value for a given scope
+     * @param scope
+     * @param configKey
+     * @return
+     */
+    void setGitConfig(String configKey, String configValue) {
+        try {
+            def getConfigValueProvider = providers.of(SetGitConfigValue.class) {
+                it.parameters.rootDir.set(rootDir)
+                it.parameters.gitConfigKey.set(configKey)
+                it.parameters.gitConfigValue.set(configValue)
+            }
+            getConfigValueProvider.get().toString()?.
+                    replaceAll("\n", "")?.toString()
+        } catch(Exception e) {
+            logger.debug("Could not set git config {} {}", configKey, configValue)
         }
     }
 }

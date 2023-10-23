@@ -16,11 +16,8 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * Plugin providing the base structure of gradle-git's flavor of release
