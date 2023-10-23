@@ -16,8 +16,9 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
+import nebula.plugin.release.git.command.GitWriteCommandsUtil
 import nebula.plugin.release.util.ConfigureUtil
-import nebula.plugin.release.git.GitOps
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -53,9 +54,13 @@ class ReleasePluginExtension {
     VersionStrategy defaultVersionStrategy
 
     /**
-     * Used to execute git operations
+     * Used to execute git read only operations
      */
-    GitOps gitOps
+    GitReadOnlyCommandUtil gitReadCommands
+    /**
+     * Used to execute git write operations
+     */
+    GitWriteCommandsUtil gitWriteCommands
 
     /**
      * The remote to fetch changes from and push changes to.
@@ -99,15 +104,15 @@ class ReleasePluginExtension {
         @CompileDynamic
         private void infer() {
             VersionStrategy selectedStrategy = versionStrategies.find {  strategy ->
-                strategy.selector(project, gitOps)
+                strategy.selector(project, gitReadCommands)
             }
 
             if (!selectedStrategy) {
                 boolean useDefault
                 if (defaultVersionStrategy instanceof DefaultVersionStrategy) {
-                    useDefault = defaultVersionStrategy.defaultSelector(project, gitOps)
+                    useDefault = defaultVersionStrategy.defaultSelector(project, gitReadCommands)
                 } else {
-                    useDefault = defaultVersionStrategy?.selector(project, gitOps)
+                    useDefault = defaultVersionStrategy?.selector(project, gitReadCommands)
                 }
 
                 if (useDefault) {
@@ -118,7 +123,7 @@ class ReleasePluginExtension {
                 }
             }
 
-            inferredVersion = selectedStrategy.infer(project, gitOps)
+            inferredVersion = selectedStrategy.infer(project, gitReadCommands)
         }
 
         @Override

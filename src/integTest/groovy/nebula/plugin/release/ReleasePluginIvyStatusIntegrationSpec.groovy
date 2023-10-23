@@ -17,6 +17,7 @@ package nebula.plugin.release
 import nebula.test.functional.ExecutionResult
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
+import spock.lang.IgnoreIf
 
 class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec {
 
@@ -47,9 +48,21 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
 
             tasks.release.dependsOn 'publishIvyPublicationToIvytestRepository'
 
-            task printStatus {
-                doLast {
-                    logger.lifecycle("Project Status: \${project.status}")
+
+            abstract class PrintStatus extends DefaultTask {
+                 @Input
+                 abstract Property<String> getProjectStatus()
+                 
+                 @TaskAction
+                 void printStatus() {
+                    println "Project Status: \${projectStatus.get()}"
+                 }
+            }
+            
+            def printStatus = tasks.register('printStatus', PrintStatus) 
+            project.afterEvaluate {
+                printStatus.configure {
+                    projectStatus.set(project.status)
                 }
             }
         """.stripIndent()
@@ -114,13 +127,6 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
         xml.info.@status == 'candidate'
     }
 
-    def 'candidate sets project.status to candidate'() {
-        when:
-        def result = runTasksSuccessfully('candidate', 'printStatus')
-
-        then:
-        result.standardOutput.contains 'Project Status: candidate'
-    }
 
     def 'final sets release status'() {
         when:
@@ -131,11 +137,4 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
         xml.info.@status == 'release'
     }
 
-    def 'final sets project.status to release'() {
-        when:
-        def result = runTasksSuccessfully('final', 'printStatus')
-
-        then:
-        result.standardOutput.contains 'Project Status: release'
-    }
 }

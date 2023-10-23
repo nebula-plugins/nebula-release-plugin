@@ -16,7 +16,7 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
-import nebula.plugin.release.git.GitOps
+import nebula.plugin.release.git.command.GitWriteCommandsUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
  * Strategy for creating a Git tag associated with a release.
  */
 @CompileDynamic
-class TagStrategy {
+class TagStrategy implements Serializable {
 
     /**
      * Closure taking a version String as an argument and returning a string to be used as a tag name.
@@ -60,13 +60,13 @@ class TagStrategy {
      * @param version the version to create the tag for
      * @return the name of the tag created, or {@code null} if it wasn't
      */
-    String maybeCreateTag(GitOps gitOps, ReleaseVersion version) {
+    String maybeCreateTag(GitWriteCommandsUtil gitWriteCommandsUtil, ReleaseVersion version) {
         if (version.createTag) {
             String name = toTagString(version.version)
             String message = generateMessage(version)
 
             logger.warn('Tagging repository as {}', name)
-            gitOps.createTag(name, message)
+            gitWriteCommandsUtil.createTag(name, message)
             return name
         } else {
             return null

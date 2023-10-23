@@ -12,6 +12,8 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
         if (GradleVersion.current().baseVersion < GradleVersion.version("7.0")) {
             settingsFile << "enableFeaturePreview('VERSION_ORDERING_V2')"
         }
+        // Enable configuration cache :)
+        new File(projectDir, 'gradle.properties') << '''org.gradle.configuration-cache=true'''.stripIndent()
     }
 
     def 'choose immutableSnapshot version if no release candidate'() {

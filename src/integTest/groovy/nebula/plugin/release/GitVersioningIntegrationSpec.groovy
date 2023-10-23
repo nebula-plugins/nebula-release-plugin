@@ -48,6 +48,9 @@ abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
 build/
 gradle.properties'''.stripIndent()
 
+        // Enable configuration cache :)
+        new File(projectDir, 'gradle.properties') << '''org.gradle.configuration-cache=true'''.stripIndent()
+
         setupBuild()
 
         git.commit(message: 'Setup')

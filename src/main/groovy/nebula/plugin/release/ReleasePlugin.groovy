@@ -20,7 +20,8 @@ import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.TagStrategy
-import nebula.plugin.release.git.GitOps
+import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
+import nebula.plugin.release.git.command.GitWriteCommandsUtil
 import nebula.plugin.release.git.semver.SemVerStrategy
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -30,6 +31,7 @@ import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.publish.ivy.IvyPublication
 import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
@@ -68,11 +70,13 @@ class ReleasePlugin implements Plugin<Project> {
     static final String POST_RELEASE_TASK_NAME = 'postRelease'
     static final String GROUP = 'Nebula Release'
 
-    private final GitOps gitOperations
+    private final GitReadOnlyCommandUtil gitCommandUtil
+    private final GitWriteCommandsUtil gitWriteCommandsUtil
 
     @Inject
-    ReleasePlugin(ExecOperations execOperations) {
-        this.gitOperations = new GitOps(execOperations)
+    ReleasePlugin(ExecOperations execOperations, ProviderFactory providerFactory) {
+        this.gitCommandUtil = new GitReadOnlyCommandUtil(providerFactory)
+        this.gitWriteCommandsUtil = new GitWriteCommandsUtil(execOperations)
     }
 
     @CompileDynamic
@@ -80,9 +84,11 @@ class ReleasePlugin implements Plugin<Project> {
     void apply(Project project) {
         this.project = project
 
-        def gitRoot = project.hasProperty('git.root') ? project.property('git.root') : project.rootProject.projectDir
-        this.gitOperations.setRootDir(gitRoot instanceof File ? gitRoot : new File(gitRoot))
-        boolean isGitRepo = this.gitOperations.isGitRepo()
+        File gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
+        gitCommandUtil.configure(gitRoot)
+        gitWriteCommandsUtil.configure(gitRoot)
+
+        boolean isGitRepo = gitCommandUtil.isGitRepo()
         if(!isGitRepo) {
             this.project.version = '0.1.0-dev.0.uncommitted'
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
@@ -119,19 +125,12 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             releaseExtension.with {extension ->
-                gitOps = gitOperations
+                gitReadCommands = gitCommandUtil
+                gitWriteCommands = gitWriteCommandsUtil
                 tagStrategy { TagStrategy tagStrategy ->
                     tagStrategy.generateMessage = { ReleaseVersion version ->
                         StringBuilder builder = new StringBuilder()
                         builder << "Release of ${version.version}\n\n"
-
-                        if (version.previousVersion) {
-                            String previousVersion = "v${version.previousVersion}^{commit}"
-                            List excludes = []
-                            if (gitOps.tagExists(previousVersion)) {
-                                excludes << previousVersion
-                            }
-                        }
                         builder.toString()
                     }
                 }
@@ -141,7 +140,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP
-                it.branchName = gitOperations.currentBranch()
+                it.branchName = gitCommandUtil.currentBranch()
                 it.patterns = nebulaReleaseExtension
             }
 
@@ -298,7 +297,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     private void checkStateForStage(boolean isSnapshotRelease) {
         if (!isSnapshotRelease) {
-            String status = gitOperations.status()
+            String status = gitCommandUtil.status()
             if (!status.empty) {
                 String message = new ErrorMessageFormatter().format(status)
                 throw new GradleException(message)
@@ -405,7 +404,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void checkForBadBranchNames() {
-        String currentBranch = gitOperations.currentBranch()
+        String currentBranch = gitCommandUtil.currentBranch()
         if (!currentBranch) {
             return
         }
