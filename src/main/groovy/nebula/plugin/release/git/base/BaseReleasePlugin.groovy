@@ -46,6 +46,13 @@ class BaseReleasePlugin implements Plugin<Project> {
         def prepareTask = project.tasks.register(PREPARE_TASK_NAME, PrepareTask)
         prepareTask.configure {
             it.description = 'Verifies that the project could be released.'
+            project.version.toString()
+            if(!(project.version instanceof String) && project.version.inferredVersion) {
+                it.projectVersion.set(project.version.inferredVersion)
+            }
+            it.remote.set(extension.remote)
+            it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
+            it.gitCommandUtil.set(extension.gitReadCommands)
         }
 
         project.tasks.configureEach { task ->
@@ -54,18 +61,6 @@ class BaseReleasePlugin implements Plugin<Project> {
             }
         }
 
-        project.afterEvaluate {
-            prepareTask.configure {
-                // Force version inference if it hasn't happened already
-                project.version.toString()
-                if(!(project.version instanceof String) && project.version.inferredVersion) {
-                    it.projectVersion.set(project.version.inferredVersion)
-                }
-                it.remote.set(extension.remote)
-                it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
-                it.gitCommandUtil.set(extension.gitReadCommands)
-            }
-        }
     }
 
 
@@ -74,18 +69,13 @@ class BaseReleasePlugin implements Plugin<Project> {
         releaseTask.configure {
             it.description = 'Releases this project.'
             it.dependsOn project.tasks.named(PREPARE_TASK_NAME)
-        }
-        project.afterEvaluate {
-            releaseTask.configure {
-                // Force version inference if it hasn't happened already
-                project.version.toString()
-                if(!(project.version instanceof String) && project.version.inferredVersion) {
-                    it.projectVersion.set(project.version.inferredVersion)
-                }
-                it.tagStrategy.set(extension.tagStrategy)
-                it.remote.set(extension.remote)
-                it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
+            project.version.toString()
+            if(!(project.version instanceof String) && project.version.inferredVersion) {
+                it.projectVersion.set(project.version.inferredVersion)
             }
+            it.tagStrategy.set(extension.tagStrategy)
+            it.remote.set(extension.remote)
+            it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
         }
     }
 }
