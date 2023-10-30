@@ -15,7 +15,8 @@
  */
 package nebula.plugin.release.git.semver
 
-import nebula.plugin.release.ReleasePlugin
+
+import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.model.TagRef
@@ -29,7 +30,7 @@ class RebuildVersionStrategySpec extends Specification {
 
     def getProject(Map properties) {
         Project p = ProjectBuilder.builder().withName("testproject").build()
-        p.apply plugin: ReleasePlugin
+        p.apply plugin: BaseReleasePlugin
         properties.each { k, v ->
             p.ext[k] = v
         }
