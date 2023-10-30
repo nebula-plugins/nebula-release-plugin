@@ -16,8 +16,6 @@
 package nebula.plugin.release
 
 import nebula.test.ProjectSpec
-import nebula.plugin.release.git.base.BaseReleasePlugin
-import nebula.plugin.release.git.base.ReleasePluginExtension
 
 class ReleasePluginConfigurationAvoidanceSpec extends ProjectSpec {
     def 'able to configure tasks lazily'() {
@@ -27,7 +25,7 @@ class ReleasePluginConfigurationAvoidanceSpec extends ProjectSpec {
         }
 
         when:
-        project.plugins.apply(BaseReleasePlugin)
+        project.plugins.apply(ReleasePlugin)
 
         then:
         notThrown(Exception)

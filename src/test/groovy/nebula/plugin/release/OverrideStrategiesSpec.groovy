@@ -16,7 +16,6 @@
 package nebula.plugin.release
 
 import nebula.test.ProjectSpec
-import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
 
 class OverrideStrategiesSpec extends ProjectSpec {
@@ -25,8 +24,8 @@ class OverrideStrategiesSpec extends ProjectSpec {
         project.ext.set('release.version', '42.5.0')
 
         when:
-        project.plugins.apply(BaseReleasePlugin)
-        def releaseExtension = project.extensions.findByType(ReleasePluginExtension)
+        project.plugins.apply(ReleasePlugin)
+        def releaseExtension = project.extensions.create('release', ReleasePluginExtension, project)
         releaseExtension.with {
             versionStrategy new OverrideStrategies.GradlePropertyStrategy(project, 'release.version')
         }
@@ -41,8 +40,8 @@ class OverrideStrategiesSpec extends ProjectSpec {
         project.ext.set('release.sanitizeVersion', true)
 
         when:
-        project.plugins.apply(BaseReleasePlugin)
-        def releaseExtension = project.extensions.findByType(ReleasePluginExtension)
+        project.plugins.apply(ReleasePlugin)
+        def releaseExtension = project.extensions.create('release', ReleasePluginExtension, project)
         releaseExtension.with {
             versionStrategy new OverrideStrategies.GradlePropertyStrategy(project, 'release.version')
         }

@@ -16,8 +16,9 @@
 package nebula.plugin.release
 
 import groovy.transform.CompileDynamic
-import nebula.plugin.release.git.base.BaseReleasePlugin
+import nebula.plugin.release.git.base.PrepareTask
 import nebula.plugin.release.git.base.ReleasePluginExtension
+import nebula.plugin.release.git.base.ReleaseTask
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.TagStrategy
 import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
@@ -72,6 +73,8 @@ class ReleasePlugin implements Plugin<Project> {
 
     private final GitReadOnlyCommandUtil gitCommandUtil
     private final GitWriteCommandsUtil gitWriteCommandsUtil
+    private static final String PREPARE_TASK_NAME = 'prepare'
+    private static final String RELEASE_TASK_NAME = 'release'
 
     @Inject
     ReleasePlugin(ExecOperations execOperations, ProviderFactory providerFactory) {
@@ -97,8 +100,7 @@ class ReleasePlugin implements Plugin<Project> {
         checkForBadBranchNames()
         boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
         if (project == project.rootProject) {
-            project.plugins.apply(BaseReleasePlugin)
-            ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
+            ReleasePluginExtension releaseExtension = project.extensions.create('release', ReleasePluginExtension, project)
 
             SemVerStrategy defaultStrategy = replaceDevSnapshots ? NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project) : NetflixOssStrategies.DEVELOPMENT(project)
             def propertyBasedStrategy
@@ -123,6 +125,9 @@ class ReleasePlugin implements Plugin<Project> {
                     defaultVersionStrategy = defaultStrategy
                 }
             }
+
+            addPrepareTask(project, releaseExtension)
+            addReleaseTask(project, releaseExtension)
 
             releaseExtension.with {extension ->
                 gitReadCommands = gitCommandUtil
@@ -229,6 +234,45 @@ class ReleasePlugin implements Plugin<Project> {
 
         configurePublishingIfPresent()
         configureBintrayTasksIfPresent()
+    }
+
+
+    @CompileDynamic
+    private void addPrepareTask(Project project, ReleasePluginExtension extension) {
+        def prepareTask = project.tasks.register(PREPARE_TASK_NAME, PrepareTask)
+        prepareTask.configure {PrepareTask task ->
+            task.description = 'Verifies that the project could be released.'
+            project.version.toString()
+            if(!(project.version instanceof String) && project.version.inferredVersion) {
+                task.projectVersion.set(project.version.inferredVersion)
+            }
+            task.remote.set(extension.remote)
+            task.gitWriteCommandsUtil.set(extension.gitWriteCommands)
+            task.gitCommandUtil.set(extension.gitReadCommands)
+        }
+
+        project.tasks.configureEach { task ->
+            if (task.name != PREPARE_TASK_NAME) {
+                task.shouldRunAfter PREPARE_TASK_NAME
+            }
+        }
+
+    }
+
+    @CompileDynamic
+    private void addReleaseTask(Project project, ReleasePluginExtension extension) {
+        def releaseTask = project.tasks.register(RELEASE_TASK_NAME, ReleaseTask)
+        releaseTask.configure {ReleaseTask task ->
+            task.description = 'Releases this project.'
+            task.dependsOn project.tasks.named(PREPARE_TASK_NAME)
+            project.version.toString()
+            if(!(project.version instanceof String) && project.version.inferredVersion) {
+                task.projectVersion.set(project.version.inferredVersion)
+            }
+            task.tagStrategy.set(extension.tagStrategy)
+            task.remote.set(extension.remote)
+            task.gitWriteCommandsUtil.set(extension.gitWriteCommands)
+        }
     }
 
     private Object getPropertyBasedVersioningStrategy() {
