@@ -15,17 +15,19 @@
  */
 package nebula.plugin.release
 
-import nebula.test.IntegrationSpec
+import nebula.test.IntegrationTestKitSpec
 import org.gradle.api.plugins.JavaPlugin
 
-class ReleasePluginNoRepoIntegrationSpec extends IntegrationSpec {
+class ReleasePluginNoRepoIntegrationSpec extends IntegrationTestKitSpec {
     def 'calculate version with no commits'() {
         given:
         buildFile << """\
+            plugins {
+                id 'com.netflix.nebula.release'
+                id 'java'
+            }
             ext.dryRun = true
             group = 'test'
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
 
             task showVersion {
                 doLast {
@@ -35,9 +37,9 @@ class ReleasePluginNoRepoIntegrationSpec extends IntegrationSpec {
             """.stripIndent()
 
         when:
-        def results = runTasksSuccessfully('showVersion')
+        def results = runTasks('showVersion')
 
         then:
-        results.standardOutput.contains 'Version in task: 0.1.0-dev.0.uncommitted'
+        results.output.contains 'Version in task: 0.1.0-dev.0.uncommitted'
     }
 }

@@ -1,20 +1,21 @@
 package nebula.plugin.release
 
-import org.gradle.api.plugins.JavaPlugin
-
-class ReleasePluginConfiguredVersionIntegrationSpec extends GitVersioningIntegrationSpec {
+class ReleasePluginConfiguredVersionIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
 
     @Override
     def setupBuild() {
         buildFile << """
+            plugins {
+                id 'com.netflix.nebula.release'
+            }
             allprojects {
-                ${applyPlugin(ReleasePlugin)}
+                apply plugin: 'com.netflix.nebula.release'
             }
 
             subprojects {
                 ext.dryRun = true
                 group = 'test'
-                ${applyPlugin(JavaPlugin)}
+                apply plugin: 'java'
             }
 
             version = '1.0.0'
@@ -35,10 +36,10 @@ class ReleasePluginConfiguredVersionIntegrationSpec extends GitVersioningIntegra
 
     def 'should fail build if version is set in build file'() {
         when:
-        def results = runTasksWithFailure('final')
+        def results = runTasksAndFail('final')
 
         then:
-        results.standardError.contains('version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter')
+        results.output.contains('version should not be set in build file when using nebula-release plugin. Instead use `-Prelease.version` parameter')
     }
 
 }

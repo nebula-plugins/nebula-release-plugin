@@ -22,15 +22,17 @@ import spock.lang.Unroll
 
 @Ignore("We need to visit the configuration/evaluation of extension")
 @Issue("Inconsistent versioning for SNAPSHOT stage https://github.com/nebula-plugins/nebula-release-plugin/issues/187")
-class Issue187IntegrationSpec extends GitVersioningIntegrationSpec {
+class Issue187IntegrationSpec extends GitVersioningIntegrationTestKitSpec {
     @Override
     def setupBuild() {
-        fork = false
         buildFile << """
+            plugins {
+                id 'com.netflix.nebula.release'
+                id 'java'
+            }
             ext.dryRun = true
             group = 'test'
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
+        
         """.stripIndent()
 
         git.add(patterns: ['build.gradle', '.gitignore'] as Set)
@@ -45,16 +47,16 @@ release {
 """
 
         when:
-        def resultBuild = runTasksSuccessfully('build')
+        def resultBuild = runTasks('build')
 
         then:
-        resultBuild.standardOutput.contains('version: 0.3.0-SNAPSHOT')
+        resultBuild.output.contains('version: 0.3.0-SNAPSHOT')
 
         when:
-        def resultSnapshot = runTasksSuccessfully('snapshot')
+        def resultSnapshot = runTasks('snapshot')
 
         then:
-        resultSnapshot.standardOutput.contains('version: 0.3.0-SNAPSHOT')
+        resultSnapshot.output.contains('version: 0.3.0-SNAPSHOT')
     }
 
     @Unroll
@@ -66,16 +68,16 @@ release {
 """
 
         when:
-        def resultBuild = runTasksSuccessfully('build', "-Prelease.scope=${scope}")
+        def resultBuild = runTasks('build', "-Prelease.scope=${scope}")
 
         then:
-        resultBuild.standardOutput.contains("version: ${expectedVersion}")
+        resultBuild.output.contains("version: ${expectedVersion}")
 
         when:
-        def resultSnapshot = runTasksSuccessfully('snapshot', "-Prelease.scope=${scope}")
+        def resultSnapshot = runTasks('snapshot', "-Prelease.scope=${scope}")
 
         then:
-        resultSnapshot.standardOutput.contains("version: ${expectedVersion}")
+        resultSnapshot.output.contains("version: ${expectedVersion}")
 
         where:
         scope   | expectedVersion
@@ -87,16 +89,16 @@ release {
     @Unroll
     def 'infer #expectedVersion for #task task when not using snapshot strategy'() {
         when:
-        def resultBuild = runTasksSuccessfully('build')
+        def resultBuild = runTasks('build')
 
         then:
-        resultBuild.standardOutput.contains('version: 0.3.0-dev')
+        resultBuild.output.contains('version: 0.3.0-dev')
 
         when:
-        def resultSnapshot = runTasksSuccessfully(task)
+        def resultSnapshot = runTasks(task)
 
         then:
-        resultSnapshot.standardOutput.contains("version: $expectedVersion")
+        resultSnapshot.output.contains("version: $expectedVersion")
 
         where:
         task          | expectedVersion
@@ -108,16 +110,16 @@ release {
     @Unroll
     def 'infer release version #expectedReleaseVersion and build  version #expectedBuildVersion for #task task when not using snapshot strategy with scope #scope'() {
         when:
-        def resultBuild = runTasksSuccessfully('build', "-Prelease.scope=${scope}")
+        def resultBuild = runTasks('build', "-Prelease.scope=${scope}")
 
         then:
-        resultBuild.standardOutput.contains("version: $expectedBuildVersion")
+        resultBuild.output.contains("version: $expectedBuildVersion")
 
         when:
-        def resultSnapshot = runTasksSuccessfully(task, "-Prelease.scope=${scope}")
+        def resultSnapshot = runTasks(task, "-Prelease.scope=${scope}")
 
         then:
-        resultSnapshot.standardOutput.contains("version: $expectedReleaseVersion")
+        resultSnapshot.output.contains("version: $expectedReleaseVersion")
 
         where:
         task          | scope   | expectedReleaseVersion | expectedBuildVersion

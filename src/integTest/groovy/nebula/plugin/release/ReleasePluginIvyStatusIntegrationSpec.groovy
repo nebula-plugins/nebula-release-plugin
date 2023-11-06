@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 package nebula.plugin.release
-import nebula.test.functional.ExecutionResult
-import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
-import spock.lang.IgnoreIf
 
-class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec {
+import org.gradle.testkit.runner.BuildResult
+
+class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
 
     public static final String REPO_LOCATION = 'build/ivytest'
 
     @Override
     def setupBuild() {
         buildFile << """
+            plugins {
+                id 'com.netflix.nebula.release'
+                id 'java'
+                id 'ivy-publish'
+            }
             ext.dryRun = true
             group = 'test'
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
-            ${applyPlugin(IvyPublishPlugin)}
+      
 
             publishing {
                 repositories {
@@ -75,8 +76,8 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
         git.add(patterns: ['build.gradle', '.gitignore', 'settings.gradle'] as Set)
     }
 
-    def loadIvyFileViaVersionLookup(ExecutionResult result) {
-        loadIvyFile(inferredVersion(result.standardOutput, 'statuscheck').toString())
+    def loadIvyFileViaVersionLookup(BuildResult result) {
+        loadIvyFile(inferredVersion(result.output, 'statuscheck').toString())
     }
 
     def loadIvyFile(String version) {
@@ -85,7 +86,7 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
 
     def 'snapshot leaves integration status'() {
         when:
-        def result = runTasksSuccessfully('snapshot')
+        def result = runTasks('snapshot')
 
         then:
         def xml = loadIvyFileViaVersionLookup(result)
@@ -94,15 +95,15 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
 
     def 'snapshot leaves project.status as integration'() {
         when:
-        def result = runTasksSuccessfully('snapshot', 'printStatus')
+        def result = runTasks('snapshot', 'printStatus')
 
         then:
-        result.standardOutput.contains 'Project Status: integration'
+        result.output.contains 'Project Status: integration'
     }
 
     def 'devSnapshot leaves integration status'() {
         when:
-        def result = runTasksSuccessfully('devSnapshot')
+        def result = runTasks('devSnapshot')
 
         then:
         def xml = loadIvyFileViaVersionLookup(result)
@@ -111,7 +112,7 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
 
     def 'immutableSnapshot leaves integration status'() {
         when:
-        def result = runTasksSuccessfully('immutableSnapshot')
+        def result = runTasks('immutableSnapshot')
 
         then:
         def xml = loadIvyFileViaVersionLookup(result)
@@ -120,7 +121,7 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
 
     def 'candidate sets candidate status'() {
         when:
-        def result = runTasksSuccessfully('candidate')
+        def result = runTasks('candidate')
 
         then:
         def xml = loadIvyFileViaVersionLookup(result)
@@ -130,7 +131,7 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationSpec
 
     def 'final sets release status'() {
         when:
-        def result = runTasksSuccessfully('final')
+        def result = runTasks('final')
 
         then:
         def xml = loadIvyFileViaVersionLookup(result)

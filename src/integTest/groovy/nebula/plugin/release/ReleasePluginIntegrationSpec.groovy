@@ -21,17 +21,23 @@ import nebula.test.functional.ExecutionResult
 import org.ajoberstar.grgit.Tag
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
+import org.gradle.testkit.runner.BuildResult
+import org.gradle.testkit.runner.TaskOutcome
 import spock.lang.Ignore
 import spock.lang.Unroll
 
-class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
+class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
     @Override
     def setupBuild() {
         buildFile << """
+            plugins {
+                id 'com.netflix.nebula.release'
+                id 'java'
+            }
+
             ext.dryRun = true
             group = 'test'
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
+       
 
             task showVersion {
                 doLast {
@@ -184,7 +190,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
 
     def 'multiple candidate releases will increment rc number'() {
-        runTasksSuccessfully('candidate')
+        runTasks('candidate')
 
         when:
         def version = inferredVersionForTask('candidate')
@@ -249,7 +255,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
     }
 
     def 'multiple final releases with defaults will increment minor number'() {
-        runTasksSuccessfully('final')
+        runTasks('final')
 
         when:
         def version = inferredVersionForTask('final')
@@ -280,11 +286,11 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.commit(message: 'Add breaking test')
 
         when:
-        def results = runTasksWithFailure('final')
+        def results = runTasksAndFail('final')
 
         then:
-        results.wasExecuted('test')
-        !results.wasExecuted('release')
+        results.task(':test').outcome == TaskOutcome.FAILED
+        !results.task(':release')?.outcome
     }
 
     def 'final release log'() {
@@ -330,13 +336,13 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.add(patterns: ['.'] as Set)
         git.commit(message: "Add file")
         git.push(all: true)
-        runTasksSuccessfully('candidate')
+        runTasks('candidate')
         git.branch.add(name: "0.1.x")
         file.text = "Updated dummy"
         git.add(patterns: ['.'] as Set)
         git.commit(message: "Update file")
         git.push(all: true)
-        runTasksSuccessfully('candidate')
+        runTasks('candidate')
 
         when:
         git.checkout(branch: '0.1.x')
@@ -484,7 +490,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.checkout(branch: oneThree)
 
         when:
-        def results = runTasksWithFailure('build')
+        def results = runTasksAndFail('build')
 
         then:
         outputContains(results, 'Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>')
@@ -503,20 +509,19 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.push()
 
         when:
-        def results = runTasksSuccessfully('final')
+        def results = runTasks('final')
 
         then:
-        results.wasExecuted('placeholderTask')
+        results.task(':placeholderTask').outcome == TaskOutcome.SUCCESS || results.task(':placeholderTask').outcome == TaskOutcome.UP_TO_DATE
     }
 
     def 'fail final release on non release branch'() {
         git.checkout(branch: 'testexample', createBranch: true)
 
         when:
-        def result = runTasksWithFailure('final')
+        def result = runTasksAndFail('final')
 
         then:
-        result.failure != null
         outputContains(result, 'testexample does not match one of the included patterns: [master, HEAD, main, (release(-|/))?\\d+(\\.\\d+)?\\.x, v?\\d+\\.\\d+\\.\\d+]')
     }
 
@@ -614,10 +619,9 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.push()
 
         when:
-        def result = runTasksWithFailure('final')
+        def result = runTasksAndFail('final')
 
         then:
-        result.failure != null
         outputContains(result, 'master matched an excluded pattern: [^master\$]')
     }
 
@@ -625,7 +629,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v42.5.3')
 
         when:
-        runTasksSuccessfully('final', '-Prelease.useLastTag=true')
+        runTasks('final', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
@@ -638,10 +642,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.commit(message: 'Something got committed')
 
         when:
-        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('final', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains 'Current commit does not have a tag'
+        result.output.contains 'Current commit does not have a tag'
         !new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
     }
 
@@ -653,17 +657,17 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v42.5.4-rc.01')
 
         when:
-        def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('candidate', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains 'Current commit has following tags: [v42.5.4-rc.01] but they were not recognized as valid versions'
+        result.output.contains 'Current commit has following tags: [v42.5.4-rc.01] but they were not recognized as valid versions'
     }
 
     def 'use last tag for rc'() {
         git.tag.add(name: 'v3.1.2-rc.1')
 
         when:
-        runTasksSuccessfully('candidate', '-Prelease.useLastTag=true')
+        runTasks('candidate', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
@@ -673,10 +677,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "v3.1.2-rc.1")
 
         when:
-        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('final', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current tag (3.1.2-rc.1) does not appear to be a final version"
+        result.output.contains "Current tag (3.1.2-rc.1) does not appear to be a final version"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
@@ -685,7 +689,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "v3.1.2")
 
         when:
-        def result = runTasksSuccessfully('final', '-Prelease.useLastTag=true')
+        def result = runTasks('final', '-Prelease.useLastTag=true')
 
         then:
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
@@ -697,47 +701,47 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "v3.1.2")
 
         when:
-        def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('candidate', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current tag (3.1.2) does not appear to be a pre-release version. A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version. For more information, please refer to https://semver.org/"
+        result.output.contains "Current tag (3.1.2) does not appear to be a pre-release version. A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version. For more information, please refer to https://semver.org/"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
     }
 
     def 'fails when running devSnapshot With useLastTag'() {
         when:
-        def result = runTasksWithFailure('devSnapshot', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('devSnapshot', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
+        result.output.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
     def 'succeeds when running devSnapshot With useLastTag false'() {
         expect:
-        runTasksSuccessfully('devSnapshot', '-Prelease.useLastTag=false')
+        runTasks('devSnapshot', '-Prelease.useLastTag=false')
     }
 
     def 'fails when running immutableSnapshot With useLastTag'() {
         when:
-        def result = runTasksWithFailure('immutableSnapshot', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('immutableSnapshot', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
+        result.output.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
     def 'succeeds when running immutableSnapshot With useLastTag false'() {
         expect:
-        runTasksSuccessfully('immutableSnapshot', '-Prelease.useLastTag=false')
+        runTasks('immutableSnapshot', '-Prelease.useLastTag=false')
     }
 
     def 'useLastTag succeeds when release stage is not supplied for final tag'() {
         git.tag.add(name: 'v42.5.3')
 
         when:
-        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+        def result = runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
@@ -747,7 +751,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v3.1.2-rc.1')
 
         when:
-        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+        def result = runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
@@ -758,7 +762,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "${dev('0.1.0-dev.3+').toString()}")
 
         when:
-        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+        def result = runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
@@ -768,10 +772,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "${dev('0.1.0-dev.3+').toString()}")
 
         when:
-        def result = runTasksWithFailure('assemble', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
+        result.output.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
         !new File(projectDir, "build/libs/${moduleName}-${dev('0.1.0-dev.3+').toString()}.jar").exists()
     }
 
@@ -780,10 +784,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "${dev('0.1.0-snapshot.220190705103502+').toString()}")
 
         when:
-        def result = runTasksWithFailure('assemble', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
+        result.output.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
         !new File(projectDir, "build/libs/${moduleName}-${dev('0.1.0-snapshot.220190705103502+').toString()}.jar").exists()
     }
 
@@ -791,10 +795,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "1.2.3-SNAPSHOT")
 
         when:
-        def result = runTasksWithFailure('assemble', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
+        result.output.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
         !new File(projectDir, "build/libs/${moduleName}-1.2.3-SNAPSHOT.jar").exists()
     }
 
@@ -804,7 +808,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v3.1.2')
 
         when:
-        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+        def result = runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
@@ -815,7 +819,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v3.1.2-rc.2')
 
         when:
-        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true')
+        def result = runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.2.jar").exists()
@@ -825,36 +829,36 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: 'v42.5.3')
 
         when:
-        def result = runTasksSuccessfully('final', '-Prelease.useLastTag=true', '--debug')
+        def result = runTasks('final', '-Prelease.useLastTag=true', '--debug')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
-        result.standardOutput.contains('Using version 42.5.3 with final release strategy')
+        result.output.contains('Using version 42.5.3 with final release strategy')
     }
 
     def 'useLastTag shows version selection with debug enabled - no release strategy selected'() {
         git.tag.add(name: 'v42.5.3')
 
         when:
-        def result = runTasksSuccessfully('assemble', '-Prelease.useLastTag=true', '--debug')
+        def result = runTasks('assemble', '-Prelease.useLastTag=true', '--debug')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
-        result.standardOutput.contains("Note: It is recommended to supply a release strategy of <snapshot|immutableSnapshot|devSnapshot|candidate|final> to make 'useLastTag' most explicit. Please add one to your list of tasks.")
-        result.standardOutput.contains('Using version 42.5.3 with a non-supplied release strategy')
+        result.output.contains("Note: It is recommended to supply a release strategy of <snapshot|immutableSnapshot|devSnapshot|candidate|final> to make 'useLastTag' most explicit. Please add one to your list of tasks.")
+        result.output.contains('Using version 42.5.3 with a non-supplied release strategy')
     }
 
     def 'succeeds when running snapshot With useLastTag false'() {
         expect:
-        runTasksSuccessfully('snapshot', '-Prelease.useLastTag=false')
+        runTasks('snapshot', '-Prelease.useLastTag=false')
     }
 
     def 'fails when running snapshot With useLastTag'() {
         when:
-        def result = runTasksWithFailure('snapshot', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('snapshot', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
+        result.output.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
     }
 
@@ -862,16 +866,16 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "v3.1.2")
 
         when:
-        def result = runTasksWithFailure('candidate', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('candidate', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current tag (3.1.2) does not appear to be a pre-release version. A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version. For more information, please refer to https://semver.org/"
+        result.output.contains "Current tag (3.1.2) does not appear to be a pre-release version. A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version. For more information, please refer to https://semver.org/"
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
     }
 
     def 'skip useLastTag if false'() {
         when:
-        runTasksSuccessfully('final', '-Prelease.useLastTag=345')
+        runTasks('final', '-Prelease.useLastTag=345')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-0.1.0.jar").exists()
@@ -903,7 +907,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
     def 'able to release with the override of version calculation'() {
         when:
-        runTasksSuccessfully('final', '-Prelease.version=42.5.0')
+        runTasks('final', '-Prelease.version=42.5.0')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-42.5.0.jar").exists()
@@ -912,10 +916,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
 
     def 'error if release.version is set to an empty string'() {
         when:
-        def result = runTasksWithFailure('build', '-Prelease.version=')
+        def result = runTasksAndFail('build', '-Prelease.version=')
 
         then:
-        Throwables.getRootCause(result.failure).message == 'Supplied release.version is empty'
+        result.output.contains('Supplied release.version is empty')
     }
 
     def 'devSnapshot works if default is changed'() {
@@ -1013,7 +1017,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "v3.1.2+release2")
 
         when:
-        def result = runTasksSuccessfully('final', '-Prelease.useLastTag=true')
+        def result = runTasks('final', '-Prelease.useLastTag=true')
 
         then:
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
@@ -1036,10 +1040,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "v3.1.2-release2")
 
         when:
-        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('final', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains 'Current tag (3.1.2-release2) does not appear to be a final version'
+        result.output.contains 'Current tag (3.1.2-release2) does not appear to be a final version'
     }
 
 
@@ -1053,7 +1057,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.commit(message: 'commenting build.gradle')
 
         when:
-        def results = runTasksSuccessfully(task)
+        def results = runTasks(task)
 
         then:
         originalRemoteHeadCommit == originGit.head().abbreviatedId
@@ -1108,7 +1112,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.add(patterns: ['.'] as Set)
         git.commit(message: "Add file")
         git.push(all: true)
-        runTasksSuccessfully('candidate')
+        runTasks('candidate')
         git.branch.add(name: "0.1.x")
         file.text = "Updated dummy"
         git.add(patterns: ['.'] as Set)
@@ -1116,10 +1120,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.push(all: true)
 
         when:
-        def result = runTasksSuccessfully('candidate')
+        def result = runTasks('candidate')
 
         then:
-        result.wasSkipped(':prepare')
+        result.task(':prepare').outcome == TaskOutcome.SKIPPED
     }
 
     def 'executes prepare if checkRemoteBranchOnRelease when releasing'() {
@@ -1127,8 +1131,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         buildFile << """
             ext.dryRun = true
             group = 'test'
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
 
             nebulaRelease { 
                 checkRemoteBranchOnRelease = true
@@ -1139,7 +1141,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.add(patterns: ['.'] as Set)
         git.commit(message: "Add file")
         git.push(all: true)
-        runTasksSuccessfully('candidate')
+        runTasks('candidate')
         git.branch.add(name: "0.1.x")
         file.text = "Updated dummy"
         git.add(patterns: ['.'] as Set)
@@ -1147,11 +1149,11 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.push(all: true)
 
         when:
-        def result = runTasksSuccessfully('candidate', '-Drelease.configurePrepareTaskEnabled=true')
+        def result = runTasks('candidate', '-Drelease.configurePrepareTaskEnabled=true')
 
         then:
-        result.wasExecuted(':prepare')
-        !result.wasSkipped(':prepare')
+        result.task(':prepare').outcome in [TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE]
+        result.task(':prepare').outcome != TaskOutcome.SKIPPED
     }
 
 
@@ -1160,8 +1162,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         buildFile << """
             ext.dryRun = true
             group = 'test'
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
 
             nebulaRelease { 
                 checkRemoteBranchOnRelease = true
@@ -1175,10 +1175,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.checkout(branch: 'my-branch-with-dash-', createBranch: true)
 
         when:
-        def result = runTasksWithFailure('candidate', '-Drelease.configurePrepareTaskEnabled=true')
+        def result = runTasksAndFail('candidate', '-Drelease.configurePrepareTaskEnabled=true')
 
         then:
-        result.standardError.contains('Nebula Release plugin does not support branches that end with dash (-)')
+        result.output.contains('Nebula Release plugin does not support branches that end with dash (-)')
     }
 
     @Unroll
@@ -1186,10 +1186,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.tag.add(name: "v$version")
 
         when:
-        def result = runTasksWithFailure('final', '-Prelease.useLastTag=true')
+        def result = runTasksAndFail('final', '-Prelease.useLastTag=true')
 
         then:
-        result.standardError.contains "Current commit has following tags: [v${version}] but they were not recognized as valid versions"
+        result.output.contains "Current commit has following tags: [v${version}] but they were not recognized as valid versions"
         !new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
 
         where:
@@ -1204,10 +1204,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
     @Unroll
     def 'release with the override of version calculation errors out if version has invalid number of digits - #version'() {
         when:
-        def result = runTasksWithFailure('final', "-Prelease.version=${version}")
+        def result = runTasksAndFail('final', "-Prelease.version=${version}")
 
         then:
-        result.standardError.contains "Supplied release.version ($version) is not valid per semver spec. For more information, please refer to https://semver.org/"
+        result.output.contains "Supplied release.version ($version) is not valid per semver spec. For more information, please refer to https://semver.org/"
         !new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
         !originGit.tag.list()*.name.contains("v${version}")
 
@@ -1223,10 +1223,10 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
     @Unroll
     def 'release with the override of version calculation does not errors out if version has invalid number of digits but verification is off - #version'() {
         when:
-        def result = runTasksSuccessfully('final', "-Prelease.version=${version}", "-Prelease.ignoreSuppliedVersionVerification=true")
+        def result = runTasks('final', "-Prelease.version=${version}", "-Prelease.ignoreSuppliedVersionVerification=true")
 
         then:
-        !result.standardError.contains("Supplied release.version ($version) is not valid per semver spec. For more information, please refer to https://semver.org/")
+        !result.output.contains("Supplied release.version ($version) is not valid per semver spec. For more information, please refer to https://semver.org/")
         new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
 
         where:
@@ -1242,12 +1242,12 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationSpec {
         git.checkout(branch: 'main', createBranch: true)
 
         when:
-        def result = runTasksSuccessfully('final')
+        def result = runTasks('final')
 
         then:
-        result.wasExecuted('final')
-        result.standardOutput.contains('Tagging repository as v0.1.0')
-        result.standardOutput.contains('Pushing changes in v0.1.0 to origin')
+        result.task(':final').outcome == TaskOutcome.SUCCESS
+        result.output.contains('Tagging repository as v0.1.0')
+        result.output.contains('Pushing changes in v0.1.0 to origin')
     }
 
     def 'Can create devSnapshot with scope patch if candidate for next minor is present'() {
@@ -1281,8 +1281,8 @@ nebula.release.features.replaceDevWithImmutableSnapshot=true
 """
     }
 
-    static outputContains(ExecutionResult result, String substring) {
-        return result.standardError.contains(substring) || result.standardOutput.contains(substring)
+    static outputContains(BuildResult result, String substring) {
+        return result.output.contains(substring)
     }
 
     private String getUtcDateForComparison() {
