@@ -15,23 +15,24 @@
  */
 package nebula.plugin.release
 
-import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.publish.plugins.PublishingPlugin
 import spock.lang.Ignore
 import spock.lang.Unroll
 
-class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationSpec {
+class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
     @Override
     def setupBuild() {
         buildFile << """\
+            plugins {
+                id 'com.netflix.nebula.release'
+            }
             allprojects {
-                ${applyPlugin(ReleasePlugin)}
+                apply plugin: 'com.netflix.nebula.release'
             }
 
             subprojects {
                 ext.dryRun = true
                 group = 'test'
-                ${applyPlugin(JavaPlugin)}
+                apply plugin: 'java'
             }
         """.stripIndent()
 
@@ -50,30 +51,30 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
 
     def 'choose release version'() {
         when:
-        def results = runTasksSuccessfully('final')
+        def results = runTasks('final')
 
         then:
-        inferredVersion(results.standardOutput) == normal('0.1.0')
+        inferredVersion(results.output) == normal('0.1.0')
         new File(projectDir, 'test-release-common/build/libs/test-release-common-0.1.0.jar').exists()
         new File(projectDir, 'test-release-client/build/libs/test-release-client-0.1.0.jar').exists()
     }
 
     def 'choose candidate version'() {
         when:
-        def results = runTasksSuccessfully('candidate')
+        def results = runTasks('candidate')
 
         then:
-        inferredVersion(results.standardOutput) == normal('0.1.0-rc.1')
+        inferredVersion(results.output) == normal('0.1.0-rc.1')
         new File(projectDir, 'test-release-common/build/libs/test-release-common-0.1.0-rc.1.jar').exists()
         new File(projectDir, 'test-release-client/build/libs/test-release-client-0.1.0-rc.1.jar').exists()
     }
 
     def 'build defaults to dev version'() {
         when:
-        def results = runTasksSuccessfully('build')
+        def results = runTasks('build')
 
         then:
-        inferredVersion(results.standardOutput) == dev('0.1.0-dev.2+')
+        inferredVersion(results.output) == dev('0.1.0-dev.2+')
         new File(projectDir, 'test-release-common/build/libs').list().find {
             it =~ /test-release-common-0\.1\.0-dev\.2\+/
         } != null
@@ -86,10 +87,10 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         git.checkout(branch: 'testexample', createBranch: true)
 
         when:
-        def results = runTasksSuccessfully('build')
+        def results = runTasks('build')
 
         then:
-        inferredVersion(results.standardOutput) == dev('0.1.0-dev.2+')
+        inferredVersion(results.output) == dev('0.1.0-dev.2+')
         new File(projectDir, 'test-release-common/build/libs').list().find {
             it =~ /test-release-common-0\.1\.0-dev\.2\+testexample\./
         } != null
@@ -102,12 +103,12 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         given:
         buildFile << """\
             allprojects {
-                ${applyPlugin(PublishingPlugin)}
-                ${applyPlugin(JavaPlugin)}
+                apply plugin: 'org.gradle.publishing'
+                apply plugin: 'java'
             }
         """.stripIndent()
         when:
-        runTasksSuccessfully('tasks', '--all')
+        runTasks('tasks', '--all')
 
         then:
         noExceptionThrown()
@@ -124,8 +125,8 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
             }
 
             allprojects {
-                ${applyPlugin(PublishingPlugin)}
-                ${applyPlugin(JavaPlugin)}
+                apply plugin: 'org.gradle.publishing'
+                apply plugin: 'java'
             }
 
             subprojects { sub ->
@@ -146,13 +147,13 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         """.stripIndent()
 
         when:
-        runTasksSuccessfully('tasks', '--all', '--warning-mode', 'all')
+        runTasks('tasks', '--all', '--warning-mode', 'all')
 
         then:
         noExceptionThrown()
 
         when:
-        def r = runTasksSuccessfully('snapshot', '-m')
+        def r = runTasks('snapshot', '-m')
 
         then:
         noExceptionThrown()
@@ -171,7 +172,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationS
         git.commit(message: 'commenting build.gradle')
 
         when:
-        def results = runTasksSuccessfully(task)
+        def results = runTasks(task)
 
         then:
         originalRemoteHeadCommit == originGit.head().abbreviatedId

@@ -64,22 +64,3 @@ gradlePlugin {
     }
 }
 
-/**
- * This is temporary until config cache serialization is fixed when writing tests
- * More in https://github.com/gradle/gradle/issues/25898
- */
-tasks.withType(Test).configureEach {
-    Provider<String> jdkVersionForTestsEnvVariable = providers.environmentVariable("JDK_VERSION_FOR_TESTS")
-    Integer jdkVersionForTests = jdkVersionForTestsEnvVariable.isPresent() ? jdkVersionForTestsEnvVariable.get().toInteger() : 8
-    if(jdkVersionForTests >= 17) {
-        jvmArgs = [
-                '--add-opens=java.base/java.lang=ALL-UNNAMED',
-                '--add-opens=java.base/java.util=ALL-UNNAMED',
-                '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
-                '--add-opens=java.base/java.net=ALL-UNNAMED',
-                '--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED'
-
-        ]
-    }
-}
-

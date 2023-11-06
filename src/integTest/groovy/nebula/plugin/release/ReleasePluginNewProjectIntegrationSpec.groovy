@@ -1,12 +1,12 @@
 package nebula.plugin.release
-import nebula.test.IntegrationSpec
+import nebula.test.IntegrationTestKitSpec
 import org.ajoberstar.grgit.Grgit
-import org.gradle.api.plugins.JavaPlugin
+
 /**
  * Verify the behavior of nebula-release under various states for a new project (e.g. no git repo yet initialized, no
  * initial commit)
  */
-class ReleasePluginNewProjectIntegrationSpec extends IntegrationSpec {
+class ReleasePluginNewProjectIntegrationSpec extends IntegrationTestKitSpec {
     def 'release tasks unavailable when git repository has no commits'() {
         setup: // equivalent of having completed `git init` but no initial commit
         def origin = new File(projectDir.parent, "${projectDir.name}.git")
@@ -15,12 +15,14 @@ class ReleasePluginNewProjectIntegrationSpec extends IntegrationSpec {
 
         when:
         buildFile << """
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
+            plugins {
+                id 'com.netflix.nebula.release'
+                id 'java'
+            }
         """
 
         then:
-        runTasksSuccessfully('build')
-        runTasksWithFailure('snapshot')
+        runTasks('build')
+        runTasksAndFail('snapshot')
     }
 }

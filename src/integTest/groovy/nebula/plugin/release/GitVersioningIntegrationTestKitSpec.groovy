@@ -17,11 +17,12 @@ package nebula.plugin.release
 
 import com.github.zafarkhaja.semver.Version
 import nebula.test.IntegrationSpec
+import nebula.test.IntegrationTestKitSpec
 import org.ajoberstar.grgit.Grgit
 
 import java.nio.file.Files
 
-abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
+abstract class GitVersioningIntegrationTestKitSpec extends IntegrationTestKitSpec {
     protected Grgit git
     protected Grgit originGit
 
@@ -33,18 +34,21 @@ abstract class GitVersioningIntegrationSpec extends IntegrationSpec {
         origin.mkdirs()
 
         ['build.gradle', 'settings.gradle'].each {
-            Files.move(new File(projectDir, it).toPath(), new File(origin, it).toPath())
+            def file = new File(projectDir, it)
+            if(!file.exists()) {
+                file.createNewFile()
+            }
+            Files.move(file.toPath(), new File(origin, it).toPath())
         }
 
         originGit = Grgit.init(dir: origin)
-
-        originGit.add(patterns: ['build.gradle', 'settings.gradle', '.gitignore', 'gradle.properties'] as Set)
+        originGit.add(patterns: ['build.gradle', 'settings.gradle', '.gitignore'] as Set)
         originGit.commit(message: 'Initial checkout')
 
         git = Grgit.clone(dir: projectDir, uri: origin.absolutePath) as Grgit
 
-        new File(projectDir, '.gitignore') << '''.gradle-test-kit/
-.gradle/
+        new File(projectDir, '.gitignore') << '''.gradle-test-kit
+.gradle
 build/
 gradle.properties'''.stripIndent()
 
@@ -53,6 +57,8 @@ gradle.properties'''.stripIndent()
 
         setupBuild()
 
+
+        git.add(patterns: ['build.gradle', 'settings.gradle', '.gitignore'])
         git.commit(message: 'Setup')
         git.push()
     }
@@ -73,8 +79,8 @@ gradle.properties'''.stripIndent()
     }
 
     def Version inferredVersionForTask(String... args) {
-        def result = runTasksSuccessfully(args)
-        inferredVersion(result.standardOutput)
+        def result = runTasks(args)
+        inferredVersion(result.output)
     }
 
     def Version inferredVersion(String standardOutput) {

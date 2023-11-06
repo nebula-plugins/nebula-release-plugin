@@ -15,21 +15,24 @@
  */
 package nebula.plugin.release
 
-import nebula.test.IntegrationSpec
+import nebula.test.IntegrationTestKitSpec
 import org.ajoberstar.grgit.Grgit
-import org.gradle.api.plugins.JavaPlugin
 
-class ReleasePluginNoCommitIntegrationSpec extends IntegrationSpec {
+class ReleasePluginNoCommitIntegrationSpec extends IntegrationTestKitSpec {
     Grgit repo
 
     def 'repo with no commits does not throw errors'() {
         given:
         repo = Grgit.init(dir: projectDir)
         buildFile << """\
+            plugins {
+                id 'com.netflix.nebula.release'
+                id 'java'
+            }
+
             ext.dryRun = true
             group = 'test'
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
+           
 
             task showVersion {
                 doLast {
@@ -42,7 +45,7 @@ class ReleasePluginNoCommitIntegrationSpec extends IntegrationSpec {
         def results = runTasks('showVersion')
 
         then:
-        results.standardOutput.contains 'Version in task: 0.1.0-dev.0.uncommitted'
+        results.output.contains 'Version in task: 0.1.0-dev.0.uncommitted'
     }
 
     def 'repo with no commits does not throw errors - replace dev with immutable snapshot'() {
@@ -52,10 +55,13 @@ class ReleasePluginNoCommitIntegrationSpec extends IntegrationSpec {
 nebula.release.features.replaceDevWithImmutableSnapshot=true
 """
         buildFile << """\
+            plugins {
+                id 'com.netflix.nebula.release'
+                id 'java'
+            }
+
             ext.dryRun = true
             group = 'test'
-            ${applyPlugin(ReleasePlugin)}
-            ${applyPlugin(JavaPlugin)}
 
             task showVersion {
                 doLast {
@@ -68,7 +74,7 @@ nebula.release.features.replaceDevWithImmutableSnapshot=true
         def results = runTasks('showVersion')
 
         then:
-        results.standardOutput.contains 'Version in task: 0.1.0-snapshot.'
-        results.standardOutput.contains '.uncommitted'
+        results.output.contains 'Version in task: 0.1.0-snapshot.'
+        results.output.contains '.uncommitted'
     }
 }

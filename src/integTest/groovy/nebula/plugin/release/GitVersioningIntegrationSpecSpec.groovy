@@ -16,9 +16,9 @@
 package nebula.plugin.release
 
 /**
- * Tests for {@link GitVersioningIntegrationSpec}.
+ * Tests for {@link GitVersioningIntegrationTestKitSpec}.
  */
-class GitVersioningIntegrationSpecSpec extends GitVersioningIntegrationSpec {
+class GitVersioningIntegrationSpecSpec extends GitVersioningIntegrationTestKitSpec {
     @Override def setupBuild() {}
 
     def 'inferred version is parsed'() {
