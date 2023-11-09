@@ -120,19 +120,6 @@ class GitReadOnlyCommandUtil implements Serializable {
                 .collect { new TagRef(it) }
     }
 
-    /**
-     * Returns the tags that point to the current HEAD
-     */
-    List<String> refTags() {
-        try {
-            return refTagsProvider.get().toString()
-                    .split("\n")
-                    .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
-                    .toList()
-        } catch (Exception e) {
-            return Collections.emptyList()
-        }
-    }
 
     Integer getCommitCountForHead() {
         try {
@@ -144,15 +131,29 @@ class GitReadOnlyCommandUtil implements Serializable {
         }
     }
 
-    String describeTagForHead(String tagName) {
+    String describeHeadWithTags() {
         try {
-            def describeTagInHeadProvider = providers.of(DescribeTagForHead.class) {
+            def describeTagInHeadProvider = providers.of(DescribeHeadWithTag.class) {
                 it.parameters.rootDir.set(rootDir)
-                it.parameters.tagForSearch.set(tagName)
             }
             return describeTagInHeadProvider.get().toString()
                     .split("\n")
                     .first()?.replaceAll("\n", "")?.toString()
+        } catch(Exception e) {
+            return null
+        }
+    }
+
+    List<String> getTagsPointingAt(String commit) {
+        try {
+            def tagsPointingAtProvider = providers.of(TagsPointingAt.class) {
+                it.parameters.rootDir.set(rootDir)
+                it.parameters.commit.set(commit)
+            }
+            return tagsPointingAtProvider.get().toString()
+                    .split("\n")
+                    .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
+                    .collect()
         } catch(Exception e) {
             return null
         }

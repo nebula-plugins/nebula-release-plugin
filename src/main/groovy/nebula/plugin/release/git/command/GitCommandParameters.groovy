@@ -5,8 +5,8 @@ import org.gradle.api.provider.ValueSourceParameters
 
 interface GitCommandParameters extends ValueSourceParameters {
     Property<File> getRootDir()
-    Property<String> getTagForSearch()
     Property<String> getGitConfigScope()
     Property<String> getGitConfigKey()
     Property<String> getGitConfigValue()
+    Property<String> getCommit()
 }

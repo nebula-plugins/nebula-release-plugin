@@ -18,13 +18,13 @@ package nebula.plugin.release.git.semver
 import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
-import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.base.TagStrategy
+import org.gradle.api.GradleException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Locates the nearest {@link nebula.plugin.release.git.model.TagRef}s whose names can be
+ * Locates the nearest Tag whose names can be
  * parsed as a {@link com.github.zafarkhaja.semver.Version version}. Both the
  * absolute nearest version tag and the nearest "normal version" tag are
  * included.
@@ -54,12 +54,6 @@ class NearestVersionLocator {
      * starting from the current HEAD.
      *
      * <p>
-     * All tag names are parsed to determine if they are valid
-     * version strings. Tag names can begin with "v" (which will
-     * be stripped off).
-     * </p>
-     *
-     * <p>
      * The nearest tag is determined by getting a commit log between
      * the tag and {@code HEAD}. The version tag with the smallest
      * log from a pure count of commits will have its version returned. If two
@@ -81,52 +75,58 @@ class NearestVersionLocator {
      */
     NearestVersion locate() {
         logger.debug('Locate beginning on branch: {}', gitCommandUtil.currentBranch())
-        // Reuse a single walk to make use of caching.
-        List<String> tagRefs = gitCommandUtil.refTags()
-        List allTags = tagRefs.collect { ref ->
-            TagRef.fromRef(ref)
-        }.findAll {
-            it.version
-        }
-
-        List normalTags = allTags.findAll { !it.version.preReleaseVersion }
-        def normal = findNearestVersion(normalTags)
-        def any = findNearestVersion(allTags)
-
+        def normal = getLatestTagWithDistance(true)
+        def any =  getLatestTagWithDistance(false)
         logger.debug('Nearest release: {}, nearest any: {}.', normal, any)
         return new NearestVersion(any.version, normal.version, any.distance, normal.distance)
     }
 
-    private Map findNearestVersion(List<TagRef> tagList) {
-        List<Map> tagsWithDistance = tagList.collect { TagRef tag ->
-            getTagWithDistance(tag)
-        }
-        if (tagsWithDistance) {
-            tagsWithDistance.sort {}
-            return tagsWithDistance.min { a, b ->
-                def distanceCompare = a.distance <=> b.distance
-                def versionCompare =  (a.version <=> b.version) * -1
-                distanceCompare == 0 ? versionCompare : distanceCompare
-            }
-        } else {
-            return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
-        }
-    }
-
-    private getTagWithDistance(TagRef tag) {
+    private getLatestTagWithDistance(boolean excludePreReleases) {
         try {
-            String result = gitCommandUtil.describeTagForHead(tag.name)
+            String result = gitCommandUtil.describeHeadWithTags()
             if(!result) {
                 return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
             }
 
             String[] parts = result.split('-')
             if(parts.size() < 3) {
-                return [version: tag.version, distance: 0]
+                return [version: parseTag(parts[0], true), distance: 0]
             }
-            return [version: tag.version, distance: parts[parts.size() - 2]?.toInteger()]
+
+            String commit = parts[parts.size() -1].drop(1)
+            List<Version> allTagsForCommit = gitCommandUtil.getTagsPointingAt(commit).collect {
+                parseTag(it)
+            }.findAll {
+                it && excludePreReleases ? !it.preReleaseVersion : true
+            }
+
+            if(!allTagsForCommit || allTagsForCommit.every { !it }) {
+                String tag = parts.size() == 4 ? parts[0..1].join('-') : parts[0]
+                Version version = parseTag(tag, true)
+                if(version.preReleaseVersion && excludePreReleases) {
+                    return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
+                }
+                return [version: parseTag(tag, true), distance: parts[parts.size() - 2]?.toInteger()]
+            }
+
+            def highest = allTagsForCommit.min { a, b ->
+                (a <=> b) * -1
+            }
+            return [version: highest, distance: parts[parts.size() - 2]?.toInteger()]
         } catch (Exception e) {
             return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
+        }
+    }
+
+    private static Version parseTag(String name, boolean failOnInvalid = false) {
+        try {
+            Version.valueOf(name[0] == 'v' ? name[1..-1] : name)
+        } catch (Exception e) {
+            if(!failOnInvalid) {
+                return null
+            }
+
+            throw new GradleException("Current commit has following tags: ${name} but they were not recognized as valid versions" )
         }
     }
 }
