@@ -58,11 +58,25 @@ abstract class CurrentBranch extends GitReadCommand {
  * Uses git describe to find a given tag in the history of the current branch
  * ex. git describe HEAD --tags --match v10.0.0 -> v10.0.0-220-ga00baaa
  */
-abstract class DescribeTagForHead extends GitReadCommand {
+abstract class DescribeHeadWithTag extends GitReadCommand {
     @Override
     String obtain() {
         try {
-            return executeGitCommand( "describe", "HEAD", "--tags", "--match", parameters.getTagForSearch().get())
+            return executeGitCommand( "describe", "HEAD", "--tags", "--long")
+        } catch (Exception e) {
+            return null
+        }
+    }
+}
+/**
+ * Uses git describe to find a given tag in the history of the current branch
+ * ex. git describe HEAD --tags --match v10.0.0 -> v10.0.0-220-ga00baaa
+ */
+abstract class TagsPointingAt extends GitReadCommand {
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand( "tag", "--points-at", parameters.commit.get())
         } catch (Exception e) {
             return null
         }
