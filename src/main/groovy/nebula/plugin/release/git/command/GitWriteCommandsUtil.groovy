@@ -81,6 +81,10 @@ class GitWriteCommandsUtil implements Serializable {
             it.standardOutput = output
             it.errorOutput = error
         }
+        def errorMsg = new String(error.toByteArray(), Charset.defaultCharset())
+        if(errorMsg) {
+            throw new GradleException(errorMsg)
+        }
         return new String(output.toByteArray(), Charset.defaultCharset())
     }
 }
