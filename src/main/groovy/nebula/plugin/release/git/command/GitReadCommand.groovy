@@ -27,6 +27,7 @@ abstract class GitReadCommand implements ValueSource<String, GitCommandParameter
         commandLineArgs.addAll(args)
         execOperations.exec {
             it.setCommandLine(commandLineArgs)
+            it.ignoreExitValue = true
             it.standardOutput = output
             it.errorOutput = error
         }
@@ -68,6 +69,17 @@ abstract class DescribeHeadWithTag extends GitReadCommand {
         }
     }
 }
+
+abstract class DescribeHeadWithTagWithExclude extends GitReadCommand {
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand( "describe", "HEAD", "--tags", "--long", "--exclude", "\"*-rc.*\"")
+        } catch (Exception e) {
+            return null
+        }
+    }
+}
 /**
  * Uses git describe to find a given tag in the history of the current branch
  * ex. git describe HEAD --tags --match v10.0.0 -> v10.0.0-220-ga00baaa
@@ -77,6 +89,21 @@ abstract class TagsPointingAt extends GitReadCommand {
     String obtain() {
         try {
             return executeGitCommand( "tag", "--points-at", parameters.commit.get())
+        } catch (Exception e) {
+            return null
+        }
+    }
+}
+
+/**
+ * Uses git describe to find a given tag in the history of the current branch
+ * ex. git describe HEAD --tags --match v10.0.0 -> v10.0.0-220-ga00baaa
+ */
+abstract class CommitFromTag extends GitReadCommand {
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand( "rev-list", "-n", '1', parameters.tag.get())
         } catch (Exception e) {
             return null
         }

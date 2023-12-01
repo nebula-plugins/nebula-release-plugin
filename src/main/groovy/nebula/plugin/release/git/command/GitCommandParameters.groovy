@@ -9,4 +9,5 @@ interface GitCommandParameters extends ValueSourceParameters {
     Property<String> getGitConfigKey()
     Property<String> getGitConfigValue()
     Property<String> getCommit()
+    Property<String> getTag()
 }

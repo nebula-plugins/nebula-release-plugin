@@ -83,7 +83,7 @@ class NearestVersionLocator {
 
     private getLatestTagWithDistance(boolean excludePreReleases) {
         try {
-            String result = gitCommandUtil.describeHeadWithTags()
+            String result = gitCommandUtil.describeHeadWithTags(excludePreReleases)
             if(!result) {
                 return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
             }
@@ -93,7 +93,8 @@ class NearestVersionLocator {
                 return [version: parseTag(parts[0], true), distance: 0]
             }
 
-            String commit = parts[parts.size() -1].drop(1)
+            String foundTag = parts.size() == 4 ? parts[0..1].join('-') : parts[0]
+            String commit = gitCommandUtil.findCommitForTag(foundTag)
             List<Version> allTagsForCommit = gitCommandUtil.getTagsPointingAt(commit).collect {
                 parseTag(it)
             }.findAll {
@@ -101,12 +102,11 @@ class NearestVersionLocator {
             }
 
             if(!allTagsForCommit || allTagsForCommit.every { !it }) {
-                String tag = parts.size() == 4 ? parts[0..1].join('-') : parts[0]
-                Version version = parseTag(tag, true)
+                Version version = parseTag(foundTag, true)
                 if(version.preReleaseVersion && excludePreReleases) {
                     return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
                 }
-                return [version: parseTag(tag, true), distance: parts[parts.size() - 2]?.toInteger()]
+                return [version: parseTag(foundTag, true), distance: parts[parts.size() - 2]?.toInteger()]
             }
 
             def highest = allTagsForCommit.min { a, b ->

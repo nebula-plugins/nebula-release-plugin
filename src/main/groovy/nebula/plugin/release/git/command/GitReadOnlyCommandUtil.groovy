@@ -131,12 +131,30 @@ class GitReadOnlyCommandUtil implements Serializable {
         }
     }
 
-    String describeHeadWithTags() {
+
+
+    String describeHeadWithTags(boolean excludePreReleases) {
         try {
-            def describeTagInHeadProvider = providers.of(DescribeHeadWithTag.class) {
+            def describeTagInHeadProvider = excludePreReleases ? providers.of(DescribeHeadWithTagWithExclude.class) {
+                it.parameters.rootDir.set(rootDir)
+            } : providers.of(DescribeHeadWithTag.class) {
                 it.parameters.rootDir.set(rootDir)
             }
             return describeTagInHeadProvider.get().toString()
+                    .split("\n")
+                    .first()?.replaceAll("\n", "")?.toString()
+        } catch(Exception e) {
+            return null
+        }
+    }
+
+    String findCommitForTag(String tag) {
+        try {
+            def commitForTag = providers.of(CommitFromTag.class) {
+                it.parameters.rootDir.set(rootDir)
+                it.parameters.tag.set(tag)
+            }
+            return commitForTag.get().toString()
                     .split("\n")
                     .first()?.replaceAll("\n", "")?.toString()
         } catch(Exception e) {
