@@ -27,7 +27,6 @@ abstract class GitReadCommand implements ValueSource<String, GitCommandParameter
         commandLineArgs.addAll(args)
         execOperations.exec {
             it.setCommandLine(commandLineArgs)
-            it.ignoreExitValue = true
             it.standardOutput = output
             it.errorOutput = error
         }
@@ -36,6 +35,28 @@ abstract class GitReadCommand implements ValueSource<String, GitCommandParameter
             throw new GradleException(errorMsg)
         }
         return new String(output.toByteArray(), Charset.defaultCharset())
+    }
+
+    @CompileDynamic
+    String executeGitCommandWithErrorIgnore(Object ... args) {
+        File rootDir = parameters.rootDir.get()
+        ByteArrayOutputStream output = new ByteArrayOutputStream()
+        ByteArrayOutputStream error = new ByteArrayOutputStream()
+        List<String> commandLineArgs = ["git", "--git-dir=${rootDir.absolutePath}/.git".toString(), "--work-tree=${rootDir.absolutePath}".toString()]
+        commandLineArgs.addAll(args)
+        execOperations.exec {
+            it.setCommandLine(commandLineArgs)
+            it.standardOutput = output
+            it.errorOutput = error
+        }
+        String result = new String(output.toByteArray(), Charset.defaultCharset())
+        if(result) {
+            return result
+        }
+        def errorMsg = new String(error.toByteArray(), Charset.defaultCharset())
+        if(errorMsg) {
+            throw new GradleException(errorMsg)
+        }
     }
 }
 
@@ -74,7 +95,7 @@ abstract class DescribeHeadWithTagWithExclude extends GitReadCommand {
     @Override
     String obtain() {
         try {
-            return executeGitCommand( "describe", "HEAD", "--tags", "--long", "--exclude", "\"*-rc.*\"")
+            return executeGitCommandWithErrorIgnore( "describe", "HEAD", "--tags", "--long", "--exclude", "*-rc.*")
         } catch (Exception e) {
             return null
         }
