@@ -10,6 +10,8 @@ class GitReadOnlyCommandUtil implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(GitReadOnlyCommandUtil)
     private final ProviderFactory providers
 
+    private Provider usernameFromLogProvider
+    private Provider emailFromLogProvider
     private Provider currentBranchProvider
     private Provider isGitRepoProvider
     private Provider describeTagsProvider
@@ -33,6 +35,12 @@ class GitReadOnlyCommandUtil implements Serializable {
      */
     void configure(File gitRoot) {
         this.rootDir = gitRoot
+        usernameFromLogProvider = providers.of(UsernameFromLog.class) {
+            it.parameters.rootDir.set(rootDir)
+        }
+        emailFromLogProvider = providers.of(EmailFromLog.class) {
+            it.parameters.rootDir.set(rootDir)
+        }
         configureCommitterIfNecessary()
         currentBranchProvider = providers.of(CurrentBranch.class) {
             it.parameters.rootDir.set(rootDir)
@@ -72,11 +80,13 @@ class GitReadOnlyCommandUtil implements Serializable {
         String globalEmail = getGitConfig('--global', 'user.email')
         String localUsername = getGitConfig('--local', 'user.name')
         String localEmail = getGitConfig('--local', 'user.email')
-        if(!globalUsername && !localUsername) {
-            setGitConfig("user.name", "\"\$(git --no-pager log --format=format:'%an' -n 1)\"")
+        String usernameFromLog = usernameFromLogProvider.isPresent() ? usernameFromLogProvider.get() : null
+        if(!globalUsername && !localUsername && usernameFromLog) {
+            setGitConfig("user.name", usernameFromLog)
         }
-        if(!globalEmail && !localEmail) {
-            setGitConfig("user.email", "\"\$(git --no-pager log --format=format:'%ae' -n 1)\"")
+        String emailFromLog =  emailFromLogProvider.isPresent() ? emailFromLogProvider.get() : null
+        if(!globalEmail && !localEmail && emailFromLog) {
+            setGitConfig("user.email", emailFromLog)
         }
     }
 
@@ -85,6 +95,14 @@ class GitReadOnlyCommandUtil implements Serializable {
             return Boolean.valueOf(isGitRepoProvider.get().toString())
         } catch (Exception e) {
             return false
+        }
+    }
+
+    String getUsernameFromLog() {
+        try {
+            return currentBranchProvider.get().toString().replaceAll("\n", "").trim()
+        } catch (Exception e) {
+            return null
         }
     }
 

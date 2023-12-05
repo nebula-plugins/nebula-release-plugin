@@ -60,6 +60,29 @@ abstract class GitReadCommand implements ValueSource<String, GitCommandParameter
     }
 }
 
+abstract class UsernameFromLog extends GitReadCommand {
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand(  "--no-pager", "log","--format=format:%an", "-n", "1")
+                    .replaceAll("\n", "").trim()
+        } catch (Exception e) {
+            return null
+        }
+    }
+}
+
+abstract class EmailFromLog extends GitReadCommand {
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand(  "--no-pager", "log","--format=format:%ae", "-n", "1")
+                    .replaceAll("\n", "").trim()
+        } catch (Exception e) {
+            return null
+        }
+    }
+}
 /**
  * Returns current branch name
  * ex.  git rev-parse --abbrev-ref HEAD  -> configuration-cache-support
