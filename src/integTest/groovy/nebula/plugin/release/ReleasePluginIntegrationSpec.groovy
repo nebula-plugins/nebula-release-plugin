@@ -745,7 +745,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
 
         then:
-        result.output.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
+        result.output.contains("Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.") || result.output.contains("but they were not recognized as valid versions")
         !new File(projectDir, "build/libs/${moduleName}-${dev('0.1.0-dev.3+').toString()}.jar").exists()
     }
 
@@ -757,7 +757,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
 
         then:
-        result.output.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
+        result.output.contains("Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.") || result.output.contains("but they were not recognized as valid versions")
         !new File(projectDir, "build/libs/${moduleName}-${dev('0.1.0-snapshot.220190705103502+').toString()}.jar").exists()
     }
 
@@ -768,7 +768,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
 
         then:
-        result.output.contains "Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag."
+        result.output.contains("Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.") || result.output.contains("but they were not recognized as valid versions")
         !new File(projectDir, "build/libs/${moduleName}-1.2.3-SNAPSHOT.jar").exists()
     }
 

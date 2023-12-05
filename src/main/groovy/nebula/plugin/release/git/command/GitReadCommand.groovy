@@ -84,7 +84,7 @@ abstract class DescribeHeadWithTag extends GitReadCommand {
     @Override
     String obtain() {
         try {
-            return executeGitCommand( "describe", "HEAD", "--tags", "--long")
+            return executeGitCommand( "describe", "HEAD", "--tags", "--long", "--match", "v*")
         } catch (Exception e) {
             return null
         }
@@ -95,7 +95,7 @@ abstract class DescribeHeadWithTagWithExclude extends GitReadCommand {
     @Override
     String obtain() {
         try {
-            return executeGitCommandWithErrorIgnore( "describe", "HEAD", "--tags", "--long", "--exclude", "*-rc.*")
+            return executeGitCommandWithErrorIgnore( "describe", "HEAD", "--tags", "--long", "--match", "v*", "--exclude", "*-rc.*")
         } catch (Exception e) {
             return null
         }
