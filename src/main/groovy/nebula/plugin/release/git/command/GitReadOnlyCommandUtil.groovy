@@ -14,7 +14,7 @@ class GitReadOnlyCommandUtil implements Serializable {
     private Provider emailFromLogProvider
     private Provider currentBranchProvider
     private Provider isGitRepoProvider
-    private Provider describeTagsProvider
+    private Provider anyCommitProvider
     private Provider revParseHeadProvider
     private Provider headTagsProvider
     private Provider refTagsProvider
@@ -48,7 +48,7 @@ class GitReadOnlyCommandUtil implements Serializable {
         isGitRepoProvider = providers.of(IsGitRepo.class) {
             it.parameters.rootDir.set(rootDir)
         }
-        describeTagsProvider = providers.of(DescribeTags.class) {
+        anyCommitProvider = providers.of(AnyCommit.class) {
             it.parameters.rootDir.set(rootDir)
         }
         revParseHeadProvider = providers.of(RevParseHead.class) {
@@ -108,8 +108,8 @@ class GitReadOnlyCommandUtil implements Serializable {
 
     Boolean hasCommit() {
         try {
-            String describe = describeTagsProvider.get().toString()
-            return describe != null && !describe.contains("fatal:")
+            String describe = anyCommitProvider.get().toString()
+            return describe != null && !describe.empty && !describe.contains("fatal:")
         } catch (Exception e) {
             return false
         }

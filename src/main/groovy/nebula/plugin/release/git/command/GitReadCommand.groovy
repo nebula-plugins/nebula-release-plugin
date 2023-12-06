@@ -157,11 +157,11 @@ abstract class CommitFromTag extends GitReadCommand {
 /**
  * Uses to determine if a given repo has any commit
  */
-abstract class DescribeTags extends GitReadCommand {
+abstract class AnyCommit extends GitReadCommand {
     @Override
     String obtain() {
         try {
-            return executeGitCommand(   "describe", "--tags", "--always")
+            return executeGitCommand(   "rev-list", "-n", "1", "--all")
                     .replaceAll("\n", "").trim()
         } catch (Exception e) {
             return null
