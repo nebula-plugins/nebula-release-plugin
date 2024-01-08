@@ -276,7 +276,6 @@ abstract class RevListCountHead  extends GitReadCommand {
  * ex. git rev-parse HEAD -> 8e6c4c925a54dbe827f043d21cd7a2a01b97fbac
  */
 abstract class RevParseHead extends GitReadCommand {
-
     @Override
     String obtain() {
         try {
@@ -312,9 +311,13 @@ abstract class GetGitConfigValue extends GitReadCommand {
     @Override
     String obtain() {
         try {
-            return executeGitCommand( "config", parameters.getGitConfigScope().get(), parameters.getGitConfigKey().get())
+            if(parameters.getGitConfigScope().isPresent()) {
+                return executeGitCommand( "config", parameters.getGitConfigScope().get(), parameters.getGitConfigKey().get())
+            } else {
+                return executeGitCommand( "config", parameters.getGitConfigKey().get())
+            }
         } catch (Exception e) {
-            logger.debug("Could not get git config {} {} {}", parameters.getGitConfigScope().get(), parameters.getGitConfigKey().get())
+            logger.debug("Could not get git config {} {}", parameters.getGitConfigScope().isPresent() ? parameters.gitConfigScope.get() : "", parameters.getGitConfigKey().get())
             return null
         }
     }

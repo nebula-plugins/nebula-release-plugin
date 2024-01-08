@@ -1,6 +1,7 @@
 package nebula.plugin.release.git.command
 
 import nebula.plugin.release.git.model.TagRef
+import org.gradle.api.GradleException
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.slf4j.Logger
@@ -41,7 +42,7 @@ class GitReadOnlyCommandUtil implements Serializable {
         emailFromLogProvider = providers.of(EmailFromLog.class) {
             it.parameters.rootDir.set(rootDir)
         }
-        configureCommitterIfNecessary()
+        verifyGitConfig()
         currentBranchProvider = providers.of(CurrentBranch.class) {
             it.parameters.rootDir.set(rootDir)
         }
@@ -75,18 +76,22 @@ class GitReadOnlyCommandUtil implements Serializable {
 
     }
 
-    private void configureCommitterIfNecessary() {
+    private void verifyGitConfig() {
+        String username = getGitConfig('user.name')
+        String email = getGitConfig('user.email')
         String globalUsername = getGitConfig('--global', 'user.name')
         String globalEmail = getGitConfig('--global', 'user.email')
+        String systemUsername = getGitConfig('--system', 'user.name')
+        String systemEmail = getGitConfig('--system', 'user.email')
         String localUsername = getGitConfig('--local', 'user.name')
         String localEmail = getGitConfig('--local', 'user.email')
         String usernameFromLog = usernameFromLogProvider.isPresent() ? usernameFromLogProvider.get() : null
-        if(!globalUsername && !localUsername && usernameFromLog) {
-            setGitConfig("user.name", usernameFromLog)
+        if(!username && !globalUsername && !localUsername && !systemUsername && usernameFromLog) {
+            throw new GradleException("Git user.name is not set. Please configure git user.name globally, locally or system wide. You can learn more in https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup")
         }
         String emailFromLog =  emailFromLogProvider.isPresent() ? emailFromLogProvider.get() : null
-        if(!globalEmail && !localEmail && emailFromLog) {
-            setGitConfig("user.email", emailFromLog)
+        if(!email && !globalEmail && !localEmail && !systemEmail && emailFromLog) {
+            throw new GradleException("Git user.email is not set. Please configure git user.email globally, locally or system wide. You can learn more in https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup")
         }
     }
 
@@ -253,6 +258,23 @@ class GitReadOnlyCommandUtil implements Serializable {
                     replaceAll("\n", "")?.toString()
         } catch(Exception e) {
             logger.debug("Could not get git config {} {} {}", scope, configKey)
+            return null
+        }
+    }    /**
+     * Returns a git config value for a given scope
+     * @param configKey
+     * @return
+     */
+    String getGitConfig(String configKey) {
+        try {
+            def getConfigValueProvider = providers.of(GetGitConfigValue.class) {
+                it.parameters.rootDir.set(rootDir)
+                it.parameters.gitConfigKey.set(configKey)
+            }
+            return getConfigValueProvider.get().toString()?.
+                    replaceAll("\n", "")?.toString()
+        } catch(Exception e) {
+            logger.debug("Could not get git config {} {}", configKey)
             return null
         }
     }
