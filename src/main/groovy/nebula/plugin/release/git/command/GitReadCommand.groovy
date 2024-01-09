@@ -212,7 +212,7 @@ abstract class IsGitRepo extends GitReadCommand  {
     @Override
     String obtain() {
         try {
-            return executeGitCommand( "rev-parse", "--is-inside-work-tree").contains("true")
+            return !executeGitCommand( "rev-parse").contains("fatal: not a git repository")
         } catch (Exception e) {
             return false
         }
