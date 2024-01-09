@@ -103,14 +103,6 @@ class GitReadOnlyCommandUtil implements Serializable {
         }
     }
 
-    String getUsernameFromLog() {
-        try {
-            return currentBranchProvider.get().toString().replaceAll("\n", "").trim()
-        } catch (Exception e) {
-            return null
-        }
-    }
-
     Boolean hasCommit() {
         try {
             String describe = anyCommitProvider.get().toString()
@@ -153,8 +145,6 @@ class GitReadOnlyCommandUtil implements Serializable {
             return 0
         }
     }
-
-
 
     String describeHeadWithTags(boolean excludePreReleases) {
         try {
@@ -276,26 +266,6 @@ class GitReadOnlyCommandUtil implements Serializable {
         } catch(Exception e) {
             logger.debug("Could not get git config {} {}", configKey)
             return null
-        }
-    }
-
-    /**
-     * Returns a git config value for a given scope
-     * @param scope
-     * @param configKey
-     * @return
-     */
-    void setGitConfig(String configKey, String configValue) {
-        try {
-            def getConfigValueProvider = providers.of(SetGitConfigValue.class) {
-                it.parameters.rootDir.set(rootDir)
-                it.parameters.gitConfigKey.set(configKey)
-                it.parameters.gitConfigValue.set(configValue)
-            }
-            getConfigValueProvider.get().toString()?.
-                    replaceAll("\n", "")?.toString()
-        } catch(Exception e) {
-            logger.debug("Could not set git config {} {}", configKey, configValue)
         }
     }
 }

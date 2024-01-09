@@ -312,29 +312,12 @@ abstract class GetGitConfigValue extends GitReadCommand {
     String obtain() {
         try {
             if(parameters.getGitConfigScope().isPresent()) {
-                return executeGitCommand( "config", parameters.getGitConfigScope().get(), parameters.getGitConfigKey().get())
+                return executeGitCommand( "config", parameters.getGitConfigScope().get(), "--includes", parameters.getGitConfigKey().get())
             } else {
                 return executeGitCommand( "config", parameters.getGitConfigKey().get())
             }
         } catch (Exception e) {
             logger.debug("Could not get git config {} {}", parameters.getGitConfigScope().isPresent() ? parameters.gitConfigScope.get() : "", parameters.getGitConfigKey().get())
-            return null
-        }
-    }
-}
-
-
-/**
- * Set a given Git config key with its value for a given scope
- */
-abstract class SetGitConfigValue extends GitReadCommand {
-    private static final Logger logger = LoggerFactory.getLogger(SetGitConfigValue)
-    @Override
-    String obtain() {
-        try {
-            return executeGitCommand( "config", parameters.getGitConfigKey().get(), parameters.getGitConfigValue().get())
-        } catch (Exception e) {
-            logger.debug("Could not set git config {} {} {}", parameters.getGitConfigKey().get(), parameters.getGitConfigValue().get())
             return null
         }
     }
