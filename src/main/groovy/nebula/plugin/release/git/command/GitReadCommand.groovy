@@ -109,6 +109,9 @@ abstract class DescribeHeadWithTag extends GitReadCommand {
         try {
             return executeGitCommand( "describe", "HEAD", "--tags", "--long", "--match", "v*")
         } catch (Exception e) {
+            if(e.message.contains("is externally known as") || e.message.contains('warning: tag ')) {
+                return e.message.takeBetween("tag '", "'")
+            }
             return null
         }
     }
