@@ -1212,7 +1212,7 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         git.checkout(branch: 'main', createBranch: true)
 
         when:
-        def result = runTasks('final')
+        def result = runTasks('final', '-i')
 
         then:
         result.task(':final').outcome == TaskOutcome.SUCCESS

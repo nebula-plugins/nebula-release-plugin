@@ -31,10 +31,10 @@ abstract class ReleaseTask extends DefaultTask {
         GitWriteCommandsUtil gitCommands = gitWriteCommandsUtil.get()
         String tagName = tagStrategy.get().maybeCreateTag(gitCommands, projectVersion.get())
         if (tagName) {
-            logger.warn('Pushing changes in {} to {}', tagName, remote.get())
+            logger.info('Pushing changes in {} to {}', tagName, remote.get())
             gitCommands.pushTag(remote.get(), tagName)
         } else {
-            logger.warn('No new tags to push for {}', remote.get())
+            logger.info('No new tags to push for {}', remote.get())
         }
     }
 }
