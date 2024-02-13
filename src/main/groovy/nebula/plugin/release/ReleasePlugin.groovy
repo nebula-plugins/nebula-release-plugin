@@ -44,30 +44,13 @@ import org.gradle.process.ExecOperations
 
 import javax.inject.Inject
 
+import static nebula.plugin.release.util.ReleaseTasksUtil.*
+
 class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
     public static final String DEFAULT_VERSIONING_STRATEGY = 'release.defaultVersioningStrategy'
     Project project
     static Logger logger = Logging.getLogger(ReleasePlugin)
-
-    static final String SNAPSHOT_TASK_NAME = 'snapshot'
-    static final String SNAPSHOT_TASK_NAME_OPTIONAL_COLON = ":$SNAPSHOT_TASK_NAME"
-    static final String SNAPSHOT_SETUP_TASK_NAME = 'snapshotSetup'
-    static final String DEV_SNAPSHOT_TASK_NAME = 'devSnapshot'
-    static final String DEV_SNAPSHOT_SETUP_TASK_NAME = 'devSnapshotSetup'
-    static final String DEV_SNAPSHOT_SETUP_TASK_NAME_OPTIONAL_COLON = ":$DEV_SNAPSHOT_SETUP_TASK_NAME"
-    static final String IMMUTABLE_SNAPSHOT_TASK_NAME = 'immutableSnapshot'
-    static final String IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME = 'immutableSnapshotSetup'
-    static final String IMMUTABLE_SNAPSHOT_TASK_NAME_OPTIONAL_COLON = ":$IMMUTABLE_SNAPSHOT_TASK_NAME"
-    static final String CANDIDATE_TASK_NAME = 'candidate'
-    static final String CANDIDATE_TASK_NAME_OPTIONAL_COLON = ":$CANDIDATE_TASK_NAME"
-    static final String CANDIDATE_SETUP_TASK_NAME = 'candidateSetup'
-    static final String FINAL_TASK_NAME = 'final'
-    static final String FINAL_TASK_NAME_WITH_OPTIONAL_COLON = ":$FINAL_TASK_NAME"
-    static final String FINAL_SETUP_TASK_NAME = 'finalSetup'
-    static final String RELEASE_CHECK_TASK_NAME = 'releaseCheck'
-    static final String NEBULA_RELEASE_EXTENSION_NAME = 'nebulaRelease'
-    static final String POST_RELEASE_TASK_NAME = 'postRelease'
     static final String GROUP = 'Nebula Release'
 
     private final GitReadOnlyCommandUtil gitCommandUtil
@@ -85,7 +68,10 @@ class ReleasePlugin implements Plugin<Project> {
         this.project = project
 
         File gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
-        gitCommandUtil.configure(gitRoot)
+
+        // Verify user git config only when using release tags and 'release.useLastTag' property is not used
+        boolean shouldVerifyUserGitConfig = isReleaseTaskThatRequiresTagging(project.gradle.startParameter.taskNames) && !isUsingLatestTag(project)
+        gitCommandUtil.configure(gitRoot, shouldVerifyUserGitConfig)
         gitWriteCommandsUtil.configure(gitRoot)
 
         boolean isGitRepo = gitCommandUtil.isGitRepo()

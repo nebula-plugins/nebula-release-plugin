@@ -25,6 +25,7 @@ import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.plugin.release.git.semver.NearestVersionLocator
+import nebula.plugin.release.util.ReleaseTasksUtil
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.slf4j.Logger
@@ -37,14 +38,13 @@ class OverrideStrategies {
 
 
     static class ReleaseLastTagStrategy implements VersionStrategy {
-        static final String PROPERTY_NAME = 'release.useLastTag'
         private static final String NOT_SUPPLIED = 'release-strategy-is-not-supplied'
         private static final Logger logger = LoggerFactory.getLogger(ReleaseLastTagStrategy)
 
         Project project
         String propertyName
 
-        ReleaseLastTagStrategy(Project project, String propertyName = PROPERTY_NAME) {
+        ReleaseLastTagStrategy(Project project, String propertyName = ReleaseTasksUtil.USE_LAST_TAG_PROPERTY) {
             this.project = project
             this.propertyName = propertyName
         }
