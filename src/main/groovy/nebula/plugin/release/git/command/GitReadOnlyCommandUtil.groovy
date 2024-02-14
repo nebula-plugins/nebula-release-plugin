@@ -34,7 +34,7 @@ class GitReadOnlyCommandUtil implements Serializable {
      * This uses the provider factory to create the providers in order to support ocnfiguration cache
      * @param gitRoot
      */
-    void configure(File gitRoot) {
+    void configure(File gitRoot, boolean shouldVerifyUserGitConfig) {
         this.rootDir = gitRoot
         usernameFromLogProvider = providers.of(UsernameFromLog.class) {
             it.parameters.rootDir.set(rootDir)
@@ -42,7 +42,9 @@ class GitReadOnlyCommandUtil implements Serializable {
         emailFromLogProvider = providers.of(EmailFromLog.class) {
             it.parameters.rootDir.set(rootDir)
         }
-        verifyGitConfig()
+        if(shouldVerifyUserGitConfig) {
+            verifyUserGitConfig()
+        }
         currentBranchProvider = providers.of(CurrentBranch.class) {
             it.parameters.rootDir.set(rootDir)
         }
@@ -76,7 +78,7 @@ class GitReadOnlyCommandUtil implements Serializable {
 
     }
 
-    private void verifyGitConfig() {
+    private void verifyUserGitConfig() {
         String username = getGitConfig('user.name')
         String email = getGitConfig('user.email')
         String globalUsername = getGitConfig('--global', 'user.name')
@@ -250,7 +252,9 @@ class GitReadOnlyCommandUtil implements Serializable {
             logger.debug("Could not get git config {} {} {}", scope, configKey)
             return null
         }
-    }    /**
+    }
+
+    /**
      * Returns a git config value for a given scope
      * @param configKey
      * @return
