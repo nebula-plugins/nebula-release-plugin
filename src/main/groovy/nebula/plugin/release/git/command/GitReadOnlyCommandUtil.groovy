@@ -81,12 +81,24 @@ class GitReadOnlyCommandUtil implements Serializable {
     private void verifyUserGitConfig() {
         String username = getGitConfig('user.name')
         String email = getGitConfig('user.email')
+        if(username && email) {
+            return
+        }
         String globalUsername = getGitConfig('--global', 'user.name')
         String globalEmail = getGitConfig('--global', 'user.email')
+        if(globalUsername && globalEmail) {
+            return
+        }
         String systemUsername = getGitConfig('--system', 'user.name')
         String systemEmail = getGitConfig('--system', 'user.email')
+        if(systemUsername && systemEmail) {
+            return
+        }
         String localUsername = getGitConfig('--local', 'user.name')
         String localEmail = getGitConfig('--local', 'user.email')
+        if(localUsername && localEmail) {
+            return
+        }
         String usernameFromLog = usernameFromLogProvider.isPresent() ? usernameFromLogProvider.get() : null
         if(!username && !globalUsername && !localUsername && !systemUsername && usernameFromLog) {
             throw new GradleException("Git user.name is not set. Please configure git user.name globally, locally or system wide. You can learn more in https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup")
