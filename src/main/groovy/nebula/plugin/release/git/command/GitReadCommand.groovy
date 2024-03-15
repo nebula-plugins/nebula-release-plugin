@@ -26,6 +26,7 @@ abstract class GitReadCommand implements ValueSource<String, GitCommandParameter
         List<String> commandLineArgs = ["git", "--git-dir=${rootDir.absolutePath}/.git".toString(), "--work-tree=${rootDir.absolutePath}".toString()]
         commandLineArgs.addAll(args)
         execOperations.exec {
+            it.setWorkingDir(rootDir.absolutePath)
             it.setCommandLine(commandLineArgs)
             it.standardOutput = output
             it.errorOutput = error
@@ -45,6 +46,7 @@ abstract class GitReadCommand implements ValueSource<String, GitCommandParameter
         List<String> commandLineArgs = ["git", "--git-dir=${rootDir.absolutePath}/.git".toString(), "--work-tree=${rootDir.absolutePath}".toString()]
         commandLineArgs.addAll(args)
         execOperations.exec {
+            it.setWorkingDir(rootDir.absolutePath)
             it.setCommandLine(commandLineArgs)
             it.standardOutput = output
             it.errorOutput = error
