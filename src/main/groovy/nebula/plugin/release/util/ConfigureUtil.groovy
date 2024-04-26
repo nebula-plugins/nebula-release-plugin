@@ -1,5 +1,6 @@
 package nebula.plugin.release.util
 
+import groovy.transform.CompileDynamic
 import org.codehaus.groovy.runtime.GeneratedClosure
 import org.gradle.internal.metaobject.ConfigureDelegate
 import org.gradle.util.Configurable
@@ -8,6 +9,8 @@ import org.gradle.util.internal.ClosureBackedAction
 import javax.annotation.Nullable
 
 class ConfigureUtil {
+    public static final int DELEGATE_FIRST = 1
+    public static final int OWNER_ONLY = 2
 
     /**
      * <p>Configures {@code target} with {@code configureClosure}, via the {@link Configurable} interface if necessary.</p>
@@ -36,14 +39,15 @@ class ConfigureUtil {
         return target
     }
 
+    @CompileDynamic
     private static <T> void configureTarget(Closure configureClosure, T target, ConfigureDelegate closureDelegate) {
         if (!(configureClosure instanceof GeneratedClosure)) {
-            new ClosureBackedAction<T>(configureClosure, Closure.DELEGATE_FIRST, false).execute(target)
+            new ClosureBackedAction<T>(configureClosure, DELEGATE_FIRST, false).execute(target)
             return;
         }
 
         // Hackery to make closure execution faster, by short-circuiting the expensive property and method lookup on Closure
         Closure withNewOwner = configureClosure.rehydrate(target, closureDelegate, configureClosure.getThisObject())
-        new ClosureBackedAction<T>(withNewOwner, Closure.OWNER_ONLY, false).execute(target)
+        new ClosureBackedAction<T>(withNewOwner, OWNER_ONLY, false).execute(target)
     }
 }
