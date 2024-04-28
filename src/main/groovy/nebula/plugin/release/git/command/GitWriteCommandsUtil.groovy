@@ -79,6 +79,7 @@ class GitWriteCommandsUtil implements Serializable {
         List<String> commandLineArgs = ["git", "--git-dir=${rootDir.absolutePath}/.git".toString(), "--work-tree=${rootDir.absolutePath}".toString()]
         commandLineArgs.addAll(args)
         execOperations.exec {
+            it.setWorkingDir(rootDir.absolutePath)
             it.ignoreExitValue = true
             it.setCommandLine(commandLineArgs)
             it.standardOutput = output
