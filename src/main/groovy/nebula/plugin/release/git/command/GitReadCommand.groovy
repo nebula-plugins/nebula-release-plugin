@@ -206,23 +206,6 @@ abstract class IsCurrentBranchBehindRemote extends GitReadCommand {
 }
 
 /**
- * Used to check if the current directory is a git repo
- * ex. git rev-parse --is-inside-work-tree -> true OR
- *    git rev-parse --is-inside-work-tree -> fatal: not a git repository (or any of the parent directories): .git when there isn't a repo
- */
-abstract class IsGitRepo extends GitReadCommand  {
-
-    @Override
-    String obtain() {
-        try {
-            return !executeGitCommand( "rev-parse").contains("fatal: not a git repository")
-        } catch (Exception e) {
-            return false
-        }
-    }
-}
-
-/**
  * Used to verify if the current branch is tracking a remote branch
  * ex. git rev-parse --abbrev-ref --symbolic-full-name @{u} -> origin/main
  * ex. git rev-parse --abbrev-ref --symbolic-full-name @{u} -> fatal: no upstream configured for branch 'configuration-cache-support' when there isn't a remote branch

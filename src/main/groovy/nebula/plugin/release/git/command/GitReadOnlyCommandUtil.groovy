@@ -14,7 +14,6 @@ class GitReadOnlyCommandUtil implements Serializable {
     private Provider usernameFromLogProvider
     private Provider emailFromLogProvider
     private Provider currentBranchProvider
-    private Provider isGitRepoProvider
     private Provider anyCommitProvider
     private Provider revParseHeadProvider
     private Provider headTagsProvider
@@ -46,9 +45,6 @@ class GitReadOnlyCommandUtil implements Serializable {
             verifyUserGitConfig()
         }
         currentBranchProvider = providers.of(CurrentBranch.class) {
-            it.parameters.rootDir.set(rootDir)
-        }
-        isGitRepoProvider = providers.of(IsGitRepo.class) {
             it.parameters.rootDir.set(rootDir)
         }
         anyCommitProvider = providers.of(AnyCommit.class) {
@@ -106,14 +102,6 @@ class GitReadOnlyCommandUtil implements Serializable {
         String emailFromLog =  emailFromLogProvider.isPresent() ? emailFromLogProvider.get() : null
         if(!email && !globalEmail && !localEmail && !systemEmail && emailFromLog) {
             throw new GradleException("Git user.email is not set. Please configure git user.email globally, locally or system wide. You can learn more in https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup")
-        }
-    }
-
-    Boolean isGitRepo() {
-        try {
-            return Boolean.valueOf(isGitRepoProvider.get().toString())
-        } catch (Exception e) {
-            return false
         }
     }
 

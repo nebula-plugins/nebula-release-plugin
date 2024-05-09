@@ -74,8 +74,8 @@ class ReleasePlugin implements Plugin<Project> {
         gitCommandUtil.configure(gitRoot, shouldVerifyUserGitConfig)
         gitWriteCommandsUtil.configure(gitRoot)
 
-        boolean isGitRepo = gitCommandUtil.isGitRepo()
-        if(!isGitRepo) {
+        boolean currentBranch = gitCommandUtil.currentBranch()
+        if (!currentBranch) {
             this.project.version = '0.1.0-dev.0.uncommitted'
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
             return
@@ -126,7 +126,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP
-                it.branchName = gitCommandUtil.currentBranch()
+                it.branchName = currentBranch
                 it.patterns = nebulaReleaseExtension
             }
 
