@@ -57,7 +57,6 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         version == dev('0.1.0-dev.2+')
     }
 
-
     def 'build on non standard branch appends name to dev version string'() {
         git.checkout(branch: 'testexample', createBranch: true)
 

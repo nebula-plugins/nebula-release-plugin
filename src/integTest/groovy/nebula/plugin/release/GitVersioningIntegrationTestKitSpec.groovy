@@ -45,6 +45,11 @@ abstract class GitVersioningIntegrationTestKitSpec extends IntegrationTestKitSpe
         originGit.add(patterns: ['build.gradle', 'settings.gradle', '.gitignore'] as Set)
         originGit.commit(message: 'Initial checkout')
 
+        if (originGit.branch.current().name == 'main') {
+            originGit.checkout(branch: 'master', createBranch: true)
+            originGit.branch.remove(names: ['main'])
+        }
+
         git = Grgit.clone(dir: projectDir, uri: origin.absolutePath) as Grgit
 
         new File(projectDir, '.gitignore') << '''.gradle-test-kit
