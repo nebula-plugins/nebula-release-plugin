@@ -1,9 +1,11 @@
 package nebula.plugin.release.git.command
 
 import groovy.transform.CompileDynamic
+import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.provider.ValueSource
 import org.gradle.process.ExecOperations
+import org.gradle.process.ExecSpec
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -25,13 +27,16 @@ abstract class GitReadCommand implements ValueSource<String, GitCommandParameter
         ByteArrayOutputStream error = new ByteArrayOutputStream()
         List<String> commandLineArgs = ["git", "--git-dir=${rootDir.absolutePath}/.git".toString(), "--work-tree=${rootDir.absolutePath}".toString()]
         commandLineArgs.addAll(args)
-        execOperations.exec {
-            it.setCommandLine(commandLineArgs)
-            it.standardOutput = output
-            it.errorOutput = error
-        }
+        execOperations.exec(new Action<ExecSpec>() {
+            @Override
+            void execute(ExecSpec execSpec) {
+                execSpec.setCommandLine(commandLineArgs)
+                execSpec.standardOutput = output
+                execSpec.errorOutput = error
+            }
+        })
         def errorMsg = new String(error.toByteArray(), Charset.defaultCharset())
-        if(errorMsg) {
+        if (errorMsg) {
             throw new GradleException(errorMsg)
         }
         return new String(output.toByteArray(), Charset.defaultCharset())
