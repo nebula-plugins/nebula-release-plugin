@@ -144,7 +144,7 @@ class GitReadOnlyCommandUtil implements Serializable {
 
     List<TagRef> headTags() {
         return headTagsProvider.get().toString()
-                .split("\n")
+                .split("\n").toList()
                 .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
                 .collect { new TagRef(it) }
     }
@@ -153,7 +153,7 @@ class GitReadOnlyCommandUtil implements Serializable {
     Integer getCommitCountForHead() {
         try {
             return refListCountHeadProvider.get().toString()
-                    .split("\n")
+                    .split("\n").toList()
                     .first()?.replaceAll("\n", "")?.trim()?.toInteger()
         } catch(Exception e) {
             return 0
@@ -168,7 +168,7 @@ class GitReadOnlyCommandUtil implements Serializable {
                 it.parameters.rootDir.set(rootDir)
             }
             return describeTagInHeadProvider.get().toString()
-                    .split("\n")
+                    .split("\n").toList()
                     .first()?.replaceAll("\n", "")?.toString()
         } catch(Exception e) {
             return null
@@ -182,7 +182,7 @@ class GitReadOnlyCommandUtil implements Serializable {
                 it.parameters.tag.set(tag)
             }
             return commitForTag.get().toString()
-                    .split("\n")
+                    .split("\n").toList()
                     .first()?.replaceAll("\n", "")?.toString()
         } catch(Exception e) {
             return null
@@ -196,7 +196,7 @@ class GitReadOnlyCommandUtil implements Serializable {
                 it.parameters.commit.set(commit)
             }
             return tagsPointingAtProvider.get().toString()
-                    .split("\n")
+                    .split("\n").toList()
                     .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
                     .collect()
         } catch(Exception e) {
