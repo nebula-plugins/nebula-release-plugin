@@ -395,7 +395,12 @@ class ReleasePlugin implements Plugin<Project> {
             return
         }
         if (currentBranch.endsWith('-')) {
-            throw new GradleException('Nebula Release plugin does not support branches that end with dash (-)')
+            throw new GradleException('Nebula Release plugin does not support branches that end with dash (-).' +
+                    'Please rename your branch')
+        }
+        if (currentBranch.contains('--')) {
+            throw new GradleException("Branch ${currentBranch} is invalid. Nebula Release plugin does not support branches that contain double dash (-) as it leads to bad build metadata for SemVer." +
+                    " Please rename your branch")
         }
         if (currentBranch ==~ /release\/\d+(\.\d+)?/) {
             throw new GradleException('Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>')

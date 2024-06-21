@@ -67,6 +67,16 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         version == dev('0.1.0-dev.2+testexample.')
     }
 
+    def 'build on non standard branch with double hyphen fails with right context'() {
+        git.checkout(branch: 'test--example', createBranch: true)
+
+        when:
+        def result = runTasksAndFail('devSnapshot')
+
+        then:
+        result.output.contains("Branch test--example is invalid. Nebula Release plugin does not support branches that contain double dash (-) as it leads to bad build metadata for SemVer")
+    }
+
     def 'choose devSnapshot version'() {
         when:
         def version = inferredVersionForTask('devSnapshot')
