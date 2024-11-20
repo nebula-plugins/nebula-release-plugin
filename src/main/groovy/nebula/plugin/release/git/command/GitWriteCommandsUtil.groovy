@@ -41,7 +41,7 @@ class GitWriteCommandsUtil implements Serializable {
             if(e.message.contains("* [new tag]")){
                 return
             }
-            logger.error("Failed to push tag ${tag} to remote ${remote}", e)
+            throw new RuntimeException("Failed to push tag ${tag} to remote ${remote}", e)
         }
     }
 
