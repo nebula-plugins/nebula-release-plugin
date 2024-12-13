@@ -36,8 +36,8 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationTest
             publishing {
                 repositories {
                     ivy {
-                        name 'ivytest'
-                        url '$REPO_LOCATION'
+                        name = 'ivytest'
+                        url = '$REPO_LOCATION'
                     }
                 }
                 publications {
