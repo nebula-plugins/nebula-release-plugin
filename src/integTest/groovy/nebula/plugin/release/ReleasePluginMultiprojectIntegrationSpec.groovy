@@ -139,7 +139,7 @@ class ReleasePluginMultiprojectIntegrationSpec extends GitVersioningIntegrationT
                     repositories {
                         ivy {
                             name 'localIvy'
-                            url 'build/localivy'
+                            url = 'build/localivy'
                         }
                     }
                 }

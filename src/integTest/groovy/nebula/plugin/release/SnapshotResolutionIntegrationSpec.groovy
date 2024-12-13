@@ -26,7 +26,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
         buildFile << """\
             apply plugin: 'java'
             repositories {
-                maven { url '${mavenrepo.absolutePath}' }
+                maven { url = '${mavenrepo.absolutePath}' }
             }
 
 
@@ -52,7 +52,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
         buildFile << """\
             apply plugin: 'java'
             repositories {
-                maven { url '${mavenrepo.absolutePath}' }
+                maven { url = '${mavenrepo.absolutePath}' }
             }
 
 
@@ -79,7 +79,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
         buildFile << """\
             apply plugin: 'java'
             repositories {
-                maven { url '${mavenrepo.absolutePath}' }
+                maven { url = '${mavenrepo.absolutePath}' }
             }
 
 
@@ -106,7 +106,7 @@ class SnapshotResolutionIntegrationSpec extends IntegrationTestKitSpec {
         buildFile << """\
             apply plugin: 'java'
             repositories {
-                maven { url '${mavenrepo.absolutePath}' }
+                maven { url = '${mavenrepo.absolutePath}' }
             }
 
 
