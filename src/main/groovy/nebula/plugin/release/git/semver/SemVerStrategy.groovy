@@ -146,7 +146,7 @@ final class SemVerStrategy implements DefaultVersionStrategy {
     @PackageScope
     ReleaseVersion doInfer(Project project, GitReadOnlyCommandUtil gitCommandUtil, NearestVersionLocator locator) {
         ChangeScope scope = getPropertyOrNull(project, SCOPE_PROP).with { scope ->
-            scope == null ? null : ChangeScope.valueOf(scope.toUpperCase())
+            scope == null ? null : ChangeScope.valueOf(scope.trim().toUpperCase())
         }
         String stage = getPropertyOrNull(project, STAGE_PROP) ?: stages.first()
         if (!stages.contains(stage)) {
