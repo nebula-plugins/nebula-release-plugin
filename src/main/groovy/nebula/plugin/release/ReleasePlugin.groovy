@@ -37,7 +37,6 @@ import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
-import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.TaskCollection
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.process.ExecOperations
@@ -66,23 +65,23 @@ class ReleasePlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         this.project = project
-
-        File gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
-
-        // Verify user git config only when using release tags and 'release.useLastTag' property is not used
-        boolean shouldVerifyUserGitConfig = isReleaseTaskThatRequiresTagging(project.gradle.startParameter.taskNames) && !isUsingLatestTag(project)
-        gitCommandUtil.configure(gitRoot, shouldVerifyUserGitConfig)
-        gitWriteCommandsUtil.configure(gitRoot)
-
-        boolean isGitRepo = gitCommandUtil.isGitRepo()
-        if(!isGitRepo) {
-            this.project.version = '0.1.0-dev.0.uncommitted'
-            logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
-            return
-        }
-        checkForBadBranchNames()
-        boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
         if (project == project.rootProject) {
+            File gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
+
+            // Verify user git config only when using release tags and 'release.useLastTag' property is not used
+            boolean shouldVerifyUserGitConfig = isReleaseTaskThatRequiresTagging(project.gradle.startParameter.taskNames) && !isUsingLatestTag(project)
+            gitCommandUtil.configure(gitRoot, shouldVerifyUserGitConfig)
+            gitWriteCommandsUtil.configure(gitRoot)
+
+            boolean isGitRepo = gitCommandUtil.isGitRepo()
+            if(!isGitRepo) {
+                this.project.version = '0.1.0-dev.0.uncommitted'
+                logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
+                return
+            }
+            checkForBadBranchNames()
+            boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
+
             project.plugins.apply(BaseReleasePlugin)
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
 
@@ -193,6 +192,9 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
         } else {
+            if(!project.rootProject.plugins.hasPlugin(ReleasePlugin)) {
+                throw new GradleException("com.netflix.nebula.release plugin should always be applied at the rootProject level")
+            }
             project.version = project.rootProject.version
         }
 
@@ -214,7 +216,7 @@ class ReleasePlugin implements Plugin<Project> {
         }
 
         configurePublishingIfPresent()
-        configureBintrayTasksIfPresent()
+        configureArtifactoryGradlePluginIfPresent()
     }
 
     private Object getPropertyBasedVersioningStrategy() {
@@ -331,7 +333,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     @CompileDynamic
-    void configureBintrayTasksIfPresent() {
+    void configureArtifactoryGradlePluginIfPresent() {
         project.plugins.withId('com.jfrog.artifactory') {
             logger.info('Configuring jfrog artifactory plugin to work with release plugin')
             Class taskClass = null
