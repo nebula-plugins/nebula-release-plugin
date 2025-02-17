@@ -332,29 +332,6 @@ class ReleasePlugin implements Plugin<Project> {
 
     @CompileDynamic
     void configureBintrayTasksIfPresent() {
-        project.plugins.withId('nebula.nebula-bintray') {
-            project.tasks.withType(PublishToMavenRepository) { Task task ->
-                project.plugins.withType(JavaPlugin) {
-                    task.dependsOn(project.tasks.build)
-                }
-                project.rootProject.tasks.getByName('postRelease').dependsOn(task)
-            }
-        }
-
-
-        project.plugins.withId('com.jfrog.bintray') {
-            TaskCollection bintrayUploadTasks = project.tasks.withType(Class.forName('com.jfrog.bintray.gradle.tasks.BintrayUploadTask'))
-            bintrayUploadTasks.configureEach { Task task ->
-                logger.info('Configuring jfrog bintray plugin to work with release plugin')
-                project.plugins.withType(JavaPlugin) {
-                    task.dependsOn(project.tasks.named('build'))
-                }
-            }
-            project.rootProject.tasks.named('postRelease').configure {
-                it.dependsOn(bintrayUploadTasks)
-            }
-        }
-
         project.plugins.withId('com.jfrog.artifactory') {
             logger.info('Configuring jfrog artifactory plugin to work with release plugin')
             Class taskClass = null
