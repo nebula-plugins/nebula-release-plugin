@@ -20,8 +20,6 @@ If you want the release plugin to trigger or finalize a publishing task you will
 
     tasks.release.finalizedBy tasks.<publish task name>
 
-This plugin also detects the presence of the [nebula-bintray-plugin](https://github.com/nebula-plugins/nebula-bintray-plugin)
-and wires itself to depend on the task types used by `bintrayUpload` and `artifactoryUpload`.
 
 # Opinions
 
