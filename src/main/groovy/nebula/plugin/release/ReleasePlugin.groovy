@@ -21,7 +21,6 @@ import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.TagStrategy
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.command.GitWriteCommandsUtil
 import nebula.plugin.release.git.semver.SemVerStrategy
 import org.gradle.api.GradleException
@@ -53,7 +52,6 @@ class ReleasePlugin implements Plugin<Project> {
     static Logger logger = Logging.getLogger(ReleasePlugin)
     static final String GROUP = 'Nebula Release'
 
-    private final GitReadOnlyCommandUtil gitCommandUtil
     private final GitWriteCommandsUtil gitWriteCommandsUtil
     private final GitBuildService gitBuildService
     private final File gitRoot
@@ -62,7 +60,6 @@ class ReleasePlugin implements Plugin<Project> {
     @Inject
     ReleasePlugin(Project project, ExecOperations execOperations, ProviderFactory providerFactory) {
         this.gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
-        this.gitCommandUtil = new GitReadOnlyCommandUtil(providerFactory)
         this.gitWriteCommandsUtil = new GitWriteCommandsUtil(execOperations)
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
@@ -84,7 +81,9 @@ class ReleasePlugin implements Plugin<Project> {
         if (project == project.rootProject) {
             // Verify user git config only when using release tags and 'release.useLastTag' property is not used
             boolean shouldVerifyUserGitConfig = isReleaseTaskThatRequiresTagging(project.gradle.startParameter.taskNames) && !isUsingLatestTag(project)
-            gitCommandUtil.configure(gitRoot, shouldVerifyUserGitConfig)
+            if(shouldVerifyUserGitConfig) {
+                gitBuildService.verifyUserGitConfig()
+            }
             gitWriteCommandsUtil.configure(gitRoot)
 
             checkForBadBranchNames()

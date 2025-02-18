@@ -15,7 +15,6 @@
  */
 package nebula.plugin.release.git.base
 
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.command.GitWriteCommandsUtil
 
 import org.gradle.api.GradleException

@@ -5,6 +5,8 @@ import nebula.plugin.release.git.command.CommitFromTag
 import nebula.plugin.release.git.command.CurrentBranch
 import nebula.plugin.release.git.command.DescribeHeadWithTag
 import nebula.plugin.release.git.command.DescribeHeadWithTagWithExclude
+import nebula.plugin.release.git.command.EmailFromLog
+import nebula.plugin.release.git.command.GetGitConfigValue
 import nebula.plugin.release.git.command.HeadTags
 import nebula.plugin.release.git.command.IsCurrentBranchBehindRemote
 import nebula.plugin.release.git.command.IsGitRepo
@@ -13,16 +15,19 @@ import nebula.plugin.release.git.command.RevListCountHead
 import nebula.plugin.release.git.command.RevParseHead
 import nebula.plugin.release.git.command.StatusPorcelain
 import nebula.plugin.release.git.command.TagsPointingAt
+import nebula.plugin.release.git.command.UsernameFromLog
 import nebula.plugin.release.git.model.TagRef
+import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import javax.inject.Inject
 
-// TODO: migrate GitReadOnlyCommandUtil funcionality to build service when possible
 abstract class GitBuildService implements BuildService<GitBuildService.Params> {
     interface Params extends BuildServiceParameters {
         DirectoryProperty getGitRootDir()
@@ -38,6 +43,7 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
     private final ProviderFactory providerFactory
     private final List<TagRef> headTags
     private final Integer commitCountForHead
+    private static final Logger LOGGER = LoggerFactory.getLogger(GitBuildService.class)
 
     @Inject
     GitBuildService(ProviderFactory providers) {
@@ -53,18 +59,75 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
         this.commitCountForHead = determineCommitCountForHead()
     }
 
+    /**
+     * Verifies that git is configured with proper user name and email
+     */
+    void verifyUserGitConfig() {
+        String username = getGitConfig('user.name')
+        String email = getGitConfig('user.email')
+        if(username && email) {
+            return
+        }
+        String globalUsername = getGitConfig('--global', 'user.name')
+        String globalEmail = getGitConfig('--global', 'user.email')
+        if(globalUsername && globalEmail) {
+            return
+        }
+        String systemUsername = getGitConfig('--system', 'user.name')
+        String systemEmail = getGitConfig('--system', 'user.email')
+        if(systemUsername && systemEmail) {
+            return
+        }
+        String localUsername = getGitConfig('--local', 'user.name')
+        String localEmail = getGitConfig('--local', 'user.email')
+        if(localUsername && localEmail) {
+            return
+        }
+
+        Provider usernameFromLogProvider = providerFactory.of(UsernameFromLog.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
+        String usernameFromLog = usernameFromLogProvider.isPresent() ? usernameFromLogProvider.get() : null
+        if(!username && !globalUsername && !localUsername && !systemUsername && usernameFromLog) {
+            throw new GradleException("Git user.name is not set. Please configure git user.name globally, locally or system wide. You can learn more in https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup")
+        }
+        Provider emailFromLogProvider = providerFactory.of(EmailFromLog.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
+        String emailFromLog =  emailFromLogProvider.isPresent() ? emailFromLogProvider.get() : null
+        if(!email && !globalEmail && !localEmail && !systemEmail && emailFromLog) {
+            throw new GradleException("Git user.email is not set. Please configure git user.email globally, locally or system wide. You can learn more in https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup")
+        }
+    }
+
+    /**
+     * Used to check if the current directory is a git repo
+     * ex. git rev-parse --is-inside-work-tree -> true OR
+     *    git rev-parse --is-inside-work-tree -> fatal: not a git repository (or any of the parent directories): .git when there isn't a repo
+     */
     boolean isGitRepo() {
         return this.isGitRepo
     }
 
+    /**
+     * Returns current branch name
+     * ex.  git rev-parse --abbrev-ref HEAD  -> configuration-cache-support
+     */
     String getCurrentBranch() {
         return this.currentBranch
     }
 
+    /**
+     * Uses to determine if a given repo has any commit
+     */
     boolean hasCommit() {
         return this.hasCommit
     }
 
+    /**
+     * Returns the current HEAD commit
+     * ex. git rev-parse HEAD -> 8e6c4c925a54dbe827f043d21cd7a2a01b97fbac
+     */
     String getHead() {
         return this.head
     }
@@ -257,5 +320,45 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
             return null
         }
 
+    }
+
+    /**
+     * Returns a git config value for a given scope
+     * @param scope
+     * @param configKey
+     * @return
+     */
+    private String getGitConfig(String scope, String configKey) {
+        try {
+            def getConfigValueProvider = providerFactory.of(GetGitConfigValue.class) {
+                it.parameters.rootDir.set(gitRootDir)
+                it.parameters.gitConfigScope.set(scope)
+                it.parameters.gitConfigKey.set(configKey)
+            }
+            return getConfigValueProvider.get().toString()?.
+                    replaceAll("\n", "")?.toString()
+        } catch(Exception e) {
+            LOGGER.debug("Could not get git config {} {}", scope, configKey)
+            return null
+        }
+    }
+
+    /**
+     * Returns a git config value for a given scope
+     * @param configKey
+     * @return
+     */
+    private String getGitConfig(String configKey) {
+        try {
+            def getConfigValueProvider = providerFactory.of(GetGitConfigValue.class) {
+                it.parameters.rootDir.set(gitRootDir)
+                it.parameters.gitConfigKey.set(configKey)
+            }
+            return getConfigValueProvider.get().toString()?.
+                    replaceAll("\n", "")?.toString()
+        } catch(Exception e) {
+            LOGGER.debug("Could not get git config {}", configKey)
+            return null
+        }
     }
 }
