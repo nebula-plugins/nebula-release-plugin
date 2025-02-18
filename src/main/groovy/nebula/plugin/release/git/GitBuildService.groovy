@@ -2,15 +2,18 @@ package nebula.plugin.release.git
 
 import nebula.plugin.release.git.command.AnyCommit
 import nebula.plugin.release.git.command.CommitFromTag
+import nebula.plugin.release.git.command.CreateTag
 import nebula.plugin.release.git.command.CurrentBranch
 import nebula.plugin.release.git.command.DescribeHeadWithTag
 import nebula.plugin.release.git.command.DescribeHeadWithTagWithExclude
 import nebula.plugin.release.git.command.EmailFromLog
+import nebula.plugin.release.git.command.FetchChanges
 import nebula.plugin.release.git.command.GetGitConfigValue
 import nebula.plugin.release.git.command.HeadTags
 import nebula.plugin.release.git.command.IsCurrentBranchBehindRemote
 import nebula.plugin.release.git.command.IsGitRepo
 import nebula.plugin.release.git.command.IsTrackingRemoteBranch
+import nebula.plugin.release.git.command.PushTag
 import nebula.plugin.release.git.command.RevListCountHead
 import nebula.plugin.release.git.command.RevParseHead
 import nebula.plugin.release.git.command.StatusPorcelain
@@ -65,22 +68,22 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
     void verifyUserGitConfig() {
         String username = getGitConfig('user.name')
         String email = getGitConfig('user.email')
-        if(username && email) {
+        if (username && email) {
             return
         }
         String globalUsername = getGitConfig('--global', 'user.name')
         String globalEmail = getGitConfig('--global', 'user.email')
-        if(globalUsername && globalEmail) {
+        if (globalUsername && globalEmail) {
             return
         }
         String systemUsername = getGitConfig('--system', 'user.name')
         String systemEmail = getGitConfig('--system', 'user.email')
-        if(systemUsername && systemEmail) {
+        if (systemUsername && systemEmail) {
             return
         }
         String localUsername = getGitConfig('--local', 'user.name')
         String localEmail = getGitConfig('--local', 'user.email')
-        if(localUsername && localEmail) {
+        if (localUsername && localEmail) {
             return
         }
 
@@ -88,14 +91,14 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
             it.parameters.rootDir.set(gitRootDir)
         }
         String usernameFromLog = usernameFromLogProvider.isPresent() ? usernameFromLogProvider.get() : null
-        if(!username && !globalUsername && !localUsername && !systemUsername && usernameFromLog) {
+        if (!username && !globalUsername && !localUsername && !systemUsername && usernameFromLog) {
             throw new GradleException("Git user.name is not set. Please configure git user.name globally, locally or system wide. You can learn more in https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup")
         }
         Provider emailFromLogProvider = providerFactory.of(EmailFromLog.class) {
             it.parameters.rootDir.set(gitRootDir)
         }
-        String emailFromLog =  emailFromLogProvider.isPresent() ? emailFromLogProvider.get() : null
-        if(!email && !globalEmail && !localEmail && !systemEmail && emailFromLog) {
+        String emailFromLog = emailFromLogProvider.isPresent() ? emailFromLogProvider.get() : null
+        if (!email && !globalEmail && !localEmail && !systemEmail && emailFromLog) {
             throw new GradleException("Git user.email is not set. Please configure git user.email globally, locally or system wide. You can learn more in https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup")
         }
     }
@@ -158,7 +161,7 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
             return describeTagInHeadProvider.get().toString()
                     .split("\n").toList()
                     .first()?.replaceAll("\n", "")?.toString()
-        } catch(Exception e) {
+        } catch (Exception e) {
             return null
         }
     }
@@ -172,7 +175,7 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
             return commitForTag.get().toString()
                     .split("\n").toList()
                     .first()?.replaceAll("\n", "")?.toString()
-        } catch(Exception e) {
+        } catch (Exception e) {
             return null
         }
     }
@@ -188,7 +191,7 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
                     .split("\n").toList()
                     .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
                     .collect()
-        } catch(Exception e) {
+        } catch (Exception e) {
             return null
         }
     }
@@ -209,6 +212,65 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
             return isCurrentBranchBehindRemoteProvider.get() != "0"
         } catch (Exception e) {
             return false
+        }
+    }
+
+    /**
+     * Pushes a Tag to a remote repository
+     * @param remote
+     * @param tag
+     * @return
+     *
+     * ex. git push origin v1.0.0
+     */
+    void pushTag(String remote, String tag) {
+        try {
+            providerFactory.of(PushTag.class) {
+                it.parameters.rootDir.set(gitRootDir)
+                it.parameters.tag.set(tag)
+                it.parameters.remote.set(remote)
+            }.get()
+        } catch (Exception e) {
+            if (e.message.contains("* [new tag]")) {
+                return
+            }
+            LOGGER.error("Failed to push tag ${tag} to remote ${remote}", e)
+        }
+    }
+
+    /**
+     * Creates a tag with a message
+     * @param name
+     * @param message
+     *
+     * ex. git tag -a v1.0.0 -m "Release 1.0.0"
+     */
+    void createTag(String name, String message) {
+        try {
+            providerFactory.of(CreateTag.class) {
+                it.parameters.rootDir.set(gitRootDir)
+                it.parameters.tag.set(name)
+                it.parameters.tagMessage.set(message)
+            }.get()
+        } catch (Exception e) {
+            throw new GradleException("Failed to create tag ${name} with message ${message}", e)
+        }
+    }
+
+    /**
+     * Fetches the remote repository
+     * @param remote
+     *
+     * ex: git fetch origin
+     */
+    void fetch(String remote) {
+        try {
+            providerFactory.of(FetchChanges.class) {
+                it.parameters.rootDir.set(gitRootDir)
+                it.parameters.remote.set(remote)
+            }.get()
+        } catch (Exception e) {
+            throw new GradleException("Could not fetch remote changes", e)
         }
     }
 
@@ -235,23 +297,23 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
             return refListCountHeadProvider.get().toString()
                     .split("\n").toList()
                     .first()?.replaceAll("\n", "")?.trim()?.toInteger()
-        } catch(Exception e) {
+        } catch (Exception e) {
             return 0
         }
     }
 
     private List<TagRef> determineHeadTags() {
-       try {
-           def headTagsProvider = providerFactory.of(HeadTags.class) {
-               it.parameters.rootDir.set(gitRootDir)
-           }
-           return headTagsProvider.get().toString()
-                   .split("\n").toList()
-                   .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
-                   .collect { new TagRef(it) }
-       } catch (Exception e) {
-           return Collections.emptyList()
-       }
+        try {
+            def headTagsProvider = providerFactory.of(HeadTags.class) {
+                it.parameters.rootDir.set(gitRootDir)
+            }
+            return headTagsProvider.get().toString()
+                    .split("\n").toList()
+                    .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
+                    .collect { new TagRef(it) }
+        } catch (Exception e) {
+            return Collections.emptyList()
+        }
     }
 
     private String determineStatus() {
@@ -266,14 +328,14 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
     }
 
     private boolean determineIsCleanStatus() {
-       try {
-           def statusPorcelainProvider = providerFactory.of(StatusPorcelain.class) {
-               it.parameters.rootDir.set(gitRootDir)
-           }
-           return statusPorcelainProvider.get().toString().replaceAll("\n", "").trim().empty
-       } catch (Exception e) {
-           return false
-       }
+        try {
+            def statusPorcelainProvider = providerFactory.of(StatusPorcelain.class) {
+                it.parameters.rootDir.set(gitRootDir)
+            }
+            return statusPorcelainProvider.get().toString().replaceAll("\n", "").trim().empty
+        } catch (Exception e) {
+            return false
+        }
     }
 
     private String determineHead() {
@@ -337,7 +399,7 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
             }
             return getConfigValueProvider.get().toString()?.
                     replaceAll("\n", "")?.toString()
-        } catch(Exception e) {
+        } catch (Exception e) {
             LOGGER.debug("Could not get git config {} {}", scope, configKey)
             return null
         }
@@ -356,7 +418,7 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
             }
             return getConfigValueProvider.get().toString()?.
                     replaceAll("\n", "")?.toString()
-        } catch(Exception e) {
+        } catch (Exception e) {
             LOGGER.debug("Could not get git config {}", configKey)
             return null
         }

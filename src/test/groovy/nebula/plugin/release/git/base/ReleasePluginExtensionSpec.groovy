@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
-import nebula.plugin.release.git.command.GitWriteCommandsUtil
+import nebula.plugin.release.git.GitBuildService
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -28,7 +28,7 @@ class ReleasePluginExtensionSpec extends Specification {
         given:
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
+        extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
             selector: { proj, git -> false },
@@ -44,7 +44,7 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infers using first strategy selector returns true for'() {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
+        extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
             selector: { proj, gitOps -> false },
@@ -60,7 +60,7 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infers using first strategy selector returns true for in order'() {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
+        extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
             selector: { proj, gitOps -> true },
@@ -77,7 +77,7 @@ class ReleasePluginExtensionSpec extends Specification {
         given:
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
+        extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
             selector: { proj, gitOps -> false },
@@ -95,7 +95,7 @@ class ReleasePluginExtensionSpec extends Specification {
         given:
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
+        extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
             selector: { proj, gitOps -> false },
@@ -113,7 +113,7 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infer fails if no strategy selected and no default set'() {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
+        extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
             selector: { proj, gitOps -> false },

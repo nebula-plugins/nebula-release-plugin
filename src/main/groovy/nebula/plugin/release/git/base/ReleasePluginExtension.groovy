@@ -17,7 +17,6 @@ package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.GitBuildService
-import nebula.plugin.release.git.command.GitWriteCommandsUtil
 import nebula.plugin.release.util.ConfigureUtil
 
 import org.gradle.api.GradleException
@@ -56,12 +55,7 @@ class ReleasePluginExtension {
     VersionStrategy defaultVersionStrategy
 
     /**
-     * Used to execute git write operations
-     */
-    GitWriteCommandsUtil gitWriteCommands
-
-    /**
-     * Used to execute git read only operations
+     * Used to execute git read and write operations
      */
     GitBuildService gitBuildService
 
