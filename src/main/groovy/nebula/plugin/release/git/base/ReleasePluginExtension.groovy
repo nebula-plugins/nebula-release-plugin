@@ -16,7 +16,7 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
+import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.command.GitWriteCommandsUtil
 import nebula.plugin.release.util.ConfigureUtil
 
@@ -24,6 +24,8 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import javax.inject.Inject
 
 /**
  * Extension providing configuration options for gradle-git's release plugins.
@@ -54,21 +56,28 @@ class ReleasePluginExtension {
     VersionStrategy defaultVersionStrategy
 
     /**
-     * Used to execute git read only operations
-     */
-    GitReadOnlyCommandUtil gitReadCommands
-    /**
      * Used to execute git write operations
      */
     GitWriteCommandsUtil gitWriteCommands
+
+    /**
+     * Used to execute git read only operations
+     */
+    GitBuildService gitBuildService
 
     /**
      * The remote to fetch changes from and push changes to.
      */
     String remote = 'origin'
 
+    @CompileDynamic
+    @Inject
     ReleasePluginExtension(Project project) {
+        File gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
         this.project = project
+        this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
+            spec.getParameters().getGitRootDir().set(gitRoot)
+        }).get()
         def sharedVersion = new DelayedVersion()
         project.rootProject.allprojects { Project p ->
             p.version = sharedVersion
@@ -104,15 +113,15 @@ class ReleasePluginExtension {
         @CompileDynamic
         private void infer() {
             VersionStrategy selectedStrategy = versionStrategies.find {  strategy ->
-                strategy.selector(project, gitReadCommands)
+                strategy.selector(project, gitBuildService)
             }
 
             if (!selectedStrategy) {
                 boolean useDefault
                 if (defaultVersionStrategy instanceof DefaultVersionStrategy) {
-                    useDefault = defaultVersionStrategy.defaultSelector(project, gitReadCommands)
+                    useDefault = defaultVersionStrategy.defaultSelector(project, gitBuildService)
                 } else {
-                    useDefault = defaultVersionStrategy?.selector(project, gitReadCommands)
+                    useDefault = defaultVersionStrategy?.selector(project, gitBuildService)
                 }
 
                 if (useDefault) {
@@ -123,7 +132,7 @@ class ReleasePluginExtension {
                 }
             }
 
-            inferredVersion = selectedStrategy.infer(project, gitReadCommands)
+            inferredVersion = selectedStrategy.infer(project, gitBuildService)
         }
 
         @Override

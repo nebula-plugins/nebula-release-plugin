@@ -15,8 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
-
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
+import nebula.plugin.release.git.GitBuildService
 import org.gradle.api.Project
 
 /**
@@ -40,7 +39,7 @@ interface VersionStrategy {
      * @param gitOps the Git operations to use
      * @return {@code true} if the strategy should be used to infer the version
      */
-    boolean selector(Project project, GitReadOnlyCommandUtil gitCommandUtil)
+    boolean selector(Project project, GitBuildService gitBuildService)
 
 
     /**
@@ -49,5 +48,5 @@ interface VersionStrategy {
      * @param gitOps the Git operations to use
      * @return the inferred version
      */
-    ReleaseVersion infer(Project project, GitReadOnlyCommandUtil gitCommandUtil)
+    ReleaseVersion infer(Project project, GitBuildService gitBuildService)
 }

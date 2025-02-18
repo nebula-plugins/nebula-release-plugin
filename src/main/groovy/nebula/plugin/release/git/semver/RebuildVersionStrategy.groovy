@@ -16,9 +16,9 @@
 package nebula.plugin.release.git.semver
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import org.gradle.api.Project
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -50,10 +50,10 @@ class RebuildVersionStrategy implements VersionStrategy {
      * </ul>
      */
     @Override
-    boolean selector(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
-        def clean = gitCommandUtil.isCleanStatus()
+    boolean selector(Project project, GitBuildService gitBuildService) {
+        def clean = gitBuildService.isCleanStatus()
         def propsSpecified = project.hasProperty(SemVerStrategy.SCOPE_PROP) || project.hasProperty(SemVerStrategy.STAGE_PROP)
-        def headVersion = getHeadVersion(gitCommandUtil)
+        def headVersion = getHeadVersion(gitBuildService)
 
         if (clean && !propsSpecified && headVersion) {
             logger.info('Using {} strategy because repo is clean, no "release." properties found and head version is {}', name, headVersion)
@@ -69,16 +69,16 @@ class RebuildVersionStrategy implements VersionStrategy {
      * highest precendence.
      */
     @Override
-    ReleaseVersion infer(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
-        String version = getHeadVersion(gitCommandUtil)
+    ReleaseVersion infer(Project project, GitBuildService gitBuildService) {
+        String version = getHeadVersion(gitBuildService)
         def releaseVersion = new ReleaseVersion(version, version, false)
         logger.debug('Inferred version {} by strategy {}', releaseVersion, name)
         return releaseVersion
     }
     
 
-    private String getHeadVersion(GitReadOnlyCommandUtil gitCommandUtil) {
-        return gitCommandUtil.headTags().findAll {
+    private String getHeadVersion(GitBuildService gitBuildService) {
+        return gitBuildService.headTags().findAll {
             it != null
         }.max()?.version?.toString()
     }

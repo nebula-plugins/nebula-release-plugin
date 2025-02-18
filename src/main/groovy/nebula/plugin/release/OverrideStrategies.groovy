@@ -18,10 +18,10 @@ package nebula.plugin.release
 import com.github.zafarkhaja.semver.UnexpectedCharacterException
 import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.plugin.release.git.semver.NearestVersionLocator
@@ -55,7 +55,7 @@ class OverrideStrategies {
         }
 
         @Override
-        boolean selector(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
+        boolean selector(Project project, GitBuildService gitBuildService) {
             def shouldSelect = project.hasProperty(propertyName) ? project.property(propertyName).toString().toBoolean() : false
 
             if (shouldSelect) {
@@ -68,9 +68,9 @@ class OverrideStrategies {
 
         @CompileDynamic
         @Override
-        ReleaseVersion infer(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
+        ReleaseVersion infer(Project project, GitBuildService gitBuildService) {
             def tagStrategy = project.extensions.getByType(ReleasePluginExtension).tagStrategy
-            def locate = new NearestVersionLocator(gitCommandUtil, tagStrategy).locate()
+            def locate = new NearestVersionLocator(gitBuildService, tagStrategy).locate()
             String releaseStage
             try {
                 releaseStage = project.property('release.stage')
@@ -110,7 +110,7 @@ class OverrideStrategies {
                 logger.debug("Using version ${inferredVersion} with ${releaseStage == NOT_SUPPLIED ? "a non-supplied release strategy" : "${releaseStage} release strategy"}")
                 return new ReleaseVersion(inferredVersion, null, false)
             } else {
-                List<TagRef> headTags = gitCommandUtil.headTags()
+                List<TagRef> headTags = gitBuildService.headTags()
                 if (headTags.isEmpty()) {
                     throw new GradleException("Current commit does not have a tag")
                 } else {
@@ -138,13 +138,13 @@ class OverrideStrategies {
         }
 
         @Override
-        boolean selector(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
+        boolean selector(Project project, GitBuildService gitBuildService) {
             project.hasProperty(propertyName)
         }
 
 
         @Override
-        ReleaseVersion infer(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
+        ReleaseVersion infer(Project project, GitBuildService gitBuildService) {
             String requestedVersion = project.property(propertyName).toString()
             if (requestedVersion == null || requestedVersion.isEmpty()) {
                 throw new GradleException('Supplied release.version is empty')
@@ -184,12 +184,12 @@ class OverrideStrategies {
         }
 
         @Override
-        boolean selector(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
-            return !gitCommandUtil.hasCommit()
+        boolean selector(Project project, GitBuildService gitBuildService) {
+            return !gitBuildService.hasCommit()
         }
 
         @Override
-        ReleaseVersion infer(Project project, GitReadOnlyCommandUtil gitCommandUtil) {
+        ReleaseVersion infer(Project project, GitBuildService gitBuildService) {
             boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
             if(replaceDevSnapshots) {
                 new ReleaseVersion("0.1.0-snapshot.${TimestampUtil.getUTCFormattedTimestamp()}.uncommitted", null, false)

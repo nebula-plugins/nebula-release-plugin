@@ -118,7 +118,6 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             releaseExtension.with {extension ->
-                gitReadCommands = gitCommandUtil
                 gitWriteCommands = gitWriteCommandsUtil
                 tagStrategy { TagStrategy tagStrategy ->
                     tagStrategy.generateMessage = { ReleaseVersion version ->
@@ -293,7 +292,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     private void checkStateForStage(boolean isSnapshotRelease) {
         if (!isSnapshotRelease) {
-            String status = gitCommandUtil.status()
+            String status = gitBuildService.status
             if (!status.empty) {
                 String message = new ErrorMessageFormatter().format(status)
                 throw new GradleException(message)

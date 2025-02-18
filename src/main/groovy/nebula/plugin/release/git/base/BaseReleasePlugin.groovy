@@ -16,8 +16,10 @@
 package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.GitBuildService
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 
 /**
  * Plugin providing the base structure of gradle-git's flavor of release
@@ -35,9 +37,14 @@ class BaseReleasePlugin implements Plugin<Project> {
 
     private static final String PREPARE_TASK_NAME = 'prepare'
     private static final String RELEASE_TASK_NAME = 'release'
+    private Provider<GitBuildService> gitBuildService
 
     void apply(Project project) {
         ReleasePluginExtension releasePluginExtension = project.extensions.create('release', ReleasePluginExtension, project)
+        File gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
+        this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
+            spec.getParameters().getGitRootDir().set(gitRoot)
+        })
         addPrepareTask(project, releasePluginExtension)
         addReleaseTask(project, releasePluginExtension)
     }
@@ -45,6 +52,7 @@ class BaseReleasePlugin implements Plugin<Project> {
     private void addPrepareTask(Project project, ReleasePluginExtension extension) {
         def prepareTask = project.tasks.register(PREPARE_TASK_NAME, PrepareTask)
         prepareTask.configure {
+            it.gitService.set(gitBuildService)
             it.description = 'Verifies that the project could be released.'
             project.version.toString()
             if(!(project.version instanceof String) && project.version.inferredVersion) {
@@ -52,7 +60,6 @@ class BaseReleasePlugin implements Plugin<Project> {
             }
             it.remote.set(extension.remote)
             it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
-            it.gitCommandUtil.set(extension.gitReadCommands)
         }
 
         project.tasks.configureEach { task ->
