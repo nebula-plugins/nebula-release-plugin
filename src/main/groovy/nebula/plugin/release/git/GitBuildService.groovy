@@ -1,5 +1,6 @@
 package nebula.plugin.release.git
 
+import nebula.plugin.release.git.command.CurrentBranch
 import nebula.plugin.release.git.command.IsGitRepo
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Provider
@@ -16,17 +17,46 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
     }
 
     private final boolean isGitRepo
+    private final String currentBranch
+    private final File gitRootDir
+    private final ProviderFactory providerFactory
 
     @Inject
     GitBuildService(ProviderFactory providers) {
-        File gitRootDir = getParameters().gitRootDir.get().asFile
-        Provider isGitRepoProvider = providers.of(IsGitRepo.class) {
-            it.parameters.rootDir.set(gitRootDir)
-        }
-        isGitRepo = Boolean.valueOf(isGitRepoProvider.getOrElse("false"))
+        this.gitRootDir = getParameters().gitRootDir.get().asFile
+        this.providerFactory = providers
+        this.isGitRepo = detectIsGitRepo()
+        this.currentBranch = detectCurrentBranch()
     }
 
     boolean isGitRepo() {
         return isGitRepo
+    }
+
+    String getCurrentBranch() {
+        return currentBranch
+    }
+
+    private Boolean detectIsGitRepo() {
+        try {
+            Provider isGitRepoProvider = providerFactory.of(IsGitRepo.class) {
+                it.parameters.rootDir.set(gitRootDir)
+            }
+            return Boolean.valueOf(isGitRepoProvider.get().toString())
+        } catch (Exception e) {
+            return false
+        }
+    }
+
+    private String detectCurrentBranch() {
+        try {
+            Provider currentBranchProvider = providerFactory.of(CurrentBranch.class) {
+                it.parameters.rootDir.set(gitRootDir)
+            }
+            return currentBranchProvider.get().toString().replaceAll("\n", "").trim()
+        } catch (Exception e) {
+            return null
+        }
+
     }
 }
