@@ -16,6 +16,7 @@
 package nebula.plugin.release
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
@@ -54,31 +55,38 @@ class ReleasePlugin implements Plugin<Project> {
 
     private final GitReadOnlyCommandUtil gitCommandUtil
     private final GitWriteCommandsUtil gitWriteCommandsUtil
+    private final GitBuildService gitBuildService
+    private final File gitRoot
 
+    @CompileDynamic
     @Inject
-    ReleasePlugin(ExecOperations execOperations, ProviderFactory providerFactory) {
+    ReleasePlugin(Project project, ExecOperations execOperations, ProviderFactory providerFactory) {
+        this.gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
         this.gitCommandUtil = new GitReadOnlyCommandUtil(providerFactory)
         this.gitWriteCommandsUtil = new GitWriteCommandsUtil(execOperations)
+        this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
+            spec.getParameters().getGitRootDir().set(gitRoot)
+        }).get()
     }
 
     @CompileDynamic
     @Override
     void apply(Project project) {
         this.project = project
-        if (project == project.rootProject) {
-            File gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
 
+        boolean isGitRepo = gitBuildService.isGitRepo()
+        if(!isGitRepo) {
+            this.project.version = '0.1.0-dev.0.uncommitted'
+            logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
+            return
+        }
+
+        if (project == project.rootProject) {
             // Verify user git config only when using release tags and 'release.useLastTag' property is not used
             boolean shouldVerifyUserGitConfig = isReleaseTaskThatRequiresTagging(project.gradle.startParameter.taskNames) && !isUsingLatestTag(project)
             gitCommandUtil.configure(gitRoot, shouldVerifyUserGitConfig)
             gitWriteCommandsUtil.configure(gitRoot)
 
-            boolean isGitRepo = gitCommandUtil.isGitRepo()
-            if(!isGitRepo) {
-                this.project.version = '0.1.0-dev.0.uncommitted'
-                logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
-                return
-            }
             checkForBadBranchNames()
             boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
 
