@@ -17,7 +17,7 @@ package nebula.plugin.release.git.semver
 
 import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
+import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.base.TagStrategy
 import org.gradle.api.GradleException
 import org.slf4j.Logger
@@ -42,11 +42,11 @@ class NearestVersionLocator {
     private static final Version UNKNOWN = Version.valueOf('0.0.0')
 
     final TagStrategy strategy
-    final GitReadOnlyCommandUtil gitCommandUtil
+    final GitBuildService gitBuildService
 
-    NearestVersionLocator(GitReadOnlyCommandUtil gitCommandUtil, TagStrategy strategy) {
+    NearestVersionLocator(GitBuildService gitBuildService, TagStrategy strategy) {
         this.strategy = strategy
-        this.gitCommandUtil = gitCommandUtil
+        this.gitBuildService = gitBuildService
     }
 
     /**
@@ -74,7 +74,7 @@ class NearestVersionLocator {
      * @return the version corresponding to the nearest tag
      */
     NearestVersion locate() {
-        logger.debug('Locate beginning on branch: {}', gitCommandUtil.currentBranch())
+        logger.debug('Locate beginning on branch: {}', gitBuildService.currentBranch)
         def normal = getLatestTagWithDistance(true)
         def any =  getLatestTagWithDistance(false)
         logger.debug('Nearest release: {}, nearest any: {}.', normal, any)
@@ -83,9 +83,9 @@ class NearestVersionLocator {
 
     private getLatestTagWithDistance(boolean excludePreReleases) {
         try {
-            String result = gitCommandUtil.describeHeadWithTags(excludePreReleases)
+            String result = gitBuildService.describeHeadWithTags(excludePreReleases)
             if(!result) {
-                return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
+                return [version: UNKNOWN, distance: gitBuildService.getCommitCountForHead()]
             }
 
             String[] parts = result.split('-')
@@ -94,8 +94,8 @@ class NearestVersionLocator {
             }
 
             String foundTag = parts.size() == 4 ? parts[0..1].join('-') : parts[0]
-            String commit = gitCommandUtil.findCommitForTag(foundTag)
-            List<Version> allTagsForCommit = gitCommandUtil.getTagsPointingAt(commit).collect {
+            String commit = gitBuildService.findCommitForTag(foundTag)
+            List<Version> allTagsForCommit = gitBuildService.getTagsPointingAt(commit).collect {
                 parseTag(it)
             }.findAll {
                 it && excludePreReleases ? !it.preReleaseVersion : true
@@ -104,7 +104,7 @@ class NearestVersionLocator {
             if(!allTagsForCommit || allTagsForCommit.every { !it }) {
                 Version version = parseTag(foundTag, true)
                 if(version.preReleaseVersion && excludePreReleases) {
-                    return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
+                    return [version: UNKNOWN, distance: gitBuildService.getCommitCountForHead()]
                 }
                 return [version: parseTag(foundTag, true), distance: parts[parts.size() - 2]?.toInteger()]
             }
@@ -114,7 +114,7 @@ class NearestVersionLocator {
             }
             return [version: highest, distance: parts[parts.size() - 2]?.toInteger()]
         } catch (Exception e) {
-            return [version: UNKNOWN, distance: gitCommandUtil.getCommitCountForHead()]
+            return [version: UNKNOWN, distance: gitBuildService.getCommitCountForHead()]
         }
     }
 

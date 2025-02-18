@@ -15,8 +15,7 @@
  */
 package nebula.plugin.release.git.base
 
-
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
+import nebula.plugin.release.git.GitBuildService
 import org.gradle.api.Project
 
 /**
@@ -36,5 +35,5 @@ interface DefaultVersionStrategy extends VersionStrategy {
      * @param gitOps the class to talk to git using native git calls
      * @return {@code true} if the strategy can be used to infer the version
      */
-    boolean defaultSelector(Project project, GitReadOnlyCommandUtil gitCommandUtil)
+    boolean defaultSelector(Project project, GitBuildService gitBuildService)
 }

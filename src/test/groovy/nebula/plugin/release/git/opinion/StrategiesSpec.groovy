@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package nebula.plugin.release.git.opinion
 
 import com.github.zafarkhaja.semver.Version
+import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.base.ReleaseVersion
-import nebula.plugin.release.git.command.GitReadOnlyCommandUtil
 import nebula.plugin.release.git.model.Branch
 import nebula.plugin.release.git.model.Commit
 import nebula.plugin.release.git.semver.ChangeScope
@@ -334,7 +334,7 @@ class StrategiesSpec extends Specification {
     def 'SNAPSHOT works as expected'() {
         given:
         def project = mockProject(scope, stage)
-        def readOnlyGitCommandUtil = mockReadOnlyGitCommand(repoDirty)
+        def readOnlyGitCommandUtil = mockGitBuildService(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
         Strategies.SNAPSHOT.doInfer(project, readOnlyGitCommandUtil, locator) == new ReleaseVersion(expected, nearestNormal, false)
@@ -352,7 +352,7 @@ class StrategiesSpec extends Specification {
     def 'DEVELOPMENT works as expected'() {
         given:
         def project = mockProject(scope, stage)
-        def readOnlyGitCommandUtil = mockReadOnlyGitCommand(repoDirty)
+        def readOnlyGitCommandUtil = mockGitBuildService(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
         Strategies.DEVELOPMENT.doInfer(project, readOnlyGitCommandUtil, locator) == new ReleaseVersion(expected, nearestNormal, false)
@@ -371,7 +371,7 @@ class StrategiesSpec extends Specification {
     def 'IMMUTABLE_SNAPSHOT works as expected'() {
         given:
         def project = mockProject(scope, stage)
-        def readOnlyGitCommandUtil = mockReadOnlyGitCommand(repoDirty)
+        def readOnlyGitCommandUtil = mockGitBuildService(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         GroovyMock(TimestampUtil, global: true)
         TimestampUtil.getUTCFormattedTimestamp() >> '20190705103502'
@@ -393,7 +393,7 @@ class StrategiesSpec extends Specification {
 
     def 'PRE_RELEASE works as expected'() {
         def project = mockProject(scope, stage)
-        def readOnlyGitCommandUtil = mockReadOnlyGitCommand(repoDirty)
+        def readOnlyGitCommandUtil = mockGitBuildService(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
         Strategies.PRE_RELEASE.doInfer(project, readOnlyGitCommandUtil, locator) == new ReleaseVersion(expected, nearestNormal, true)
@@ -413,7 +413,7 @@ class StrategiesSpec extends Specification {
 
     def 'Strategies.FINAL works as expected'() {
         def project = mockProject(scope, stage)
-        def readOnlyGitCommandUtil = mockReadOnlyGitCommand(repoDirty)
+        def readOnlyGitCommandUtil = mockGitBuildService(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
         Strategies.FINAL.doInfer(project, readOnlyGitCommandUtil, locator) == new ReleaseVersion(expected, nearestNormal, true)
@@ -429,7 +429,7 @@ class StrategiesSpec extends Specification {
 
     def 'PRE_RELEASE_ALPHA_BETA works as expected'() {
         def project = mockProject(scope, stage)
-        def readOnlyGitCommandUtil = mockReadOnlyGitCommand(repoDirty)
+        def readOnlyGitCommandUtil = mockGitBuildService(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         expect:
         Strategies.PRE_RELEASE_ALPHA_BETA.doInfer(project, readOnlyGitCommandUtil, locator) == new ReleaseVersion(expected, nearestNormal, true)
@@ -462,14 +462,14 @@ class StrategiesSpec extends Specification {
 
         return project
     }
-    
 
-    GitReadOnlyCommandUtil mockReadOnlyGitCommand(boolean repoDirty, String branchName = 'master') {
-        GitReadOnlyCommandUtil gitReadOnlyCommandUtil = GroovyMock()
-        gitReadOnlyCommandUtil.isCleanStatus() >> !repoDirty
-        gitReadOnlyCommandUtil.head() >> "5e9b2a1e98b5670a90a9ed382a35f0d706d5736c"
-        gitReadOnlyCommandUtil.currentBranch() >> "refs/heads/${branchName}"
-        return gitReadOnlyCommandUtil
+
+    GitBuildService mockGitBuildService(boolean repoDirty, String branchName = 'master') {
+        GitBuildService gitBuildService = GroovyMock()
+        gitBuildService.isCleanStatus() >> !repoDirty
+        gitBuildService.head >> "5e9b2a1e98b5670a90a9ed382a35f0d706d5736c"
+        gitBuildService.currentBranch >> "refs/heads/${branchName}"
+        return gitBuildService
     }
 
     def mockLocator(String nearestNormal, String nearestAny) {

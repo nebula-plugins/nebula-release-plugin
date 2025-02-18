@@ -29,7 +29,6 @@ class ReleasePluginExtensionSpec extends Specification {
         given:
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitReadCommands = GroovyMock(GitReadOnlyCommandUtil)
         extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
         extension.versionStrategy([
             getName: { 'b' },
@@ -46,7 +45,6 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infers using first strategy selector returns true for'() {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitReadCommands = GroovyMock(GitReadOnlyCommandUtil)
         extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
         extension.versionStrategy([
             getName: { 'b' },
@@ -63,7 +61,6 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infers using first strategy selector returns true for in order'() {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitReadCommands = GroovyMock(GitReadOnlyCommandUtil)
         extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
         extension.versionStrategy([
             getName: { 'b' },
@@ -81,7 +78,6 @@ class ReleasePluginExtensionSpec extends Specification {
         given:
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitReadCommands = GroovyMock(GitReadOnlyCommandUtil)
         extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
         extension.versionStrategy([
             getName: { 'b' },
@@ -100,7 +96,6 @@ class ReleasePluginExtensionSpec extends Specification {
         given:
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitReadCommands = GroovyMock(GitReadOnlyCommandUtil)
         extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
         extension.versionStrategy([
             getName: { 'b' },
@@ -119,7 +114,6 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infer fails if no strategy selected and no default set'() {
         Project project = ProjectBuilder.builder().build()
         ReleasePluginExtension extension = new ReleasePluginExtension(project)
-        extension.gitReadCommands = GroovyMock(GitReadOnlyCommandUtil)
         extension.gitWriteCommands = GroovyMock(GitWriteCommandsUtil)
         extension.versionStrategy([
             getName: { 'b' },

@@ -118,7 +118,6 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             releaseExtension.with {extension ->
-                gitReadCommands = gitCommandUtil
                 gitWriteCommands = gitWriteCommandsUtil
                 tagStrategy { TagStrategy tagStrategy ->
                     tagStrategy.generateMessage = { ReleaseVersion version ->
@@ -133,7 +132,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP
-                it.branchName = gitCommandUtil.currentBranch()
+                it.branchName = gitBuildService.currentBranch
                 it.patterns = nebulaReleaseExtension
             }
 
@@ -293,7 +292,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     private void checkStateForStage(boolean isSnapshotRelease) {
         if (!isSnapshotRelease) {
-            String status = gitCommandUtil.status()
+            String status = gitBuildService.status
             if (!status.empty) {
                 String message = new ErrorMessageFormatter().format(status)
                 throw new GradleException(message)
@@ -377,7 +376,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void checkForBadBranchNames() {
-        String currentBranch = gitCommandUtil.currentBranch()
+        String currentBranch = gitBuildService.currentBranch
         if (!currentBranch) {
             return
         }
