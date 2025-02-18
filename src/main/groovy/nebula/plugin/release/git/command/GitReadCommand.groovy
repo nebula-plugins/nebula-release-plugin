@@ -16,7 +16,7 @@ import java.nio.charset.Charset
  * These read only git commands use ValueSource approach for configuration cache
  * @see {@link https://docs.gradle.org/8.4/userguide/configuration_cache.html#config_cache:requirements:external_processes}
  */
-abstract class GitReadCommand implements ValueSource<String, GitCommandParameters> {
+abstract class GitReadCommand implements ValueSource<String, GitReadCommandParameters> {
     @Inject
     abstract ExecOperations getExecOperations()
 

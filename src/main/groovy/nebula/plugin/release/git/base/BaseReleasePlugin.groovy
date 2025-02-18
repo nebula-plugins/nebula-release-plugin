@@ -59,7 +59,6 @@ class BaseReleasePlugin implements Plugin<Project> {
                 it.projectVersion.set(project.version.inferredVersion)
             }
             it.remote.set(extension.remote)
-            it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
         }
 
         project.tasks.configureEach { task ->
@@ -82,7 +81,7 @@ class BaseReleasePlugin implements Plugin<Project> {
             }
             it.tagStrategy.set(extension.tagStrategy)
             it.remote.set(extension.remote)
-            it.gitWriteCommandsUtil.set(extension.gitWriteCommands)
+            it.gitService.set(gitBuildService)
         }
     }
 }
