@@ -68,6 +68,8 @@ Where `timestamp` is UTC time in `YYYYMMddHHmm` format, ex. `201907052105`  and 
 
 ## Timestamp precision
 
+***This was introduced in 20.1.0***
+
 The time precision used by the plugin to calculate immutable snapshot timestamp is configurable 
 through the `nebula.release.features.immutableSnapshot.timestampPrecision` 
 For example: `nebula.release.features.immutableSnapshot.timestampPrecision=MINUTES`
