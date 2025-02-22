@@ -22,6 +22,7 @@ import groovy.transform.Immutable
 import groovy.transform.ToString
 import nebula.plugin.release.git.model.Branch
 import nebula.plugin.release.git.model.Commit
+import nebula.plugin.release.git.opinion.TimestampPrecision
 
 /**
  * Working state used by {@link PartialSemVerStrategy}.
@@ -39,6 +40,7 @@ final class SemVerStrategyState {
     String inferredNormal
     String inferredPreRelease
     String inferredBuildMetadata
+    TimestampPrecision timestampPrecision
 
     Version toVersion() {
         return new Version.Builder().with {

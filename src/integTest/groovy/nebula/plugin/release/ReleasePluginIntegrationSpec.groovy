@@ -16,6 +16,7 @@
 package nebula.plugin.release
 
 import com.github.zafarkhaja.semver.Version
+import nebula.plugin.release.git.opinion.TimestampPrecision
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.test.functional.ExecutionResult
 import org.ajoberstar.grgit.Tag
@@ -96,13 +97,14 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
     }
 
-
     def 'choose immutableSnapshot version'() {
         when:
-        def version = inferredVersionForTask('immutableSnapshot')
+        def version = inferredVersionForTask('immutableSnapshot').toString()
+        int numberOfDigits = version.substring(version.indexOf("snapshot.") + 9, version.indexOf("+")).size()
 
         then:
-        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
+        version.startsWith("0.1.0-snapshot." + getUtcDateForComparison())
+        numberOfDigits == 12
     }
 
     def 'choose immutableSnapshot version with optional colon (:)'() {
@@ -1253,6 +1255,33 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         then:
         version.toString().startsWith("3.1.3-snapshot." + getUtcDateForComparison())
     }
+
+
+    def 'can configure immutableSnapshot timestamp precision'() {
+        given:
+        replaceDevWithImmutableSnapshot()
+        new File(buildFile.parentFile, "gradle.properties") << """
+\n
+nebula.release.features.immutableSnapshot.timestampPrecision=${precision.name()}
+"""
+
+        when:
+        def version = inferredVersionForTask('immutableSnapshot').toString()
+        int numberOfDigits = version.substring(version.indexOf("snapshot.") + 9, version.indexOf("+")).size()
+
+        then:
+        numberOfDigits == expectedNumberOfDigits
+
+        where:
+        precision | expectedNumberOfDigits
+        TimestampPrecision.DAYS |  8
+        TimestampPrecision.HOURS |  10
+        TimestampPrecision.MINUTES | 12
+        TimestampPrecision.SECONDS |  14
+        TimestampPrecision.MILLISECONDS |  17
+    }
+
+
 
     private void replaceDevWithImmutableSnapshot() {
         new File(buildFile.parentFile, "gradle.properties").text = """

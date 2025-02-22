@@ -18,17 +18,16 @@ package nebula.plugin.release.git.opinion
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 class TimestampUtil {
 
-    private static DateTimeFormatter timestampDateFormat = DateTimeFormatter
-            .ofPattern("yyyyMMddHHmm")
-            .withZone(ZoneOffset.UTC)
-
     static String getUTCFormattedTimestamp() {
+        return getUTCFormattedTimestamp(TimestampPrecision.MINUTES)
+    }
+
+    static String getUTCFormattedTimestamp(TimestampPrecision timestampPrecision) {
         return LocalDateTime
                 .ofInstant(Instant.now(), ZoneOffset.UTC)
-                .format(timestampDateFormat)
+                .format(timestampPrecision.dateTimeFormatter)
     }
 }

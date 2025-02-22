@@ -23,6 +23,7 @@ import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
 import nebula.plugin.release.git.base.VersionStrategy
 import nebula.plugin.release.git.model.TagRef
+import nebula.plugin.release.git.opinion.TimestampPrecision
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.plugin.release.git.semver.NearestVersionLocator
 import nebula.plugin.release.util.ReleaseTasksUtil
@@ -192,7 +193,8 @@ class OverrideStrategies {
         ReleaseVersion infer(Project project, GitBuildService gitBuildService) {
             boolean replaceDevSnapshots = FeatureFlags.isDevSnapshotReplacementEnabled(project)
             if(replaceDevSnapshots) {
-                new ReleaseVersion("0.1.0-snapshot.${TimestampUtil.getUTCFormattedTimestamp()}.uncommitted", null, false)
+                TimestampPrecision immutableSnapshotTimestampPrecision = FeatureFlags.immutableSnapshotTimestampPrecision(project)
+                new ReleaseVersion("0.1.0-snapshot.${TimestampUtil.getUTCFormattedTimestamp(immutableSnapshotTimestampPrecision)}.uncommitted", null, false)
             } else {
                 new ReleaseVersion('0.1.0-dev.0.uncommitted', null, false)
             }

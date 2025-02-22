@@ -16,6 +16,7 @@
 package nebula.plugin.release.git.opinion
 
 import groovy.transform.CompileDynamic
+import nebula.plugin.release.FeatureFlags
 import nebula.plugin.release.git.semver.ChangeScope
 import nebula.plugin.release.git.semver.PartialSemVerStrategy
 import nebula.plugin.release.git.semver.SemVerStrategy
@@ -242,7 +243,7 @@ final class Strategies {
          * Append timestamp to make snapshot version unique
          */
         static final PartialSemVerStrategy TIMESTAMP = closure { state ->
-            def timestamp = TimestampUtil.getUTCFormattedTimestamp()
+            def timestamp = TimestampUtil.getUTCFormattedTimestamp(state.timestampPrecision)
             def inferred = state.inferredPreRelease ? "${state.inferredPreRelease}.${timestamp}" : "${timestamp}"
             return state.copyWith(inferredPreRelease: inferred)
         }

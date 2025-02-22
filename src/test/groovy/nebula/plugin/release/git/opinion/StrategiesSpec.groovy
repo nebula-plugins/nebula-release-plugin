@@ -374,7 +374,7 @@ class StrategiesSpec extends Specification {
         def readOnlyGitCommandUtil = mockGitBuildService(repoDirty)
         def locator = mockLocator(nearestNormal, nearestAny)
         GroovyMock(TimestampUtil, global: true)
-        TimestampUtil.getUTCFormattedTimestamp() >> '20190705103502'
+        TimestampUtil.getUTCFormattedTimestamp(TimestampPrecision.MINUTES) >> '20190705103502'
 
         expect:
         Strategies.IMMUTABLE_SNAPSHOT.doInfer(project, readOnlyGitCommandUtil, locator) == new ReleaseVersion(expected, nearestNormal, false)

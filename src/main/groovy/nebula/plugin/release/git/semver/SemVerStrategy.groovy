@@ -20,6 +20,7 @@ import groovy.transform.Immutable
 import groovy.transform.PackageScope
 
 import com.github.zafarkhaja.semver.Version
+import nebula.plugin.release.FeatureFlags
 import nebula.plugin.release.VersionSanitizerUtil
 import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.base.DefaultVersionStrategy
@@ -159,6 +160,7 @@ final class SemVerStrategy implements DefaultVersionStrategy {
 
         String currentHead = gitBuildService.head
         SemVerStrategyState state = new SemVerStrategyState(
+                timestampPrecision: FeatureFlags.immutableSnapshotTimestampPrecision(project),
                 scopeFromProp: scope,
                 stageFromProp: stage,
                 currentHead: new Commit(id: currentHead, abbreviatedId: currentHead.take(7)),
