@@ -61,6 +61,28 @@ All tasks will trigger gradle-git's release task which is configured to depend o
 
 Use of devSnapshot vs snapshot is a project by project choice of whether you want maven style versioning (snapshot) or semantic versioned snapshots (devSnapshot).
 
+# Immutable snapshots
+
+For `devSnapshot` task, you can use `nebula.release.features.replaceDevWithImmutableSnapshot=true` in your `gradle.properties` file to change pattern of version to `<major>.<minor>.<patch>-snapshot.<timestamp>+<hash>`. 
+Where `timestamp` is UTC time in `YYYYMMddHHmm` format, ex. `201907052105`  and `hash` is the git hash of the current commit.  If releasing a immutableSnapshot from a branch not listed in the `releaseBranchPatterns` and not excluded by `excludeBranchPatterns` the version will be `<major>.<minor>.<patch>-snapshot.<timestamp>+<branchname>.<hash>`
+
+## Timestamp precision
+
+The time precision used by the plugin to calculate immutable snapshot timestamp is configurable 
+through the `nebula.release.features.immutableSnapshot.timestampPrecision` 
+For example: `nebula.release.features.immutableSnapshot.timestampPrecision=MINUTES`
+
+The default value is `MINUTES`.
+
+
+The supported precision values are:
+
+* `DAYS`: produces `yyyyMMdd`
+* `HOURS`: produces `yyyyMMddHH`
+* `MINUTES`: produces `yyyyMMddHHmm`
+* `SECONDS`: produces `yyyyMMddHHmmss`
+* `MILLISECONDS`: produces `YYYYMMddHHmmssSSS`
+
 # Versioning Notes
 
 We attempt to pick up on the fact that you're on certain release branches.
@@ -163,21 +185,17 @@ Gradle and Java Compatibility
 =============================
 
 Built with OpenJDK8
-Tested with OpenJDK8
+Tested with OpenJDK 8, 17 and 21
 
-| Gradle Version | Works |
-| :------------: | :---: |
-| 5.0            | yes   |
-| 5.1            | yes   |
-| 5.2            | yes   |
-| 5.3            | yes   |
-| 5.4            | yes   |
-| 5.5            | yes   |
+| Gradle Version | Working version |
+|:--------------:|:---------------:|
+|      8.x       |      19.x       |
+|      7.x       |      20.x       |
 
 LICENSE
 =======
 
-Copyright 2014-2019 Netflix, Inc.
+Copyright 2014-2025 Netflix, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
