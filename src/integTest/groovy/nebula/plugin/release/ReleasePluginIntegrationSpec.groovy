@@ -23,9 +23,12 @@ import org.ajoberstar.grgit.Tag
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 import org.gradle.testkit.runner.BuildResult
+import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import spock.lang.Ignore
 import spock.lang.Unroll
+
+import java.nio.file.Files
 
 class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
     @Override
@@ -1281,6 +1284,26 @@ nebula.release.features.immutableSnapshot.timestampPrecision=${precision.name()}
         TimestampPrecision.MILLISECONDS |  17
     }
 
+    def 'can use relative git.root'() {
+        given:
+        def subdir = new File(projectDir, 'subdir')
+        subdir.mkdirs()
+        ['build.gradle', 'settings.gradle'].each {
+            def file = new File(projectDir, it)
+            Files.move(file.toPath(), new File(subdir, it).toPath())
+        }
+        new File(subdir, 'gradle.properties') << 'git.root=..'
+
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(subdir)
+                .withArguments('help', '-s')
+                .withPluginClasspath()
+                .build()
+
+        then:
+        result.task(':help').outcome == TaskOutcome.SUCCESS
+    }
 
 
     private void replaceDevWithImmutableSnapshot() {
