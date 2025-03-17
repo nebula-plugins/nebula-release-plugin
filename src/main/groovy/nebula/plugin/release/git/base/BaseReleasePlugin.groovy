@@ -41,7 +41,7 @@ class BaseReleasePlugin implements Plugin<Project> {
 
     void apply(Project project) {
         ReleasePluginExtension releasePluginExtension = project.extensions.create('release', ReleasePluginExtension, project)
-        File gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
+        File gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
         })

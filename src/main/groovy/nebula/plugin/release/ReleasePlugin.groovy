@@ -57,7 +57,7 @@ class ReleasePlugin implements Plugin<Project> {
     @CompileDynamic
     @Inject
     ReleasePlugin(Project project, ExecOperations execOperations, ProviderFactory providerFactory) {
-        this.gitRoot = project.hasProperty('git.root') ? new File(project.property('git.root')) : project.rootProject.projectDir
+        this.gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
         }).get()
