@@ -112,7 +112,7 @@ abstract class DescribeHeadWithTag extends GitReadCommand {
     @Override
     String obtain() {
         try {
-            return executeGitCommand( "describe", "HEAD", "--tags", "--long", "--match", "v*")
+            return executeGitCommand( "describe", "HEAD", "--tags", "--long", "--match", "v[0-9]*", "--match", "[0-9]*")
         } catch (Exception e) {
             if(e.message.contains("is externally known as") || e.message.contains('warning: tag ')) {
                 return e.message.takeBetween("tag '", "'")
@@ -126,7 +126,7 @@ abstract class DescribeHeadWithTagWithExclude extends GitReadCommand {
     @Override
     String obtain() {
         try {
-            return executeGitCommandWithErrorIgnore( "describe", "HEAD", "--tags", "--long", "--match", "v*", "--exclude", "*-rc.*")
+            return executeGitCommandWithErrorIgnore( "describe", "HEAD", "--tags", "--long", "--match", "v[0-9]*", "--match", "[0-9]*", "--exclude", "*-rc.*")
         } catch (Exception e) {
             return null
         }
