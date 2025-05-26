@@ -16,16 +16,11 @@
 package nebula.plugin.release
 
 import com.github.zafarkhaja.semver.Version
-import nebula.plugin.release.git.opinion.TimestampPrecision
 import nebula.plugin.release.git.opinion.TimestampUtil
 import org.ajoberstar.grgit.Tag
 import org.gradle.testkit.runner.BuildResult
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
-import spock.lang.Ignore
 import spock.lang.Unroll
-
-import java.nio.file.Files
 
 class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
     @Override
@@ -55,135 +50,6 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         git.add(patterns: ['build.gradle', '.gitignore'] as Set)
     }
 
-    def 'build defaults to dev version string'() {
-        when:
-        def version = inferredVersionForTask('build')
-
-        then:
-        version == dev('0.1.0-dev.2+')
-    }
-
-    def 'build on non standard branch appends name to dev version string'() {
-        git.checkout(branch: 'testexample', createBranch: true)
-
-        when:
-        def version = inferredVersionForTask('build')
-
-        then:
-        version == dev('0.1.0-dev.2+testexample.')
-    }
-
-    def 'build on non standard branch with double hyphen fails with right context'() {
-        git.checkout(branch: 'test--example', createBranch: true)
-
-        when:
-        def result = runTasksAndFail('devSnapshot')
-
-        then:
-        result.output.contains("Branch test--example is invalid. Nebula Release plugin does not support branches that contain double dash (-) as it leads to bad build metadata for SemVer")
-    }
-
-    def 'choose devSnapshot version'() {
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version == dev('0.1.0-dev.2+')
-    }
-
-    def 'choose immutableSnapshot version if devSnapshot is replaced and devSnapshot is executed'() {
-        given:
-        replaceDevWithImmutableSnapshot()
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
-    }
-
-    def 'choose immutableSnapshot version'() {
-        when:
-        def version = inferredVersionForTask('immutableSnapshot').toString()
-        int numberOfDigits = version.substring(version.indexOf("snapshot.") + 9, version.indexOf("+")).size()
-
-        then:
-        version.startsWith("0.1.0-snapshot." + getUtcDateForComparison())
-        numberOfDigits == 12
-    }
-
-    def 'choose immutableSnapshot version with optional colon (:)'() {
-        when:
-        def version = inferredVersionForTask(':immutableSnapshot')
-
-        then:
-        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
-    }
-
-    def 'choose devSnapshot uncommitted version'() {
-        given:
-        new File(projectDir, 'newfile').createNewFile()
-
-        when:
-        def version = inferredVersionForTask('build')
-
-        then:
-        version == dev('0.1.0-dev.2.uncommitted+')
-    }
-
-    def 'choose immutableSnapshot uncommitted version if devSnapshot is replaced and devSnapshot is executed'() {
-        given:
-        replaceDevWithImmutableSnapshot()
-        new File(projectDir, 'newfile').createNewFile()
-
-        when:
-        def version = inferredVersionForTask('build')
-
-        then:
-        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
-        version.toString().contains('uncommitted')
-    }
-
-
-    def 'use maven style snapshot string'() {
-        when:
-        def version = inferredVersionForTask('snapshot')
-
-        then:
-        version == normal('0.1.0-SNAPSHOT')
-    }
-
-    def 'choose candidate version'() {
-        when:
-        def version = inferredVersionForTask('candidate')
-
-        then:
-        version == normal('0.1.0-rc.1')
-    }
-
-    def 'choose candidate version with optional colon (:) for root project'() {
-        when:
-        def version = inferredVersionForTask(':candidate')
-
-        then:
-        version == normal('0.1.0-rc.1')
-    }
-
-    def 'choose candidate version with optional colon (:) for root project - multi-module'() {
-        setup:
-        addSubproject('sub1')
-        addSubproject('sub2')
-        git.add(patterns: ['.'] as Set)
-        git.commit(message: "Update file")
-        git.push(all: true)
-
-        when:
-        def version = inferredVersionForTask(':candidate')
-
-        then:
-        version == normal('0.1.0-rc.1')
-    }
-
     def 'choose candidate development version'() {
         git.tag.add(name: '2.2.0-rc.1')
 
@@ -204,80 +70,12 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         version.toString().startsWith("2.2.0-snapshot." + getUtcDateForComparison())
     }
 
-
-    def 'multiple candidate releases will increment rc number'() {
-        runTasks('candidate')
-
-        when:
-        def version = inferredVersionForTask('candidate')
-
-        then:
-        version == normal('0.1.0-rc.2')
-    }
-
     def 'candidate release creates tag'() {
         when:
         inferredVersionForTask('candidate')
 
         then:
         originGit.tag.list()*.name.contains('0.1.0-rc.1')
-    }
-
-    def 'choose release version'() {
-        when:
-        def version = inferredVersionForTask('final')
-
-        then:
-        version == normal('0.1.0')
-    }
-
-    def 'choose release version with optional colon (:) for root project'() {
-        when:
-        def version = inferredVersionForTask(':final')
-
-        then:
-        version == normal('0.1.0')
-    }
-
-    def 'choose release version with optional colon (:) for root project - multi-module'() {
-        setup:
-        addSubproject('sub1')
-        addSubproject('sub2')
-        git.add(patterns: ['.'] as Set)
-        git.commit(message: "Update file")
-        git.push(all: true)
-
-        when:
-        def version = inferredVersionForTask(':final')
-
-        then:
-        version == normal('0.1.0')
-    }
-
-    def 'choose release version, update patch'() {
-        when:
-        def version = inferredVersionForTask('final', '-Prelease.scope=patch')
-
-        then:
-        version == normal('0.0.1')
-    }
-
-    def 'choose release version, update major'() {
-        when:
-        def version = inferredVersionForTask('final', '-Prelease.scope=major')
-
-        then:
-        version == normal('1.0.0')
-    }
-
-    def 'multiple final releases with defaults will increment minor number'() {
-        runTasks('final')
-
-        when:
-        def version = inferredVersionForTask('final')
-
-        then:
-        version == normal('0.2.0')
     }
 
     def 'final release creates tag'() {
@@ -288,89 +86,12 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         originGit.tag.list()*.name.contains('0.1.0')
     }
 
-    def 'release does not run if tests fail'() {
-        buildFile << """
-            repositories { mavenCentral() }
-            dependencies {
-                testImplementation 'junit:junit:4.12'
-            }
-        """.stripIndent()
-
-        writeUnitTest(true)
-
-        git.add(patterns: ['build.gradle', 'src/test/java/nebula/HelloWorldTest.java'])
-        git.commit(message: 'Add breaking test')
-
-        when:
-        def results = runTasksAndFail('final')
-
-        then:
-        results.task(':test').outcome == TaskOutcome.FAILED
-        !results.task(':release')?.outcome
-    }
-
     def 'final release log'() {
         when:
         inferredVersionForTask('final')
 
         then:
-        String message = originGit.tag.list().find { it.name == '0.1.0' }.fullMessage
-    }
-
-    def 'create new major release branch have branch name respected on version'() {
-        def oneX = '1.x'
-        git.branch.add(name: oneX)
-        git.push(all: true)
-        git.branch.change(name: oneX, startPoint: "origin/${oneX}".toString())
-        git.checkout(branch: oneX)
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version.toString() == dev('1.0.0-dev.2+').toString()
-    }
-
-    def 'create new major release branch have branch name respected on version - immutableSnapshot'() {
-        def oneX = '1.x'
-        git.branch.add(name: oneX)
-        git.push(all: true)
-        git.branch.change(name: oneX, startPoint: "origin/${oneX}".toString())
-        git.checkout(branch: oneX)
-
-        when:
-        def version = inferredVersionForTask('immutableSnapshot')
-
-        then:
-        version.toString().startsWith("1.0.0-snapshot." + getUtcDateForComparison())
-    }
-
-    def 'create new major release branch in git-flow style and have branch name respected on version'() {
-        def oneX = 'release/1.x'
-        git.branch.add(name: oneX)
-        git.push(all: true)
-        git.branch.change(name: oneX, startPoint: "origin/${oneX}".toString())
-        git.checkout(branch: oneX)
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version.toString() == dev('1.0.0-dev.2+').toString()
-    }
-
-    def 'create new major release branch in git-flow style and have branch name respected on version - immutableSnapshot'() {
-        def oneX = 'release/1.x'
-        git.branch.add(name: oneX)
-        git.push(all: true)
-        git.branch.change(name: oneX, startPoint: "origin/${oneX}".toString())
-        git.checkout(branch: oneX)
-
-        when:
-        def version = inferredVersionForTask('immutableSnapshot')
-
-        then:
-        version.toString().startsWith("1.0.0-snapshot." + getUtcDateForComparison())
+        originGit.tag.list().find { it.name == '0.1.0' }.fullMessage
     }
 
     def 'create release on git-flow style branch'() {
@@ -482,135 +203,6 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         outputContains(results, 'Branches with pattern release/<version> are used to calculate versions. The version must be of form: <major>.x, <major>.<minor>.x, or <major>.<minor>.<patch>')
     }
 
-
-    def 'task dependency configuration is read from extension'() {
-        buildFile << '''
-            task placeholderTask
-
-            tasks.release.dependsOn placeholderTask
-        '''.stripIndent()
-
-        git.add(patterns: ['build.gradle'] as Set)
-        git.commit(message: 'Setup')
-        git.push()
-
-        when:
-        def results = runTasks('final')
-
-        then:
-        results.task(':placeholderTask').outcome == TaskOutcome.SUCCESS || results.task(':placeholderTask').outcome == TaskOutcome.UP_TO_DATE
-    }
-
-    def 'fail final release on non release branch'() {
-        git.checkout(branch: 'testexample', createBranch: true)
-
-        when:
-        def result = runTasksAndFail('final')
-
-        then:
-        outputContains(result, 'testexample does not match one of the included patterns: [master, HEAD, main, (release(-|/))?\\d+(\\.\\d+)?\\.x, v?\\d+\\.\\d+\\.\\d+]')
-    }
-
-    def 'version includes branch name on devSnapshot of non release branch'() {
-        git.branch.add(name: 'testexample')
-        git.push(all: true)
-        git.branch.change(name: 'testexample', startPoint: 'origin/testexample')
-        git.checkout(branch: 'testexample')
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version.toString() == dev('0.1.0-dev.2+testexample.').toString()
-    }
-
-    def 'version includes branch name on immutableSnapshot of non release branch'() {
-        git.branch.add(name: 'testexample')
-        git.push(all: true)
-        git.branch.change(name: 'testexample', startPoint: 'origin/testexample')
-        git.checkout(branch: 'testexample')
-
-        when:
-        def version = inferredVersionForTask('immutableSnapshot')
-
-        then:
-        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
-        version.toString().contains('+testexample.')
-    }
-
-    def 'version includes branch name with stripped off patterns on devSnapshot of non release branch'() {
-        git.branch.add(name: 'feature/testexample')
-        git.push(all: true)
-        git.branch.change(name: 'feature/testexample', startPoint: 'origin/feature/testexample')
-        git.checkout(branch: 'feature/testexample')
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version.toString() == dev('0.1.0-dev.2+testexample.').toString()
-    }
-
-    def 'version includes branch name with stripped off patterns on immutableSnapshot of non release branch'() {
-        git.branch.add(name: 'feature/testexample')
-        git.push(all: true)
-        git.branch.change(name: 'feature/testexample', startPoint: 'origin/feature/testexample')
-        git.checkout(branch: 'feature/testexample')
-
-        when:
-        def version = inferredVersionForTask('immutableSnapshot')
-
-        then:
-        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
-        version.toString().contains('+testexample.')
-        !version.toString().contains('+feature/testexample.')
-    }
-
-    def 'version includes branch name with underscores on devSnapshot of non release branch'() {
-        git.branch.add(name: 'feature/test_example')
-        git.push(all: true)
-        git.branch.change(name: 'feature/test_example', startPoint: 'origin/feature/test_example')
-        git.checkout(branch: 'feature/test_example')
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version.toString() == dev('0.1.0-dev.2+test.example.').toString()
-    }
-
-    def 'version includes branch name with underscores on immutableSnapshot of non release branch'() {
-        git.branch.add(name: 'feature/test_example')
-        git.push(all: true)
-        git.branch.change(name: 'feature/test_example', startPoint: 'origin/feature/test_example')
-        git.checkout(branch: 'feature/test_example')
-
-        when:
-        def version = inferredVersionForTask('immutableSnapshot')
-
-        then:
-        version.toString().startsWith("0.1.0-snapshot." + getUtcDateForComparison())
-        version.toString().contains('+test.example.')
-    }
-
-    def 'fail build on excluded master branch'() {
-        buildFile << '''\
-            nebulaRelease {
-                addExcludeBranchPattern(/^master\$/)
-            }
-        '''.stripIndent()
-
-        git.add(patterns: ['build.gradle'] as Set)
-        git.commit(message: 'Setup')
-        git.push()
-
-        when:
-        def result = runTasksAndFail('final')
-
-        then:
-        outputContains(result, 'master matched an excluded pattern: [^master\$]')
-    }
-
     def 'use last tag'() {
         git.tag.add(name: '42.5.3')
 
@@ -675,7 +267,7 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         git.tag.add(name: "3.1.2")
 
         when:
-        def result = runTasks('final', '-Prelease.useLastTag=true')
+        runTasks('final', '-Prelease.useLastTag=true')
 
         then:
         !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
@@ -695,39 +287,11 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
     }
 
-    def 'fails when running devSnapshot With useLastTag'() {
-        when:
-        def result = runTasksAndFail('devSnapshot', '-Prelease.useLastTag=true')
-
-        then:
-        result.output.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
-        !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
-    }
-
-    def 'succeeds when running devSnapshot With useLastTag false'() {
-        expect:
-        runTasks('devSnapshot', '-Prelease.useLastTag=false')
-    }
-
-    def 'fails when running immutableSnapshot With useLastTag'() {
-        when:
-        def result = runTasksAndFail('immutableSnapshot', '-Prelease.useLastTag=true')
-
-        then:
-        result.output.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
-        !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
-    }
-
-    def 'succeeds when running immutableSnapshot With useLastTag false'() {
-        expect:
-        runTasks('immutableSnapshot', '-Prelease.useLastTag=false')
-    }
-
     def 'useLastTag succeeds when release stage is not supplied for final tag'() {
         git.tag.add(name: '42.5.3')
 
         when:
-        def result = runTasks('assemble', '-Prelease.useLastTag=true')
+        runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-42.5.3.jar").exists()
@@ -737,7 +301,7 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         git.tag.add(name: '3.1.2-rc.1')
 
         when:
-        def result = runTasks('assemble', '-Prelease.useLastTag=true')
+        runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
@@ -748,44 +312,10 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         git.tag.add(name: "${dev('0.1.0-dev.3+').toString()}")
 
         when:
-        def result = runTasks('assemble', '-Prelease.useLastTag=true')
+        runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
-    }
-
-    def 'useLastTag fails when release stage is not supplied for devSnapshot tag'() {
-        git.tag.add(name: "${dev('0.1.0-dev.3+').toString()}")
-
-        when:
-        def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
-
-        then:
-        result.output.contains("Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.") || result.output.contains("but they were not recognized as valid versions")
-        !new File(projectDir, "build/libs/${moduleName}-${dev('0.1.0-dev.3+').toString()}.jar").exists()
-    }
-
-
-    def 'useLastTag fails when release stage is not supplied for immutableSnapshot tag'() {
-        git.tag.add(name: "${dev('0.1.0-snapshot.220190705103502+').toString()}")
-
-        when:
-        def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
-
-        then:
-        result.output.contains("Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.") || result.output.contains("but they were not recognized as valid versions")
-        !new File(projectDir, "build/libs/${moduleName}-${dev('0.1.0-snapshot.220190705103502+').toString()}.jar").exists()
-    }
-
-    def 'useLastTag fails when release stage is not supplied for snapshot tag'() {
-        git.tag.add(name: "1.2.3-SNAPSHOT")
-
-        when:
-        def result = runTasksAndFail('assemble', '-Prelease.useLastTag=true')
-
-        then:
-        result.output.contains("Current commit has a snapshot, immutableSnapshot or devSnapshot tag. 'useLastTag' requires a prerelease or final tag.") || result.output.contains("but they were not recognized as valid versions")
-        !new File(projectDir, "build/libs/${moduleName}-1.2.3-SNAPSHOT.jar").exists()
     }
 
     def 'useLastTag should release with semantically most significant tag'() {
@@ -794,7 +324,7 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         git.tag.add(name: '3.1.2')
 
         when:
-        def result = runTasks('assemble', '-Prelease.useLastTag=true')
+        runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
@@ -805,7 +335,7 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         git.tag.add(name: '3.1.2-rc.2')
 
         when:
-        def result = runTasks('assemble', '-Prelease.useLastTag=true')
+        runTasks('assemble', '-Prelease.useLastTag=true')
 
         then:
         new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.2.jar").exists()
@@ -834,20 +364,6 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         result.output.contains('Using version 42.5.3 with a non-supplied release strategy')
     }
 
-    def 'succeeds when running snapshot With useLastTag false'() {
-        expect:
-        runTasks('snapshot', '-Prelease.useLastTag=false')
-    }
-
-    def 'fails when running snapshot With useLastTag'() {
-        when:
-        def result = runTasksAndFail('snapshot', '-Prelease.useLastTag=true')
-
-        then:
-        result.output.contains "Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks"
-        !new File(projectDir, "build/libs/${moduleName}-3.1.2-rc.1.jar").exists()
-    }
-
     def 'using tag 3.1.2 fails when running candidate'() {
         git.tag.add(name: "3.1.2")
 
@@ -859,38 +375,6 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
     }
 
-    def 'skip useLastTag if false'() {
-        when:
-        runTasks('final', '-Prelease.useLastTag=345')
-
-        then:
-        new File(projectDir, "build/libs/${moduleName}-0.1.0.jar").exists()
-    }
-
-    @Ignore("We need to visit the configuration/evaluation of extension")
-    def 'use last tag with custom tag strategy'() {
-        buildFile << '''\
-            release {
-              tagStrategy {
-                toTagString = { vs -> "version${vs}" }
-                parseTag = { tag ->
-                  try { com.github.zafarkhaja.semver.Version.valueOf(tag.name[7..-1]) } catch (Exception e) { null }
-                }
-              }
-            }
-        '''.stripIndent()
-        git.add(patterns: ['build.gradle'] as Set)
-        git.commit(message: 'setting tag strategy')
-
-        git.tag.add(name: 'version19.71.1')
-
-        when:
-        runTasksSuccessfully('final', '-Prelease.useLastTag=true')
-
-        then:
-        new File(projectDir, "build/libs/${moduleName}-19.71.1.jar").exists()
-    }
-
     def 'able to release with the override of version calculation'() {
         when:
         runTasks('final', '-Prelease.version=42.5.0')
@@ -898,31 +382,6 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         then:
         new File(projectDir, "build/libs/${moduleName}-42.5.0.jar").exists()
         originGit.tag.list()*.name.contains('42.5.0')
-    }
-
-    def 'error if release.version is set to an empty string'() {
-        when:
-        def result = runTasksAndFail('build', '-Prelease.version=')
-
-        then:
-        result.output.contains('Supplied release.version is empty')
-    }
-
-    def 'devSnapshot works if default is changed'() {
-        buildFile << '''\
-            release {
-                defaultVersionStrategy = nebula.plugin.release.NetflixOssStrategies.SNAPSHOT(project)
-            }
-        '''.stripIndent()
-        git.add(patterns: ['build.gradle'] as Set)
-        git.commit(message: 'Setup')
-        git.push()
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version.toString() == dev('0.1.0-dev.3+').toString()
     }
 
     def 'able to release from hash and push tag'() {
@@ -956,37 +415,6 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         originGit.branch.list().size() == 1
     }
 
-    def 'branches with slashes that do not match specified patterns do not fail builds'() {
-        git.checkout(branch: 'dev/robtest', createBranch: true)
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version == dev('0.1.0-dev.2+dev.robtest.')
-    }
-
-    def 'branches with dashes that do not match specified patterns do not fail builds'() {
-        git.checkout(branch: 'dev-robtest', createBranch: true)
-
-        when:
-        def version = inferredVersionForTask('devSnapshot')
-
-        then:
-        version == dev('0.1.0-dev.2+dev.robtest.')
-    }
-
-    def 'branches with dashes that do not match specified patterns do not fail builds - immutableSnapshot'() {
-        git.checkout(branch: 'dev-robtest', createBranch: true)
-
-        when:
-        def version = inferredVersionForTask('immutableSnapshot')
-
-        then:
-        version.toString().startsWith('0.1.0-snapshot.' + getUtcDateForComparison())
-        version.toString().contains('+dev.robtest.')
-    }
-
     def 'Can release final version with + not considered as pre-release'() {
         buildFile << '''\
             nebulaRelease {
@@ -1003,7 +431,7 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         git.tag.add(name: "3.1.2+release2")
 
         when:
-        def result = runTasks('final', '-Prelease.useLastTag=true')
+        runTasks('final', '-Prelease.useLastTag=true')
 
         then:
         !new File(projectDir, "build/libs/${moduleName}-3.1.2.jar").exists()
@@ -1032,150 +460,15 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         result.output.contains 'Current tag (3.1.2-release2) does not appear to be a final version'
     }
 
-
-    @Unroll('release task does not push for #task')
-    def 'release task does not push'() {
-        given:
-        String originalRemoteHeadCommit = originGit.head().abbreviatedId
-
-        buildFile << '// add a comment'
-        git.add(patterns: ['build.gradle'])
-        git.commit(message: 'commenting build.gradle')
-
-        when:
-        def results = runTasks(task)
-
-        then:
-        originalRemoteHeadCommit == originGit.head().abbreviatedId
-
-        where:
-        task << ['devSnapshot', 'snapshot']
-    }
-
-    def 'can release devSnapshot with sanitized version'() {
-        when:
-        def version = inferredVersionForTask('devSnapshot', '-Prelease.sanitizeVersion=true')
-
-        then:
-        version.toString().startsWith('0.1.0-dev.2.')
-    }
-
-    @Ignore("We need to visit the configuration/evaluation of extension")
-    def 'immutableSnapshot works as default when changed'() {
-        buildFile << '''\
-            release {
-                defaultVersionStrategy = nebula.plugin.release.NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project)
-            }
-        '''.stripIndent()
-        git.add(patterns: ['build.gradle'] as Set)
-        git.commit(message: 'Setup')
-        git.push()
-
-        when:
-        def version = inferredVersionForTask('build')
-
-        then:
-        version.toString().startsWith('0.1.0-snapshot.' + getUtcDateForComparison())
-    }
-
-    def 'immutableSnapshot works as default when dev is replaced with it'() {
-        replaceDevWithImmutableSnapshot()
-        git.add(patterns: ['build.gradle'] as Set)
-        git.commit(message: 'Setup')
-        git.push()
-
-        when:
-        def version = inferredVersionForTask('build')
-
-        then:
-        version.toString().startsWith('0.1.0-snapshot.' + getUtcDateForComparison())
-    }
-
-    def 'does not run prepare as default when releasing'() {
-        given:
-        def file = new File(projectDir, "test_file.txt")
-        file.text = "DUMMY"
-        git.add(patterns: ['.'] as Set)
-        git.commit(message: "Add file")
-        git.push(all: true)
-        runTasks('candidate')
-        git.branch.add(name: "0.1.x")
-        file.text = "Updated dummy"
-        git.add(patterns: ['.'] as Set)
-        git.commit(message: "Update file")
-        git.push(all: true)
-
-        when:
-        def result = runTasks('candidate')
-
-        then:
-        result.task(':prepare').outcome == TaskOutcome.SKIPPED
-    }
-
-    def 'executes prepare if checkRemoteBranchOnRelease when releasing'() {
-        given:
-        buildFile << """
-            ext.dryRun = true
-            group = 'test'
-
-            nebulaRelease { 
-                checkRemoteBranchOnRelease = true
-            }
-        """.stripIndent()
-        def file = new File(projectDir, "test_file.txt")
-        file.text = "DUMMY"
-        git.add(patterns: ['.'] as Set)
-        git.commit(message: "Add file")
-        git.push(all: true)
-        runTasks('candidate')
-        git.branch.add(name: "0.1.x")
-        file.text = "Updated dummy"
-        git.add(patterns: ['.'] as Set)
-        git.commit(message: "Update file")
-        git.push(all: true)
-
-        when:
-        def result = runTasks('candidate', '-Drelease.configurePrepareTaskEnabled=true')
-
-        then:
-        result.task(':prepare').outcome in [TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE]
-        result.task(':prepare').outcome != TaskOutcome.SKIPPED
-    }
-
-
-    def 'fails when branch ends with dash'() {
-        given:
-        buildFile << """
-            ext.dryRun = true
-            group = 'test'
-
-            nebulaRelease { 
-                checkRemoteBranchOnRelease = true
-            }
-        """.stripIndent()
-        def file = new File(projectDir, "test_file.txt")
-        file.text = "DUMMY"
-        git.add(patterns: ['.'] as Set)
-        git.commit(message: "Add file")
-        git.push(all: true)
-        git.checkout(branch: 'my-branch-with-dash-', createBranch: true)
-
-        when:
-        def result = runTasksAndFail('candidate', '-Drelease.configurePrepareTaskEnabled=true')
-
-        then:
-        result.output.contains('Nebula Release plugin does not support branches that end with dash (-)')
-    }
-
     @Unroll
     def 'useLastTag errors out if version has invalid number of digits - #version'() {
-        git.tag.add(name: "v$version")
+        git.tag.add(name: "$version")
 
         when:
         def result = runTasksAndFail('final', '-Prelease.useLastTag=true')
 
         then:
-        result.output.contains "Current commit has following tags: [v${version}] but they were not recognized as valid versions"
+        result.output.contains "Current commit has following tags: [${version}] but they were not recognized as valid versions"
         !new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
 
         where:
@@ -1195,25 +488,7 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         then:
         result.output.contains "Supplied release.version ($version) is not valid per semver spec. For more information, please refer to https://semver.org/"
         !new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
-        !originGit.tag.list()*.name.contains("v${version}")
-
-        where:
-        version << [
-                '42.5.3.5',
-                '42.5.3.5.3',
-                '42.5.3.1-rc.1',
-                '42.5.3.1.4-rc.1',
-        ]
-    }
-
-    @Unroll
-    def 'release with the override of version calculation does not errors out if version has invalid number of digits but verification is off - #version'() {
-        when:
-        def result = runTasks('final', "-Prelease.version=${version}", "-Prelease.ignoreSuppliedVersionVerification=true")
-
-        then:
-        !result.output.contains("Supplied release.version ($version) is not valid per semver spec. For more information, please refer to https://semver.org/")
-        new File(projectDir, "build/libs/${moduleName}-${version}.jar").exists()
+        !originGit.tag.list()*.name.contains("${version}")
 
         where:
         version << [
@@ -1261,53 +536,6 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         version.toString().startsWith("3.1.3-snapshot." + getUtcDateForComparison())
     }
 
-
-    def 'can configure immutableSnapshot timestamp precision'() {
-        given:
-        replaceDevWithImmutableSnapshot()
-        new File(buildFile.parentFile, "gradle.properties") << """
-\n
-nebula.release.features.immutableSnapshot.timestampPrecision=${precision.name()}
-"""
-
-        when:
-        def version = inferredVersionForTask('immutableSnapshot').toString()
-        int numberOfDigits = version.substring(version.indexOf("snapshot.") + 9, version.indexOf("+")).size()
-
-        then:
-        numberOfDigits == expectedNumberOfDigits
-
-        where:
-        precision | expectedNumberOfDigits
-        TimestampPrecision.DAYS |  8
-        TimestampPrecision.HOURS |  10
-        TimestampPrecision.MINUTES | 12
-        TimestampPrecision.SECONDS |  14
-        TimestampPrecision.MILLISECONDS |  17
-    }
-
-    def 'can use relative git.root'() {
-        given:
-        def subdir = new File(projectDir, 'subdir')
-        subdir.mkdirs()
-        ['build.gradle', 'settings.gradle'].each {
-            def file = new File(projectDir, it)
-            Files.move(file.toPath(), new File(subdir, it).toPath())
-        }
-        new File(subdir, 'gradle.properties') << 'git.root=..'
-
-        when:
-        def result = GradleRunner.create()
-                .withProjectDir(subdir)
-                .withArguments('help', '-s')
-                .withPluginClasspath()
-                .build()
-
-        then:
-        result.task(':help').outcome == TaskOutcome.SUCCESS
-    }
-
-
     private void replaceDevWithImmutableSnapshot() {
         new File(buildFile.parentFile, "gradle.properties").text = """
 nebula.release.features.replaceDevWithImmutableSnapshot=true
@@ -1318,7 +546,7 @@ nebula.release.features.replaceDevWithImmutableSnapshot=true
         return result.output.contains(substring)
     }
 
-    private String getUtcDateForComparison() {
+    private static String getUtcDateForComparison() {
         return TimestampUtil.getUTCFormattedTimestamp().take(8)
     }
 }
