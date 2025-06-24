@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release
 
+import groovy.xml.XmlSlurper
 import org.gradle.testkit.runner.BuildResult
 
 class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationTestKitSpec {

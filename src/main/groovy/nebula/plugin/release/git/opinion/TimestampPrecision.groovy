@@ -16,7 +16,7 @@ enum TimestampPrecision {
         this.dateTimeFormatter = formatter
     }
 
-    static createDateTimeFormatter(String format) {
+    static DateTimeFormatter createDateTimeFormatter(String format) {
         return DateTimeFormatter
                 .ofPattern(format)
                 .withZone(ZoneOffset.UTC)
