@@ -17,43 +17,47 @@ package nebula.plugin.release
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault
-class ReleaseCheck extends DefaultTask {
+abstract class ReleaseCheck extends DefaultTask {
     @Input
-    String branchName
+    abstract Property<String> getBranchName()
+
+    @Nested
+    abstract Property<ReleaseExtension> getPatterns()
+
     @Input
-    ReleaseExtension patterns
-    @Input
-    boolean isSnapshotRelease
+    abstract Property<Boolean> getIsSnapshotRelease()
 
     @TaskAction
     void check() {
-        if (patterns.allowReleaseFromDetached) {
+        if (patterns.allowReleaseFromDetached.get()) {
             return
         }
-        boolean includeMatch = patterns.releaseBranchPatterns.isEmpty()
+        boolean includeMatch = patterns.releaseBranchPatterns.get().isEmpty()
 
-        patterns.releaseBranchPatterns.each { String pattern ->
+        patterns.releaseBranchPatterns.get().each { String pattern ->
             if (getBranchName() ==~ pattern) includeMatch = true
         }
 
         boolean excludeMatch = false
-        patterns.excludeBranchPatterns.each { String pattern ->
+        patterns.excludeBranchPatterns.get().each { String pattern ->
             if (getBranchName() ==~ pattern) excludeMatch = true
         }
 
         if (!includeMatch && !isSnapshotRelease) {
-            String message = "Branch ${getBranchName()} does not match one of the included patterns: ${patterns.releaseBranchPatterns}"
+            String message = "Branch ${getBranchName()} does not match one of the included patterns: ${patterns.releaseBranchPatterns.get()}"
             logger.error(message)
             throw new GradleException(message)
         }
 
         if (excludeMatch) {
-            String message = "Branch ${getBranchName()} matched an excluded pattern: ${patterns.excludeBranchPatterns}"
+            String message = "Branch ${getBranchName()} matched an excluded pattern: ${patterns.excludeBranchPatterns.get()}"
             logger.error(message)
             throw new GradleException(message)
         }

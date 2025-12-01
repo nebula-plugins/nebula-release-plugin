@@ -15,20 +15,42 @@
  */
 package nebula.plugin.release
 
-class ReleaseExtension {
-    Set<String> releaseBranchPatterns = [/master/, /HEAD/, /main/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/] as Set<String>
-    Set<String> excludeBranchPatterns = [] as Set<String>
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Input
+
+import javax.inject.Inject
+
+abstract class ReleaseExtension {
+    @Input
+    abstract SetProperty<String> getReleaseBranchPatterns()
+
+    @Input
+    abstract SetProperty<String> getExcludeBranchPatterns()
 
     /**
      * This should be a regex pattern with one(1) capture group. By default shortens the typical
      * {bugfix|feature|hotfix|release}/branch-name to branch-name. The prefix is optional and a
      * dash may be used instead of the forward slash.
      */
-    String shortenedBranchPattern = /(?:(?:bugfix|feature|hotfix|release)(?:-|\/))?(.+)/
+    @Input
+    abstract Property<String> getShortenedBranchPattern()
 
-    Boolean allowReleaseFromDetached = false
+    @Input
+    abstract Property<Boolean> getAllowReleaseFromDetached()
 
-    Boolean checkRemoteBranchOnRelease = false
+    @Input
+    abstract Property<Boolean> getCheckRemoteBranchOnRelease()
+
+    @Inject
+    ReleaseExtension(ObjectFactory objects) {
+        releaseBranchPatterns.convention([/master/, /HEAD/, /main/, /(release(-|\/))?\d+(\.\d+)?\.x/, /v?\d+\.\d+\.\d+/] as Set<String>)
+        excludeBranchPatterns.convention([] as Set<String>)
+        shortenedBranchPattern.convention(/(?:(?:bugfix|feature|hotfix|release)(?:-|\/))?(.+)/)
+        allowReleaseFromDetached.convention(false)
+        checkRemoteBranchOnRelease.convention(false)
+    }
 
     void addReleaseBranchPattern(String pattern) {
         releaseBranchPatterns.add(pattern)

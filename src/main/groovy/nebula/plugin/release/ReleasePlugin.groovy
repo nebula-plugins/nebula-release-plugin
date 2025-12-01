@@ -187,7 +187,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             project.gradle.taskGraph.whenReady { TaskExecutionGraph g ->
-                if (!nebulaReleaseExtension.checkRemoteBranchOnRelease) {
+                if (!nebulaReleaseExtension.checkRemoteBranchOnRelease.get()) {
                     removePrepLogic(project)
                 }
             }
