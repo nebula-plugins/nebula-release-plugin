@@ -58,6 +58,7 @@ class ReleasePlugin implements Plugin<Project> {
     @Inject
     ReleasePlugin(Project project, ExecOperations execOperations, ProviderFactory providerFactory) {
         this.gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir
+
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
         }).get()
@@ -89,10 +90,10 @@ class ReleasePlugin implements Plugin<Project> {
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
 
             SemVerStrategy defaultStrategy = replaceDevSnapshots ? NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project) : NetflixOssStrategies.DEVELOPMENT(project)
-            def propertyBasedStrategy
-            if (project.hasProperty(DEFAULT_VERSIONING_STRATEGY)) {
-                propertyBasedStrategy = getPropertyBasedVersioningStrategy()
-            }
+
+            def propertyBasedStrategy = project.providers.gradleProperty(DEFAULT_VERSIONING_STRATEGY)
+                .map { clazzName -> getPropertyBasedVersioningStrategy(clazzName) }
+                .getOrNull()
             releaseExtension.with {
                 versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
@@ -126,8 +127,8 @@ class ReleasePlugin implements Plugin<Project> {
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP
-                it.branchName = gitBuildService.currentBranch
-                it.patterns = nebulaReleaseExtension
+                it.branchName.set(gitBuildService.currentBranch)
+                it.patterns.set(nebulaReleaseExtension)
             }
 
             TaskProvider<Task> postReleaseTask = project.tasks.register(POST_RELEASE_TASK_NAME) {
@@ -220,8 +221,7 @@ class ReleasePlugin implements Plugin<Project> {
         configureArtifactoryGradlePluginIfPresent()
     }
 
-    private Object getPropertyBasedVersioningStrategy() {
-        String clazzName = project.property(DEFAULT_VERSIONING_STRATEGY).toString()
+    private Object getPropertyBasedVersioningStrategy(String clazzName) {
         try {
             return Class.forName(clazzName).getDeclaredConstructor().newInstance()
         } catch (ClassNotFoundException e) {
@@ -260,7 +260,7 @@ class ReleasePlugin implements Plugin<Project> {
         def isSnapshotRelease = hasSnapshot || hasDevSnapshot || hasImmutableSnapshot || (!hasCandidate && !hasFinal)
 
         releaseCheck.configure {
-            it.isSnapshotRelease = isSnapshotRelease
+            it.isSnapshotRelease.set(isSnapshotRelease)
         }
 
         if (hasFinal) {
@@ -295,8 +295,12 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private boolean shouldSkipGitChecks() {
-        def disableGit = project.hasProperty(DISABLE_GIT_CHECKS) && project.property(DISABLE_GIT_CHECKS) as Boolean
-        def travis = project.hasProperty('release.travisci') && project.property('release.travisci').toString().toBoolean()
+        def disableGit = project.providers.gradleProperty(DISABLE_GIT_CHECKS)
+            .map { it.toBoolean() }
+            .getOrElse(false)
+        def travis = project.providers.gradleProperty('release.travisci')
+            .map { it.toBoolean() }
+            .getOrElse(false)
         disableGit || travis
     }
 
@@ -304,7 +308,7 @@ class ReleasePlugin implements Plugin<Project> {
     void setupStatus(String status) {
         project.plugins.withType(IvyPublishPlugin) {
             project.publishing {
-                publications.withType(IvyPublication) {
+                publications.withType(IvyPublication).configureEach {
                     descriptor.status = status
                 }
             }

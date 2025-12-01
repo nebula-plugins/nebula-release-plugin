@@ -36,28 +36,32 @@ abstract class ReleaseCheck extends DefaultTask {
 
     @TaskAction
     void check() {
-        if (patterns.allowReleaseFromDetached.get()) {
+        ReleaseExtension patternsValue = patterns.get()
+        String branch = branchName.get()
+        boolean isSnapshot = isSnapshotRelease.get()
+
+        if (patternsValue.allowReleaseFromDetached.get()) {
             return
         }
-        boolean includeMatch = patterns.releaseBranchPatterns.get().isEmpty()
+        boolean includeMatch = patternsValue.releaseBranchPatterns.get().isEmpty()
 
-        patterns.releaseBranchPatterns.get().each { String pattern ->
-            if (getBranchName() ==~ pattern) includeMatch = true
+        patternsValue.releaseBranchPatterns.get().each { String pattern ->
+            if (branch ==~ pattern) includeMatch = true
         }
 
         boolean excludeMatch = false
-        patterns.excludeBranchPatterns.get().each { String pattern ->
-            if (getBranchName() ==~ pattern) excludeMatch = true
+        patternsValue.excludeBranchPatterns.get().each { String pattern ->
+            if (branch ==~ pattern) excludeMatch = true
         }
 
-        if (!includeMatch && !isSnapshotRelease) {
-            String message = "Branch ${getBranchName()} does not match one of the included patterns: ${patterns.releaseBranchPatterns.get()}"
+        if (!includeMatch && !isSnapshot) {
+            String message = "Branch ${branch} does not match one of the included patterns: ${patternsValue.releaseBranchPatterns.get()}"
             logger.error(message)
             throw new GradleException(message)
         }
 
         if (excludeMatch) {
-            String message = "Branch ${getBranchName()} matched an excluded pattern: ${patterns.excludeBranchPatterns.get()}"
+            String message = "Branch ${branch} matched an excluded pattern: ${patternsValue.excludeBranchPatterns.get()}"
             logger.error(message)
             throw new GradleException(message)
         }
