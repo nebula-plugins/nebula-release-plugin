@@ -30,6 +30,7 @@ import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.publish.ivy.IvyPublication
 import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
@@ -51,7 +52,7 @@ class ReleasePlugin implements Plugin<Project> {
     static Logger logger = Logging.getLogger(ReleasePlugin)
     static final String GROUP = 'Nebula Release'
 
-    private final GitBuildService gitBuildService
+    private final Provider<GitBuildService> gitBuildService
     private final File gitRoot
 
     @CompileDynamic
@@ -61,7 +62,7 @@ class ReleasePlugin implements Plugin<Project> {
 
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
-        }).get()
+        })
     }
 
     @CompileDynamic
@@ -69,7 +70,7 @@ class ReleasePlugin implements Plugin<Project> {
     void apply(Project project) {
         this.project = project
 
-        boolean isGitRepo = gitBuildService.isGitRepo()
+        boolean isGitRepo = gitBuildService.get().isGitRepo()
         if(!isGitRepo) {
             this.project.version = '0.1.0-dev.0.uncommitted'
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
@@ -80,7 +81,7 @@ class ReleasePlugin implements Plugin<Project> {
             // Verify user git config only when using release tags and 'release.useLastTag' property is not used
             boolean shouldVerifyUserGitConfig = isReleaseTaskThatRequiresTagging(project.gradle.startParameter.taskNames) && !isUsingLatestTag(project)
             if(shouldVerifyUserGitConfig) {
-                gitBuildService.verifyUserGitConfig()
+                gitBuildService.get().verifyUserGitConfig()
             }
 
             checkForBadBranchNames()
@@ -127,7 +128,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP
-                it.branchName.set(gitBuildService.currentBranch)
+                it.branchName.set(gitBuildService.map { it.currentBranch })
                 it.patterns.set(nebulaReleaseExtension)
             }
 
@@ -296,7 +297,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     private void checkStateForStage(boolean isSnapshotRelease) {
         if (!isSnapshotRelease) {
-            String status = gitBuildService.status
+            String status = gitBuildService.get().status
             if (!status.empty) {
                 String message = new ErrorMessageFormatter().format(status)
                 throw new GradleException(message)
@@ -384,7 +385,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void checkForBadBranchNames() {
-        String currentBranch = gitBuildService.currentBranch
+        String currentBranch = gitBuildService.get().currentBranch
         if (!currentBranch) {
             return
         }

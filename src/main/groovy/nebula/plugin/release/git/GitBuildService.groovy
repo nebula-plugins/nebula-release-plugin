@@ -36,30 +36,30 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
         DirectoryProperty getGitRootDir()
     }
 
-    private final boolean isGitRepo
-    private final boolean hasCommit
-    private final String currentBranch
-    private final String head
-    private final String status
-    private final boolean isCleanStatus
+    private final Provider<Boolean> isGitRepo
+    private final Provider<Boolean> hasCommit
+    private final Provider<String> currentBranch
+    private final Provider<String> head
+    private final Provider<String> status
+    private final Provider<Boolean> isCleanStatus
     private final File gitRootDir
     private final ProviderFactory providerFactory
-    private final List<TagRef> headTags
-    private final Integer commitCountForHead
+    private final Provider<List<TagRef>> headTags
+    private final Provider<Integer> commitCountForHead
     private static final Logger LOGGER = LoggerFactory.getLogger(GitBuildService.class)
 
     @Inject
     GitBuildService(ProviderFactory providers) {
         this.gitRootDir = getParameters().gitRootDir.get().asFile
         this.providerFactory = providers
-        this.isGitRepo = detectIsGitRepo()
-        this.currentBranch = detectCurrentBranch()
-        this.status = determineStatus()
-        this.hasCommit = determineHasCommit()
-        this.isCleanStatus = determineIsCleanStatus()
-        this.head = determineHead()
-        this.headTags = determineHeadTags()
-        this.commitCountForHead = determineCommitCountForHead()
+        this.isGitRepo = providers.provider { detectIsGitRepo() }
+        this.currentBranch = providers.provider { detectCurrentBranch() }
+        this.status = providers.provider { determineStatus() }
+        this.hasCommit = providers.provider { determineHasCommit() }
+        this.isCleanStatus = providers.provider { determineIsCleanStatus() }
+        this.head = providers.provider { determineHead() }
+        this.headTags = providers.provider { determineHeadTags() }
+        this.commitCountForHead = providers.provider { determineCommitCountForHead() }
     }
 
     /**
@@ -109,7 +109,7 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
      *    git rev-parse --is-inside-work-tree -> fatal: not a git repository (or any of the parent directories): .git when there isn't a repo
      */
     boolean isGitRepo() {
-        return this.isGitRepo
+        return this.isGitRepo.get()
     }
 
     /**
@@ -117,14 +117,14 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
      * ex.  git rev-parse --abbrev-ref HEAD  -> configuration-cache-support
      */
     String getCurrentBranch() {
-        return this.currentBranch
+        return this.currentBranch.getOrNull()
     }
 
     /**
      * Uses to determine if a given repo has any commit
      */
     boolean hasCommit() {
-        return this.hasCommit
+        return this.hasCommit.get()
     }
 
     /**
@@ -132,23 +132,23 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
      * ex. git rev-parse HEAD -> 8e6c4c925a54dbe827f043d21cd7a2a01b97fbac
      */
     String getHead() {
-        return this.head
+        return this.head.getOrNull()
     }
 
     String getStatus() {
-        return this.status
+        return this.status.getOrNull()
     }
 
     boolean isCleanStatus() {
-        return this.isCleanStatus
+        return this.isCleanStatus.get()
     }
 
     List<TagRef> headTags() {
-        return this.headTags
+        return this.headTags.getOrElse(Collections.emptyList())
     }
 
     Integer getCommitCountForHead() {
-        return this.commitCountForHead
+        return this.commitCountForHead.get()
     }
 
     String describeHeadWithTags(boolean excludePreReleases) {

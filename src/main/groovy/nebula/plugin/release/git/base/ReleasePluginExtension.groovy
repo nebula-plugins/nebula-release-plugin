@@ -17,10 +17,11 @@ package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.GitBuildService
-import nebula.plugin.release.util.ConfigureUtil
 
+import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -38,7 +39,7 @@ import javax.inject.Inject
  *
  * @see BaseReleasePlugin
  */
-class ReleasePluginExtension {
+abstract class ReleasePluginExtension {
     private static final Logger logger = LoggerFactory.getLogger(ReleasePluginExtension)
     protected final Project project
     private final Map<String, VersionStrategy> versionStrategies = [:]
@@ -63,7 +64,7 @@ class ReleasePluginExtension {
     /**
      * The remote to fetch changes from and push changes to.
      */
-    String remote = 'origin'
+    abstract Property<String> getRemote()
 
     @CompileDynamic
     @Inject
@@ -73,6 +74,7 @@ class ReleasePluginExtension {
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
         }).get()
+        remote.convention('origin')
         def sharedVersion = new DelayedVersion()
         project.rootProject.allprojects { Project p ->
             p.version = sharedVersion
@@ -95,10 +97,10 @@ class ReleasePluginExtension {
     }
 
     /**
-     * Configures the tag strategy with the provided closure.
+     * Configures the tag strategy with the provided action.
      */
-    void tagStrategy(Closure closure) {
-        ConfigureUtil.configure(closure, tagStrategy)
+    void tagStrategy(Action<TagStrategy> action) {
+        action.execute(tagStrategy)
     }
 
     private class DelayedVersion implements Serializable {
