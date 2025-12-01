@@ -136,47 +136,57 @@ class ReleasePlugin implements Plugin<Project> {
                 it.dependsOn project.tasks.named('release')
             }
 
-            TaskProvider snapshotSetupTask = project.tasks.register(SNAPSHOT_SETUP_TASK_NAME)
-            TaskProvider immutableSnapshotSetupTask = project.tasks.register(IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME)
-            TaskProvider devSnapshotSetupTask = project.tasks.register(DEV_SNAPSHOT_SETUP_TASK_NAME)
+            TaskProvider snapshotSetupTask = project.tasks.register(SNAPSHOT_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
+            }
+            TaskProvider immutableSnapshotSetupTask = project.tasks.register(IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
+            }
+            TaskProvider devSnapshotSetupTask = project.tasks.register(DEV_SNAPSHOT_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
+            }
             TaskProvider candidateSetupTask = project.tasks.register(CANDIDATE_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
                 it.configure {
                     project.allprojects.each { it.status = 'candidate' }
                 }
             }
             TaskProvider finalSetupTask = project.tasks.register(FINAL_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
                 it.configure {
                     project.allprojects.each { it.status = 'release' }
                 }
             }
-            [snapshotSetupTask, immutableSnapshotSetupTask, devSnapshotSetupTask, candidateSetupTask, finalSetupTask].each {
-                it.configure {
-                    it.group = GROUP
-                    it.dependsOn releaseCheck
-                }
-            }
 
             TaskProvider<Task> snapshotTask = project.tasks.register(SNAPSHOT_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn snapshotSetupTask
+                it.dependsOn postReleaseTask
             }
             TaskProvider<Task> immutableSnapshotTask = project.tasks.register(IMMUTABLE_SNAPSHOT_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn immutableSnapshotSetupTask
+                it.dependsOn postReleaseTask
             }
             TaskProvider<Task> devSnapshotTask = project.tasks.register(DEV_SNAPSHOT_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn devSnapshotSetupTask
+                it.dependsOn postReleaseTask
             }
             TaskProvider<Task> candidateTask = project.tasks.register(CANDIDATE_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn candidateSetupTask
+                it.dependsOn postReleaseTask
             }
             TaskProvider<Task> finalTask = project.tasks.register(FINAL_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn finalSetupTask
-            }
-
-            [snapshotTask, immutableSnapshotTask, devSnapshotTask, candidateTask, finalTask].each {
-                it.configure {
-                    it.group = GROUP
-                    it.dependsOn postReleaseTask
-                }
+                it.dependsOn postReleaseTask
             }
 
             List<String> cliTasks = project.gradle.startParameter.taskNames

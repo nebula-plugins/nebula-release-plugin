@@ -21,6 +21,7 @@ import nebula.plugin.release.util.ConfigureUtil
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -100,12 +101,15 @@ class ReleasePluginExtension {
         ConfigureUtil.configure(closure, tagStrategy)
     }
 
-    // TODO: Decide if this should be thread-safe.
     private class DelayedVersion implements Serializable {
-        ReleaseVersion inferredVersion
+        private final Provider<ReleaseVersion> inferredVersionProvider
+
+        DelayedVersion() {
+            this.inferredVersionProvider = project.provider { -> infer() }
+        }
 
         @CompileDynamic
-        private void infer() {
+        private ReleaseVersion infer() {
             VersionStrategy selectedStrategy = versionStrategies.find {  strategy ->
                 strategy.selector(project, gitBuildService)
             }
@@ -126,15 +130,16 @@ class ReleasePluginExtension {
                 }
             }
 
-            inferredVersion = selectedStrategy.infer(project, gitBuildService)
+            return selectedStrategy.infer(project, gitBuildService)
+        }
+
+        ReleaseVersion getInferredVersion() {
+            return inferredVersionProvider.get()
         }
 
         @Override
         String toString() {
-            if (!inferredVersion) {
-                infer()
-            }
-            return inferredVersion.version
+            return inferredVersionProvider.get().version
         }
     }
 }
