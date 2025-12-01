@@ -30,6 +30,7 @@ import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.publish.ivy.IvyPublication
 import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin
@@ -51,16 +52,17 @@ class ReleasePlugin implements Plugin<Project> {
     static Logger logger = Logging.getLogger(ReleasePlugin)
     static final String GROUP = 'Nebula Release'
 
-    private final GitBuildService gitBuildService
+    private final Provider<GitBuildService> gitBuildService
     private final File gitRoot
 
     @CompileDynamic
     @Inject
     ReleasePlugin(Project project, ExecOperations execOperations, ProviderFactory providerFactory) {
         this.gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir
+
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
-        }).get()
+        })
     }
 
     @CompileDynamic
@@ -68,7 +70,7 @@ class ReleasePlugin implements Plugin<Project> {
     void apply(Project project) {
         this.project = project
 
-        boolean isGitRepo = gitBuildService.isGitRepo()
+        boolean isGitRepo = gitBuildService.get().isGitRepo()
         if(!isGitRepo) {
             this.project.version = '0.1.0-dev.0.uncommitted'
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
@@ -79,7 +81,7 @@ class ReleasePlugin implements Plugin<Project> {
             // Verify user git config only when using release tags and 'release.useLastTag' property is not used
             boolean shouldVerifyUserGitConfig = isReleaseTaskThatRequiresTagging(project.gradle.startParameter.taskNames) && !isUsingLatestTag(project)
             if(shouldVerifyUserGitConfig) {
-                gitBuildService.verifyUserGitConfig()
+                gitBuildService.get().verifyUserGitConfig()
             }
 
             checkForBadBranchNames()
@@ -89,10 +91,10 @@ class ReleasePlugin implements Plugin<Project> {
             ReleasePluginExtension releaseExtension = project.extensions.findByType(ReleasePluginExtension)
 
             SemVerStrategy defaultStrategy = replaceDevSnapshots ? NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project) : NetflixOssStrategies.DEVELOPMENT(project)
-            def propertyBasedStrategy
-            if (project.hasProperty(DEFAULT_VERSIONING_STRATEGY)) {
-                propertyBasedStrategy = getPropertyBasedVersioningStrategy()
-            }
+
+            def propertyBasedStrategy = project.providers.gradleProperty(DEFAULT_VERSIONING_STRATEGY)
+                .map { clazzName -> getPropertyBasedVersioningStrategy(clazzName) }
+                .getOrNull()
             releaseExtension.with {
                 versionStrategy new OverrideStrategies.NoCommitStrategy()
                 versionStrategy new OverrideStrategies.ReleaseLastTagStrategy(project)
@@ -126,8 +128,8 @@ class ReleasePlugin implements Plugin<Project> {
 
             TaskProvider<ReleaseCheck> releaseCheck = project.tasks.register(RELEASE_CHECK_TASK_NAME, ReleaseCheck) {
                 it.group = GROUP
-                it.branchName = gitBuildService.currentBranch
-                it.patterns = nebulaReleaseExtension
+                it.branchName.set(gitBuildService.map { it.currentBranch })
+                it.patterns.set(nebulaReleaseExtension)
             }
 
             TaskProvider<Task> postReleaseTask = project.tasks.register(POST_RELEASE_TASK_NAME) {
@@ -135,47 +137,57 @@ class ReleasePlugin implements Plugin<Project> {
                 it.dependsOn project.tasks.named('release')
             }
 
-            TaskProvider snapshotSetupTask = project.tasks.register(SNAPSHOT_SETUP_TASK_NAME)
-            TaskProvider immutableSnapshotSetupTask = project.tasks.register(IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME)
-            TaskProvider devSnapshotSetupTask = project.tasks.register(DEV_SNAPSHOT_SETUP_TASK_NAME)
+            TaskProvider snapshotSetupTask = project.tasks.register(SNAPSHOT_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
+            }
+            TaskProvider immutableSnapshotSetupTask = project.tasks.register(IMMUTABLE_SNAPSHOT_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
+            }
+            TaskProvider devSnapshotSetupTask = project.tasks.register(DEV_SNAPSHOT_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
+            }
             TaskProvider candidateSetupTask = project.tasks.register(CANDIDATE_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
                 it.configure {
                     project.allprojects.each { it.status = 'candidate' }
                 }
             }
             TaskProvider finalSetupTask = project.tasks.register(FINAL_SETUP_TASK_NAME) {
+                it.group = GROUP
+                it.dependsOn releaseCheck
                 it.configure {
                     project.allprojects.each { it.status = 'release' }
                 }
             }
-            [snapshotSetupTask, immutableSnapshotSetupTask, devSnapshotSetupTask, candidateSetupTask, finalSetupTask].each {
-                it.configure {
-                    it.group = GROUP
-                    it.dependsOn releaseCheck
-                }
-            }
 
             TaskProvider<Task> snapshotTask = project.tasks.register(SNAPSHOT_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn snapshotSetupTask
+                it.dependsOn postReleaseTask
             }
             TaskProvider<Task> immutableSnapshotTask = project.tasks.register(IMMUTABLE_SNAPSHOT_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn immutableSnapshotSetupTask
+                it.dependsOn postReleaseTask
             }
             TaskProvider<Task> devSnapshotTask = project.tasks.register(DEV_SNAPSHOT_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn devSnapshotSetupTask
+                it.dependsOn postReleaseTask
             }
             TaskProvider<Task> candidateTask = project.tasks.register(CANDIDATE_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn candidateSetupTask
+                it.dependsOn postReleaseTask
             }
             TaskProvider<Task> finalTask = project.tasks.register(FINAL_TASK_NAME) {
+                it.group = GROUP
                 it.dependsOn finalSetupTask
-            }
-
-            [snapshotTask, immutableSnapshotTask, devSnapshotTask, candidateTask, finalTask].each {
-                it.configure {
-                    it.group = GROUP
-                    it.dependsOn postReleaseTask
-                }
+                it.dependsOn postReleaseTask
             }
 
             List<String> cliTasks = project.gradle.startParameter.taskNames
@@ -187,7 +199,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             project.gradle.taskGraph.whenReady { TaskExecutionGraph g ->
-                if (!nebulaReleaseExtension.checkRemoteBranchOnRelease) {
+                if (!nebulaReleaseExtension.checkRemoteBranchOnRelease.get()) {
                     removePrepLogic(project)
                 }
             }
@@ -220,8 +232,7 @@ class ReleasePlugin implements Plugin<Project> {
         configureArtifactoryGradlePluginIfPresent()
     }
 
-    private Object getPropertyBasedVersioningStrategy() {
-        String clazzName = project.property(DEFAULT_VERSIONING_STRATEGY).toString()
+    private Object getPropertyBasedVersioningStrategy(String clazzName) {
         try {
             return Class.forName(clazzName).getDeclaredConstructor().newInstance()
         } catch (ClassNotFoundException e) {
@@ -260,7 +271,7 @@ class ReleasePlugin implements Plugin<Project> {
         def isSnapshotRelease = hasSnapshot || hasDevSnapshot || hasImmutableSnapshot || (!hasCandidate && !hasFinal)
 
         releaseCheck.configure {
-            it.isSnapshotRelease = isSnapshotRelease
+            it.isSnapshotRelease.set(isSnapshotRelease)
         }
 
         if (hasFinal) {
@@ -286,7 +297,7 @@ class ReleasePlugin implements Plugin<Project> {
 
     private void checkStateForStage(boolean isSnapshotRelease) {
         if (!isSnapshotRelease) {
-            String status = gitBuildService.status
+            String status = gitBuildService.get().status
             if (!status.empty) {
                 String message = new ErrorMessageFormatter().format(status)
                 throw new GradleException(message)
@@ -295,8 +306,12 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private boolean shouldSkipGitChecks() {
-        def disableGit = project.hasProperty(DISABLE_GIT_CHECKS) && project.property(DISABLE_GIT_CHECKS) as Boolean
-        def travis = project.hasProperty('release.travisci') && project.property('release.travisci').toString().toBoolean()
+        def disableGit = project.providers.gradleProperty(DISABLE_GIT_CHECKS)
+            .map { it.toBoolean() }
+            .getOrElse(false)
+        def travis = project.providers.gradleProperty('release.travisci')
+            .map { it.toBoolean() }
+            .getOrElse(false)
         disableGit || travis
     }
 
@@ -304,7 +319,7 @@ class ReleasePlugin implements Plugin<Project> {
     void setupStatus(String status) {
         project.plugins.withType(IvyPublishPlugin) {
             project.publishing {
-                publications.withType(IvyPublication) {
+                publications.withType(IvyPublication).configureEach {
                     descriptor.status = status
                 }
             }
@@ -370,7 +385,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void checkForBadBranchNames() {
-        String currentBranch = gitBuildService.currentBranch
+        String currentBranch = gitBuildService.get().currentBranch
         if (!currentBranch) {
             return
         }

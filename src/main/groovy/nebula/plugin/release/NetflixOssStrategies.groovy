@@ -131,12 +131,12 @@ class NetflixOssStrategies {
         return { state ->
             def nebulaReleaseExtension = project.extensions.findByType(ReleaseExtension)
             boolean needsBranchMetadata = true
-            nebulaReleaseExtension.releaseBranchPatterns.each {
+            nebulaReleaseExtension.releaseBranchPatterns.get().each {
                 if (state.currentBranch.name =~ it) {
                     needsBranchMetadata = false
                 }
             }
-            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern)[0][1]
+            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern.get())[0][1]
             shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
             def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
             state.copyWith(inferredBuildMetadata: metadata)

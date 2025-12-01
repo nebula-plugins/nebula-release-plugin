@@ -27,7 +27,7 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infers default version if selector returns false for all but default'() {
         given:
         Project project = ProjectBuilder.builder().build()
-        ReleasePluginExtension extension = new ReleasePluginExtension(project)
+        ReleasePluginExtension extension = project.objects.newInstance(ReleasePluginExtension, project)
         extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
@@ -43,7 +43,7 @@ class ReleasePluginExtensionSpec extends Specification {
 
     def 'infers using first strategy selector returns true for'() {
         Project project = ProjectBuilder.builder().build()
-        ReleasePluginExtension extension = new ReleasePluginExtension(project)
+        ReleasePluginExtension extension = project.objects.newInstance(ReleasePluginExtension, project)
         extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
@@ -59,7 +59,7 @@ class ReleasePluginExtensionSpec extends Specification {
 
     def 'infers using first strategy selector returns true for in order'() {
         Project project = ProjectBuilder.builder().build()
-        ReleasePluginExtension extension = new ReleasePluginExtension(project)
+        ReleasePluginExtension extension = project.objects.newInstance(ReleasePluginExtension, project)
         extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
@@ -76,7 +76,7 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infer uses default if it has default selector that passes when selector doesnt'() {
         given:
         Project project = ProjectBuilder.builder().build()
-        ReleasePluginExtension extension = new ReleasePluginExtension(project)
+        ReleasePluginExtension extension = project.objects.newInstance(ReleasePluginExtension, project)
         extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
@@ -94,7 +94,7 @@ class ReleasePluginExtensionSpec extends Specification {
     def 'infer fails if no strategy selected including the default strategy'() {
         given:
         Project project = ProjectBuilder.builder().build()
-        ReleasePluginExtension extension = new ReleasePluginExtension(project)
+        ReleasePluginExtension extension = project.objects.newInstance(ReleasePluginExtension, project)
         extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
@@ -112,7 +112,7 @@ class ReleasePluginExtensionSpec extends Specification {
 
     def 'infer fails if no strategy selected and no default set'() {
         Project project = ProjectBuilder.builder().build()
-        ReleasePluginExtension extension = new ReleasePluginExtension(project)
+        ReleasePluginExtension extension = project.objects.newInstance(ReleasePluginExtension, project)
         extension.gitBuildService = GroovyMock(GitBuildService)
         extension.versionStrategy([
             getName: { 'b' },
