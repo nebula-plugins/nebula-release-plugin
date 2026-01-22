@@ -129,6 +129,13 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationTest
         xml.info.@status == 'candidate'
     }
 
+    def 'candidate sets project.status as candidate'() {
+        when:
+        def result = runTasks('candidate', 'printStatus')
+
+        then:
+        result.output.contains 'Project Status: candidate'
+    }
 
     def 'final sets release status'() {
         when:
@@ -137,6 +144,14 @@ class ReleasePluginIvyStatusIntegrationSpec extends GitVersioningIntegrationTest
         then:
         def xml = loadIvyFileViaVersionLookup(result)
         xml.info.@status == 'release'
+    }
+
+    def 'final sets project.status as release'() {
+        when:
+        def result = runTasks('final', 'printStatus')
+
+        then:
+        result.output.contains 'Project Status: release'
     }
 
 }

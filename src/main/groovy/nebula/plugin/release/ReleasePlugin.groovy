@@ -152,16 +152,10 @@ class ReleasePlugin implements Plugin<Project> {
             TaskProvider candidateSetupTask = project.tasks.register(CANDIDATE_SETUP_TASK_NAME) {
                 it.group = GROUP
                 it.dependsOn releaseCheck
-                it.configure {
-                    project.allprojects.each { it.status = 'candidate' }
-                }
             }
             TaskProvider finalSetupTask = project.tasks.register(FINAL_SETUP_TASK_NAME) {
                 it.group = GROUP
                 it.dependsOn releaseCheck
-                it.configure {
-                    project.allprojects.each { it.status = 'release' }
-                }
             }
 
             TaskProvider<Task> snapshotTask = project.tasks.register(SNAPSHOT_TASK_NAME) {
@@ -275,9 +269,11 @@ class ReleasePlugin implements Plugin<Project> {
         }
 
         if (hasFinal) {
+            project.allprojects.each { it.status = 'release' }
             setupStatus('release')
             applyReleaseStage('final')
         } else if (hasCandidate) {
+            project.allprojects.each { it.status = 'candidate' }
             setupStatus('candidate')
             applyReleaseStage('rc')
         } else if (hasImmutableSnapshot) {
