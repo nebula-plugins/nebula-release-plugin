@@ -48,18 +48,18 @@ import static nebula.plugin.release.util.ReleaseTasksUtil.*
 class ReleasePlugin implements Plugin<Project> {
     public static final String DISABLE_GIT_CHECKS = 'release.disableGitChecks'
     public static final String DEFAULT_VERSIONING_STRATEGY = 'release.defaultVersioningStrategy'
-    Project project
     static Logger logger = Logging.getLogger(ReleasePlugin)
     static final String GROUP = 'Nebula Release'
 
     private final Provider<GitBuildService> gitBuildService
     private final File gitRoot
+    private final ProviderFactory providers
 
     @CompileDynamic
     @Inject
     ReleasePlugin(Project project, ExecOperations execOperations, ProviderFactory providerFactory) {
         this.gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir
-
+        providers = providerFactory
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
         })
@@ -68,11 +68,10 @@ class ReleasePlugin implements Plugin<Project> {
     @CompileDynamic
     @Override
     void apply(Project project) {
-        this.project = project
 
         boolean isGitRepo = gitBuildService.get().isGitRepo()
         if(!isGitRepo) {
-            this.project.version = '0.1.0-dev.0.uncommitted'
+            project.version = '0.1.0-dev.0.uncommitted'
             logger.warn("Git repository not found at $gitRoot -- nebula-release tasks will not be available. Use the git.root Gradle property to specify a different directory.")
             return
         }
@@ -92,7 +91,7 @@ class ReleasePlugin implements Plugin<Project> {
 
             SemVerStrategy defaultStrategy = replaceDevSnapshots ? NetflixOssStrategies.IMMUTABLE_SNAPSHOT(project) : NetflixOssStrategies.DEVELOPMENT(project)
 
-            def propertyBasedStrategy = project.providers.gradleProperty(DEFAULT_VERSIONING_STRATEGY)
+            def propertyBasedStrategy = providers.gradleProperty(DEFAULT_VERSIONING_STRATEGY)
                 .map { clazzName -> getPropertyBasedVersioningStrategy(clazzName) }
                 .getOrNull()
             releaseExtension.with {
@@ -191,7 +190,7 @@ class ReleasePlugin implements Plugin<Project> {
             }
 
             List<String> cliTasks = project.gradle.startParameter.taskNames
-            def isSnapshotRelease = determineStage(cliTasks, releaseCheck, replaceDevSnapshots)
+            def isSnapshotRelease = determineStage(project, cliTasks, releaseCheck, replaceDevSnapshots)
             checkStateForStage(isSnapshotRelease)
 
             if (shouldSkipGitChecks()) {
@@ -228,8 +227,8 @@ class ReleasePlugin implements Plugin<Project> {
             }
         }
 
-        configurePublishingIfPresent()
-        configureArtifactoryGradlePluginIfPresent()
+        configurePublishingIfPresent(project)
+        configureArtifactoryGradlePluginIfPresent(project)
     }
 
     private Object getPropertyBasedVersioningStrategy(String clazzName) {
@@ -258,7 +257,11 @@ class ReleasePlugin implements Plugin<Project> {
         }
     }
 
-    private boolean determineStage(List<String> cliTasks, TaskProvider<ReleaseCheck> releaseCheck, boolean replaceDevSnapshots) {
+    private boolean determineStage(
+            Project project,
+                                   List<String> cliTasks,
+            TaskProvider<ReleaseCheck> releaseCheck,
+            boolean replaceDevSnapshots) {
         def hasSnapshot = cliTasks.contains(SNAPSHOT_TASK_NAME) || cliTasks.contains(SNAPSHOT_TASK_NAME_OPTIONAL_COLON)
         def hasDevSnapshot = cliTasks.contains(DEV_SNAPSHOT_TASK_NAME) || cliTasks.contains(DEV_SNAPSHOT_SETUP_TASK_NAME_OPTIONAL_COLON)
         def hasImmutableSnapshot = cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME) || cliTasks.contains(IMMUTABLE_SNAPSHOT_TASK_NAME_OPTIONAL_COLON)
@@ -275,20 +278,20 @@ class ReleasePlugin implements Plugin<Project> {
         }
 
         if (hasFinal) {
-            setupStatus('release')
-            applyReleaseStage('final')
+            setupStatus(project, 'release')
+            applyReleaseStage(project, 'final')
         } else if (hasCandidate) {
-            setupStatus('candidate')
-            applyReleaseStage('rc')
+            setupStatus(project, 'candidate')
+            applyReleaseStage(project, 'rc')
         } else if (hasImmutableSnapshot) {
-            applyReleaseStage('snapshot')
+            applyReleaseStage(project, 'snapshot')
         } else if (hasSnapshot) {
-            applyReleaseStage('SNAPSHOT')
+            applyReleaseStage(project, 'SNAPSHOT')
         } else if (hasDevSnapshot) {
             if (replaceDevSnapshots) {
-                applyReleaseStage('snapshot')
+                applyReleaseStage(project, 'snapshot')
             } else {
-                applyReleaseStage('dev')
+                applyReleaseStage(project, 'dev')
             }
         }
 
@@ -306,17 +309,17 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     private boolean shouldSkipGitChecks() {
-        def disableGit = project.providers.gradleProperty(DISABLE_GIT_CHECKS)
+        def disableGit = providers.gradleProperty(DISABLE_GIT_CHECKS)
             .map { it.toBoolean() }
             .getOrElse(false)
-        def travis = project.providers.gradleProperty('release.travisci')
+        def travis = providers.gradleProperty('release.travisci')
             .map { it.toBoolean() }
             .getOrElse(false)
         disableGit || travis
     }
 
     @CompileDynamic
-    void setupStatus(String status) {
+    void setupStatus(Project project, String status) {
         project.plugins.withType(IvyPublishPlugin) {
             project.publishing {
                 publications.withType(IvyPublication).configureEach {
@@ -327,12 +330,12 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     @CompileDynamic
-    void applyReleaseStage(String stage) {
+    void applyReleaseStage(Project project, String stage) {
         final String releaseStage = 'release.stage'
         project.allprojects.each { it.ext.set(releaseStage, stage) }
     }
 
-    void configurePublishingIfPresent() {
+    void configurePublishingIfPresent(Project project) {
         project.plugins.withType(MavenPublishPlugin) {
             def tasks = project.tasks.withType(GenerateMavenPom)
             project.rootProject.tasks.named('postRelease').configure {
@@ -349,7 +352,7 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     @CompileDynamic
-    void configureArtifactoryGradlePluginIfPresent() {
+    void configureArtifactoryGradlePluginIfPresent(Project project) {
         project.plugins.withId('com.jfrog.artifactory') {
             logger.info('Configuring jfrog artifactory plugin to work with release plugin')
             Class taskClass = null
