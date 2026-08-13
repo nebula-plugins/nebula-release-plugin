@@ -48,10 +48,54 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
     private final Provider<Integer> commitCountForHead
     private static final Logger LOGGER = LoggerFactory.getLogger(GitBuildService.class)
 
+    /**
+     * Value source providers for the parameterless git reads, created once per build service
+     * instance.
+     *
+     * A {@code ValueSource} result is cached per <em>provider instance</em>, so these must be
+     * constructed here rather than inside each accessor -- building a fresh provider per call
+     * re-executes the underlying git command every time. {@code git status --porcelain} in
+     * particular costs ~870ms on a large worktree, and it used to run twice per build because
+     * {@link #getStatus()} and {@link #isCleanStatus()} each built their own provider for it.
+     *
+     * These caches are build-scoped, which is safe because every consumer of them is on the
+     * version inference path and therefore runs before the release tasks mutate git state. Any
+     * read that must observe post-{@link #fetch(java.lang.String)} or post-{@link #createTag}
+     * state belongs on the parameterized (uncached) methods below instead.
+     */
+    private final Provider<String> statusPorcelainProvider
+    private final Provider<String> revParseHeadProvider
+    private final Provider<String> anyCommitProvider
+    private final Provider<String> isGitRepoProvider
+    private final Provider<String> currentBranchProvider
+    private final Provider<String> headTagsProvider
+    private final Provider<String> revListCountHeadProvider
+
     @Inject
     GitBuildService(ProviderFactory providers) {
         this.gitRootDir = getParameters().gitRootDir.get().asFile
         this.providerFactory = providers
+        this.statusPorcelainProvider = providers.of(StatusPorcelain.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
+        this.revParseHeadProvider = providers.of(RevParseHead.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
+        this.anyCommitProvider = providers.of(AnyCommit.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
+        this.isGitRepoProvider = providers.of(IsGitRepo.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
+        this.currentBranchProvider = providers.of(CurrentBranch.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
+        this.headTagsProvider = providers.of(HeadTags.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
+        this.revListCountHeadProvider = providers.of(RevListCountHead.class) {
+            it.parameters.rootDir.set(gitRootDir)
+        }
         this.isGitRepo = providers.provider { detectIsGitRepo() }
         this.currentBranch = providers.provider { detectCurrentBranch() }
         this.status = providers.provider { determineStatus() }
@@ -291,10 +335,7 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
 
     private Integer determineCommitCountForHead() {
         try {
-            def refListCountHeadProvider = providerFactory.of(RevListCountHead.class) {
-                it.parameters.rootDir.set(gitRootDir)
-            }
-            return refListCountHeadProvider.get().toString()
+            return revListCountHeadProvider.get().toString()
                     .split("\n").toList()
                     .first()?.replaceAll("\n", "")?.trim()?.toInteger()
         } catch (Exception e) {
@@ -304,9 +345,6 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
 
     private List<TagRef> determineHeadTags() {
         try {
-            def headTagsProvider = providerFactory.of(HeadTags.class) {
-                it.parameters.rootDir.set(gitRootDir)
-            }
             return headTagsProvider.get().toString()
                     .split("\n").toList()
                     .findAll { String tag -> !tag?.replaceAll("\n", "")?.isEmpty() }
@@ -318,9 +356,6 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
 
     private String determineStatus() {
         try {
-            def statusPorcelainProvider = providerFactory.of(StatusPorcelain.class) {
-                it.parameters.rootDir.set(gitRootDir)
-            }
             return statusPorcelainProvider.get().toString()
         } catch (Exception e) {
             return null
@@ -329,9 +364,8 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
 
     private boolean determineIsCleanStatus() {
         try {
-            def statusPorcelainProvider = providerFactory.of(StatusPorcelain.class) {
-                it.parameters.rootDir.set(gitRootDir)
-            }
+            // Shares statusPorcelainProvider with determineStatus(), so the working tree is only
+            // ever scanned once per build.
             return statusPorcelainProvider.get().toString().replaceAll("\n", "").trim().empty
         } catch (Exception e) {
             return false
@@ -340,9 +374,6 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
 
     private String determineHead() {
         try {
-            def revParseHeadProvider = providerFactory.of(RevParseHead.class) {
-                it.parameters.rootDir.set(gitRootDir)
-            }
             return revParseHeadProvider.get().toString()
         } catch (Exception e) {
             return null
@@ -351,9 +382,6 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
 
     private Boolean determineHasCommit() {
         try {
-            def anyCommitProvider = providerFactory.of(AnyCommit.class) {
-                it.parameters.rootDir.set(gitRootDir)
-            }
             String describe = anyCommitProvider.get().toString()
             return describe != null && !describe.empty && !describe.contains("fatal:")
         } catch (Exception e) {
@@ -363,9 +391,6 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
 
     private Boolean detectIsGitRepo() {
         try {
-            Provider isGitRepoProvider = providerFactory.of(IsGitRepo.class) {
-                it.parameters.rootDir.set(gitRootDir)
-            }
             return Boolean.valueOf(isGitRepoProvider.get().toString())
         } catch (Exception e) {
             return false
@@ -374,9 +399,6 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
 
     private String detectCurrentBranch() {
         try {
-            Provider currentBranchProvider = providerFactory.of(CurrentBranch.class) {
-                it.parameters.rootDir.set(gitRootDir)
-            }
             return currentBranchProvider.get().toString().replaceAll("\n", "").trim()
         } catch (Exception e) {
             return null
