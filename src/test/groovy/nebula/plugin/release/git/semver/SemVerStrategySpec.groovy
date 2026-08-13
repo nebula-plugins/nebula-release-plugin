@@ -115,6 +115,27 @@ class SemVerStrategySpec extends Specification {
         strategy.defaultSelector(project, gitBuildService)
     }
 
+    def 'default selector queries repo status only once'() {
+        given:
+        def strategy = new SemVerStrategy(stages: ['one'] as SortedSet, allowDirtyRepo: allowDirty)
+        mockStage(null)
+
+        when:
+        def result = strategy.defaultSelector(project, gitBuildService)
+
+        then:
+        // `git status --porcelain` is the most expensive command this plugin runs; it must not be
+        // forked a second time just to build a log message.
+        1 * gitBuildService.isCleanStatus() >> isClean
+        result == expected
+
+        where:
+        allowDirty | isClean | expected
+        false      | true    | true
+        true       | false   | true
+        false      | false   | false
+    }
+
     def 'infer returns correct version'() {
         given:
         mockScope(scope)

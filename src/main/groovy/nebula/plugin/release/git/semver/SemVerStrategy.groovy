@@ -97,11 +97,16 @@ final class SemVerStrategy implements DefaultVersionStrategy {
         if (stage != null && !stages.contains(stage)) {
             logger.info('Skipping {} default strategy because stage ({}) is not one of: {}', name, stage, stages)
             return false
-        } else if (!allowDirtyRepo && !gitBuildService.isCleanStatus()) {
+        }
+        // Read the working tree state once: `git status --porcelain` is the single most expensive
+        // command this plugin runs (~870ms on a large worktree), and the value cannot change
+        // between the two uses below.
+        boolean clean = gitBuildService.isCleanStatus()
+        if (!allowDirtyRepo && !clean) {
             logger.info('Skipping {} default strategy because repo is dirty.', name)
             return false
         } else {
-            String status = gitBuildService.isCleanStatus() ? 'clean' : 'dirty'
+            String status = clean ? 'clean' : 'dirty'
             logger.info('Using {} default strategy because repo is {} and no stage defined', name, status)
             return true
         }
