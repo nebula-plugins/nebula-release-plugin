@@ -23,6 +23,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -42,6 +43,7 @@ import javax.inject.Inject
 abstract class ReleasePluginExtension {
     private static final Logger logger = LoggerFactory.getLogger(ReleasePluginExtension)
     protected final Project project
+    private final ProviderFactory providerFactory
     private final Map<String, VersionStrategy> versionStrategies = [:]
 
     /**
@@ -71,6 +73,7 @@ abstract class ReleasePluginExtension {
     ReleasePluginExtension(Project project) {
         File gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir
         this.project = project
+        this.providerFactory = project.getProviders()
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
             spec.getParameters().getGitRootDir().set(gitRoot)
         }).get()
@@ -107,7 +110,7 @@ abstract class ReleasePluginExtension {
         private final Provider<ReleaseVersion> inferredVersionProvider
 
         DelayedVersion() {
-            this.inferredVersionProvider = project.provider { -> infer() }
+            this.inferredVersionProvider = providerFactory.provider { -> infer() }
         }
 
         @CompileDynamic

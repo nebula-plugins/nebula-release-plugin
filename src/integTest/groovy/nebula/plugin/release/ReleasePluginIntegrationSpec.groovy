@@ -53,6 +53,96 @@ class ReleasePluginIntegrationSpec extends GitVersioningIntegrationTestKitSpec {
         git.add(patterns: ['build.gradle', '.gitignore'] as Set)
     }
 
+    def 'configuration cache is reused on second build'() {
+        when:
+        def firstRun = runTasks('build')
+
+        then:
+        firstRun.output.contains('Configuration cache entry stored')
+
+        when:
+        def secondRun = runTasks('build')
+
+        then:
+        secondRun.output.contains('Reusing configuration cache')
+    }
+
+    def 'configuration cache is reused for devSnapshot'() {
+        when:
+        def firstRun = runTasks('devSnapshot')
+
+        then:
+        firstRun.output.contains('Configuration cache entry stored')
+
+        when:
+        def secondRun = runTasks('devSnapshot')
+
+        then:
+        secondRun.output.contains('Reusing configuration cache')
+    }
+
+    def 'configuration cache entry is stored for candidate on consecutive runs'() {
+        when:
+        def firstRun = runTasks('candidate')
+
+        then:
+        firstRun.output.contains('Configuration cache entry stored')
+
+        when:
+        def secondRun = runTasks('candidate')
+
+        then:
+        secondRun.output.contains('configuration cache cannot be reused because a build logic input of type \'DescribeHeadWithTag\' has changed')
+        secondRun.output.contains('Configuration cache entry stored')
+    }
+
+    def 'configuration cache entry is stored for final on consecutive runs'() {
+        when:
+        def firstRun = runTasks('final')
+
+        then:
+        firstRun.output.contains('Configuration cache entry stored')
+
+        when:
+        def secondRun = runTasks('final')
+
+        then:
+        secondRun.output.contains('configuration cache cannot be reused because a build logic input of type \'DescribeHeadWithTagWithExclude\' has changed')
+        secondRun.output.contains('Configuration cache entry stored')
+    }
+
+    def 'configuration cache is reused for useLastTag with final'() {
+        git.tag.add(name: 'v42.5.3')
+
+        when:
+        def firstRun = runTasks('final', '-Prelease.useLastTag=true')
+
+        then:
+        firstRun.output.contains('Configuration cache entry stored')
+
+        when:
+        def secondRun = runTasks('final', '-Prelease.useLastTag=true')
+
+        then:
+        secondRun.output.contains('Reusing configuration cache')
+    }
+
+    def 'configuration cache is reused for useLastTag with candidate'() {
+        git.tag.add(name: 'v3.1.2-rc.1')
+
+        when:
+        def firstRun = runTasks('candidate', '-Prelease.useLastTag=true')
+
+        then:
+        firstRun.output.contains('Configuration cache entry stored')
+
+        when:
+        def secondRun = runTasks('candidate', '-Prelease.useLastTag=true')
+
+        then:
+        secondRun.output.contains('Reusing configuration cache')
+    }
+
     def 'build defaults to dev version string'() {
         when:
         def version = inferredVersionForTask('build')
