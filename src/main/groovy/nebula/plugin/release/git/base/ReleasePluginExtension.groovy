@@ -22,7 +22,6 @@ import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -104,10 +103,13 @@ abstract class ReleasePluginExtension {
     }
 
     private class DelayedVersion implements Serializable {
-        private final Provider<ReleaseVersion> inferredVersionProvider
+        private volatile ReleaseVersion inferredVersion
 
-        DelayedVersion() {
-            this.inferredVersionProvider = project.provider { -> infer() }
+        private synchronized ReleaseVersion getOrInfer() {
+            if (inferredVersion == null) {
+                inferredVersion = infer()
+            }
+            return inferredVersion
         }
 
         @CompileDynamic
@@ -136,12 +138,12 @@ abstract class ReleasePluginExtension {
         }
 
         ReleaseVersion getInferredVersion() {
-            return inferredVersionProvider.get()
+            return getOrInfer()
         }
 
         @Override
         String toString() {
-            return inferredVersionProvider.get().version
+            return getOrInfer().version
         }
     }
 }
