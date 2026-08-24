@@ -1,3 +1,5 @@
+import org.gradle.plugin.compatibility.compatibility
+
 /*
  * Copyright 2014-2023 Netflix, Inc.
  *
@@ -63,6 +65,18 @@ gradlePlugin {
             implementationClass = "nebula.plugin.release.ReleasePlugin"
             tags.addAll("nebula", "release", "versioning", "semver")
         }
+        create("nebulaReleaseBase") {
+            id = "com.netflix.nebula.release-base"
+            displayName = "Nebula Release Base plugin"
+            description = project.description
+            implementationClass = "nebula.plugin.release.git.base.BaseReleasePlugin"
+            tags.addAll("nebula", "release", "versioning", "semver")
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
+        }
     }
 }
 
@@ -83,4 +97,10 @@ tasks.wrapper {
     distributionType = Wrapper.DistributionType.ALL
     gradleVersion = "9.5.0"
     distributionSha256Sum = "a3c4ba4aca8f0075688b9c5b18939fd28e8cb4357c227da5c1d9f38343791439"
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
