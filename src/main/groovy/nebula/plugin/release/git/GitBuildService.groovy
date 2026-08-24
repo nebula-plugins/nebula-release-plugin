@@ -8,10 +8,13 @@ import nebula.plugin.release.git.command.DescribeHeadWithTag
 import nebula.plugin.release.git.command.DescribeHeadWithTagWithExclude
 import nebula.plugin.release.git.command.EmailFromLog
 import nebula.plugin.release.git.command.FetchChanges
+import nebula.plugin.release.git.command.FetchDeepen
+import nebula.plugin.release.git.command.FetchUnshallow
 import nebula.plugin.release.git.command.GetGitConfigValue
 import nebula.plugin.release.git.command.HeadTags
 import nebula.plugin.release.git.command.IsCurrentBranchBehindRemote
 import nebula.plugin.release.git.command.IsGitRepo
+import nebula.plugin.release.git.command.IsShallowRepository
 import nebula.plugin.release.git.command.IsTrackingRemoteBranch
 import nebula.plugin.release.git.command.PushTag
 import nebula.plugin.release.git.command.RevListCountHead
@@ -316,6 +319,76 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
         } catch (Exception e) {
             throw new GradleException("Could not fetch remote changes", e)
         }
+    }
+
+    /**
+     * Checks if the current repository is a shallow clone
+     * @return true if the repository is shallow
+     */
+    boolean isShallowRepository() {
+        try {
+            def isShallowProvider = providerFactory.of(IsShallowRepository.class) {
+                it.parameters.rootDir.set(gitRootDir)
+            }
+            return Boolean.valueOf(isShallowProvider.get().toString())
+        } catch (Exception e) {
+            return false
+        }
+    }
+
+    /**
+     * Fetches additional history from a remote using --deepen
+     * @param remote
+     * @param depth number of commits to deepen
+     */
+    void fetchDeepen(String remote, int depth) {
+        try {
+            providerFactory.of(FetchDeepen.class) {
+                it.parameters.rootDir.set(gitRootDir)
+                it.parameters.remote.set(remote)
+                it.parameters.depth.set(depth.toString())
+            }.get()
+        } catch (Exception e) {
+            LOGGER.warn("Failed to deepen clone from remote {}: {}", remote, e.message)
+        }
+    }
+
+    /**
+     * Fetches full history from a remote using --unshallow
+     * @param remote
+     */
+    void fetchUnshallow(String remote) {
+        try {
+            providerFactory.of(FetchUnshallow.class) {
+                it.parameters.rootDir.set(gitRootDir)
+                it.parameters.remote.set(remote)
+            }.get()
+        } catch (Exception e) {
+            LOGGER.warn("Failed to unshallow clone from remote {}: {}", remote, e.message)
+        }
+    }
+
+    /**
+     * Incrementally deepens a shallow clone until a version tag is found
+     * @param remote the remote to fetch from
+     */
+    void deepenUntilTagFound(String remote) {
+        int maxIterations = 10
+        int depth = 1
+        int totalDepth = 0
+        for (int i = 1; i <= maxIterations; i++) {
+            LOGGER.warn("Shallow clone detected: deepening by {} commits (iteration {}/{})", depth, i, maxIterations)
+            fetchDeepen(remote, depth)
+            totalDepth += depth
+            String described = describeHeadWithTags(false)
+            if (described != null) {
+                LOGGER.warn("Found version tag after deepening by {} commits", totalDepth)
+                return
+            }
+            depth *= 2
+        }
+        LOGGER.warn("Could not find a version tag after deepening by {} commits. Fetching full history.", totalDepth)
+        fetchUnshallow(remote)
     }
 
     /**
