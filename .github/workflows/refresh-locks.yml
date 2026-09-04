@@ -15,7 +15,7 @@ jobs:
           git config --global user.name "Nebula Plugin Maintainers"
           git config --global user.email "nebula-plugins-oss@netflix.com"
       - name: Set up JDKs
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: 21
