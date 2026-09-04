@@ -104,3 +104,11 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
+
+afterEvaluate {
+    if(tasks.findByName("publishNebulaReleaseLegacyPluginMarkerMavenPublicationToSonatypeRepository") != null) {
+        project.tasks.named<Task>("publishNebulaReleaseLegacyPluginMarkerMavenPublicationToSonatypeRepository") {
+            onlyIf("legacy ids can't be published to maven central") { false }
+        }
+    }
+}
