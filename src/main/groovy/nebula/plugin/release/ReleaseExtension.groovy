@@ -53,7 +53,7 @@ abstract class ReleaseExtension {
     }
 
     void addReleaseBranchPattern(String pattern) {
-        releaseBranchPatterns.add(pattern)
+        releaseBranchPatterns.set(releaseBranchPatterns.get() + pattern)
     }
 
     void addExcludeBranchPattern(String pattern) {
