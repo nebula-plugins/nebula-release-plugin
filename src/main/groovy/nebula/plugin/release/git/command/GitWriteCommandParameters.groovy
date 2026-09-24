@@ -8,4 +8,5 @@ interface GitWriteCommandParameters extends ValueSourceParameters {
     Property<String> getRemote()
     Property<String> getTag()
     Property<String> getTagMessage()
+    Property<String> getDepth()
 }
