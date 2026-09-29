@@ -195,12 +195,14 @@ abstract class GitBuildService implements BuildService<GitBuildService.Params> {
         return this.commitCountForHead.get()
     }
 
-    String describeHeadWithTags(boolean excludePreReleases) {
+    String describeHeadWithTags(boolean excludePreReleases, String tagGlob) {
         try {
             def describeTagInHeadProvider = excludePreReleases ? providerFactory.of(DescribeHeadWithTagWithExclude.class) {
                 it.parameters.rootDir.set(gitRootDir)
+                it.parameters.tagGlob.set(tagGlob)
             } : providerFactory.of(DescribeHeadWithTag.class) {
                 it.parameters.rootDir.set(gitRootDir)
+                it.parameters.tagGlob.set(tagGlob)
             }
             return describeTagInHeadProvider.get().toString()
                     .split("\n").toList()

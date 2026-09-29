@@ -31,6 +31,8 @@ class TagStrategy implements Serializable {
      */
     Closure<String> toTagString
 
+    private boolean prefixNameWithV = true
+
 
     TagStrategy() {
         setPrefixNameWithV(true)
@@ -43,7 +45,15 @@ class TagStrategy implements Serializable {
      * @param prefix whether or not to prefix the tag with a 'v'
      */
     void setPrefixNameWithV(boolean prefix) {
+        this.prefixNameWithV = prefix
         toTagString = { versionString -> prefix ? "v${versionString}" : versionString }
+    }
+
+    /**
+     * @return whether tag names are prefixed with a 'v'. Used to decide which existing tags are read as versions.
+     */
+    boolean isPrefixNameWithV() {
+        return prefixNameWithV
     }
 
     /**

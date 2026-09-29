@@ -1306,6 +1306,35 @@ nebula.release.features.immutableSnapshot.timestampPrecision=${precision.name()}
     }
 
 
+    def 'ignore CI tags starting with a digit when a v-prefixed version tag exists'() {
+        git.tag.add(name: 'v30.1.2')
+        new File(projectDir, 'a.txt').text = 'change'
+        git.add(patterns: ['a.txt'] as Set)
+        git.commit(message: 'Change after release')
+        // add another non-version tag starting with a digit
+        git.tag.add(name: '123-master-candidate')
+
+        when:
+        def version = inferredVersionForTask('candidate')
+
+        then:
+        version == normal('30.2.0-rc.1')
+    }
+
+    def 'ignore version-like tags without a v prefix when tags are v-prefixed'() {
+        git.tag.add(name: 'v30.1.2')
+        new File(projectDir, 'a.txt').text = 'change'
+        git.add(patterns: ['a.txt'] as Set)
+        git.commit(message: 'Change after release')
+        git.tag.add(name: '9.9.9')
+
+        when:
+        def version = inferredVersionForTask('candidate')
+
+        then:
+        version == normal('30.2.0-rc.1')
+    }
+
     private void replaceDevWithImmutableSnapshot() {
         new File(buildFile.parentFile, "gradle.properties").text = """
 nebula.release.features.replaceDevWithImmutableSnapshot=true
