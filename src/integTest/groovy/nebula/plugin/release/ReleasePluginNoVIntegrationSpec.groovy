@@ -536,6 +536,20 @@ class ReleasePluginNoVIntegrationSpec extends GitVersioningIntegrationTestKitSpe
         version.toString().startsWith("3.1.3-snapshot." + getUtcDateForComparison())
     }
 
+    def 'ignore CI tags that are not versions when tags have no v prefix'() {
+        git.tag.add(name: '30.1.2')
+        new File(projectDir, 'a.txt').text = 'change'
+        git.add(patterns: ['a.txt'] as Set)
+        git.commit(message: 'Change after release')
+        git.tag.add(name: '123-master-candidate')
+
+        when:
+        def version = inferredVersionForTask('candidate')
+
+        then:
+        version == normal('30.2.0-rc.1')
+    }
+
     private void replaceDevWithImmutableSnapshot() {
         new File(buildFile.parentFile, "gradle.properties").text = """
 nebula.release.features.replaceDevWithImmutableSnapshot=true

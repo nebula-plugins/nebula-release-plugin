@@ -10,4 +10,5 @@ interface GitReadCommandParameters extends ValueSourceParameters {
     Property<String> getGitConfigValue()
     Property<String> getCommit()
     Property<String> getTag()
+    Property<String> getTagGlob()
 }

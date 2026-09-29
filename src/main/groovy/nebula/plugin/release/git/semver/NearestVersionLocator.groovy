@@ -83,7 +83,7 @@ class NearestVersionLocator {
 
     private getLatestTagWithDistance(boolean excludePreReleases) {
         try {
-            String result = gitBuildService.describeHeadWithTags(excludePreReleases)
+            String result = gitBuildService.describeHeadWithTags(excludePreReleases, versionTagGlob())
             if(!result) {
                 return [version: UNKNOWN, distance: gitBuildService.getCommitCountForHead()]
             }
@@ -116,6 +116,14 @@ class NearestVersionLocator {
         } catch (Exception e) {
             return [version: UNKNOWN, distance: gitBuildService.getCommitCountForHead()]
         }
+    }
+
+    /**
+     * Version tags look like 1.2.3 or v1.2.3 depending on the tag strategy prefix
+     */
+    private String versionTagGlob() {
+        String version = '[0-9]*.[0-9]*.[0-9]*'
+        return strategy.prefixNameWithV ? "v${version}".toString() : version
     }
 
     private static Version parseTag(String name, boolean failOnInvalid = false) {
