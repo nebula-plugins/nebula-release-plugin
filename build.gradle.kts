@@ -39,9 +39,7 @@ tasks.named<GroovyCompile>("compileGroovy") {
 
 dependencies {
     implementation("com.github.zafarkhaja:java-semver:0.9.0")
-    implementation(platform("com.fasterxml.jackson:jackson-bom:2.14.2"))
 
-    compileOnly(platform("com.fasterxml.jackson:jackson-bom:2.11.0"))
     testImplementation("org.eclipse.jgit:org.eclipse.jgit:5.7.0.202003110725-r")
     testImplementation("org.ajoberstar.grgit:grgit-core:4.1.1") {
         exclude(group = "org.codehaus.groovy", module = "groovy")
