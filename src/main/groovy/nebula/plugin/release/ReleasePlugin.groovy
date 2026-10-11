@@ -76,6 +76,10 @@ class ReleasePlugin implements Plugin<Project> {
             return
         }
 
+        if (FeatureFlags.isUnshallowEnabled(project) && gitBuildService.get().isShallowRepository()) {
+            gitBuildService.get().deepenUntilTagFound('origin')
+        }
+
         if (project == project.rootProject) {
             // Verify user git config only when using release tags and 'release.useLastTag' property is not used
             boolean shouldVerifyUserGitConfig = isReleaseTaskThatRequiresTagging(project.gradle.startParameter.taskNames) && !isUsingLatestTag(project)

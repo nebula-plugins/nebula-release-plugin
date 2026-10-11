@@ -314,6 +314,22 @@ abstract class StatusPorcelain extends GitReadCommand {
 /**
  * Retrieves a given Git config key with its value for a given scope
  */
+/**
+ * Checks if the current repository is a shallow clone
+ * ex. git rev-parse --is-shallow-repository -> true/false
+ */
+abstract class IsShallowRepository extends GitReadCommand {
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand("rev-parse", "--is-shallow-repository")
+                    .replaceAll("\n", "").trim()
+        } catch (Exception e) {
+            return "false"
+        }
+    }
+}
+
 abstract class GetGitConfigValue extends GitReadCommand {
     private static final Logger logger = LoggerFactory.getLogger(GetGitConfigValue)
     @Override

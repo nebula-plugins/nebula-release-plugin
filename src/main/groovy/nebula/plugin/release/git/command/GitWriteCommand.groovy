@@ -63,6 +63,35 @@ abstract class CreateTag extends GitWriteCommand {
 
 
 /**
+ * Fetches additional history from a remote using --deepen
+ * ex. git fetch --deepen=30 origin
+ */
+abstract class FetchDeepen extends GitWriteCommand {
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand("fetch", "--deepen=${parameters.depth.get()}".toString(), parameters.remote.get())
+        } catch (Exception e) {
+            return null
+        }
+    }
+}
+
+/**
+ * Fetches full history from a remote using --unshallow
+ */
+abstract class FetchUnshallow extends GitWriteCommand {
+    @Override
+    String obtain() {
+        try {
+            return executeGitCommand("fetch", "--unshallow", parameters.remote.get())
+        } catch (Exception e) {
+            return null
+        }
+    }
+}
+
+/**
  * Creates a tag with a given message
  */
 abstract class FetchChanges extends GitWriteCommand {
