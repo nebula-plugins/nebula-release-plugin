@@ -55,6 +55,11 @@ gradlePlugin {
             description = project.description
             implementationClass = "nebula.plugin.release.ReleasePlugin"
             tags.addAll("nebula", "release", "versioning", "semver")
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
         create("nebulaReleaseLegacy") {
             id = "nebula.release"
