@@ -1,0 +1,352 @@
+# Isolated Projects support
+
+Status: proposed. This document specifies an opt-in implementation; it does not
+describe support available in a released version.
+
+Implementation status: the working prototype covers ordinary `help`/`build`, root
+`snapshot`, and default version selection for `snapshotSetup` with a Git repository, common inputs, local
+version assignment, leaf Java builds, and Maven/Ivy descriptors. Other stages,
+release-base, custom strategies/legacy extension DSL, Artifactory, and the no-Git
+fallback are rejected with adoption diagnostics. The remaining milestones below
+are still required before claiming general Isolated Projects compatibility.
+
+In this prototype, explicit `isolatedRelease` settings override the `git.root` and
+`release.scope` property defaults. A supplied `release.version` overrides version
+inference, except that the existing no-commits strategy still takes precedence.
+
+Gradle 9.0/9.5 task builds configure all projects on a configuration-cache miss.
+Local-script invalidation tests on these versions therefore do not prove partial
+project-cache reuse. That acceptance criterion requires an implementation or
+invocation mode that actually supports partial reuse.
+
+## Objective
+
+Support Gradle Isolated Projects in single-project and multi-project builds while
+preserving the existing release APIs and behavior for consumers that do not opt
+in. Supported isolated workflows must produce equivalent versions, artifacts,
+release participation, validation, and Git effects.
+
+The scope includes the public plugin IDs `com.netflix.nebula.release`,
+`nebula.release`, and `com.netflix.nebula.release-base`.
+
+## Current behavior and constraints
+
+The implementation currently shares a root-owned delayed version object with
+every project, mutates stage and status across projects, reads root plugin and
+task state from children, and inspects tasks from other projects through task
+graph callbacks. These operations conflict with project isolation.
+
+Configuration-cache compatibility alone does not establish Isolated Projects
+compatibility. Single-project success and the no-Git fallback also do not prove
+that multi-project release workflows work under isolation.
+
+The public `VersionStrategy` contract receives a `Project`. Custom strategies
+may read arbitrary mutable project state. Keeping this API compatible is
+required; transparently supporting every implementation under isolation is not
+possible without an explicit adoption contract.
+
+## Rollout flag
+
+Introduce a build-wide Gradle property:
+
+```properties
+nebula.release.isolatedProjectsSupport=true
+```
+
+Consumers may set it in root `gradle.properties` or pass
+`-Pnebula.release.isolatedProjectsSupport=true` before plugin application.
+
+Requirements:
+
+- Default to `false`; only `true`, ignoring case, enables the new path.
+- Read through `ProviderFactory.gradleProperty`. Do not use a static cached
+  decision, inherited extra properties, or mutable project state to select mode.
+- Select mode before constructors or extension initialization perform legacy
+  cross-project access. Cover all three existing plugin entry points.
+- Keep selection consistent throughout the build. Project-local changes after
+  plugin application and mixed legacy/isolated configuration are unsupported and
+  must not produce a partially selected implementation.
+- Keep the flag independent of Gradle's own Isolated Projects setting. Neither
+  enables the other, and the new implementation must also work with ordinary
+  configuration cache when Gradle isolation is disabled.
+- Track flag changes as configuration-cache inputs. Switching modes in the same
+  daemon must not retain state from the previous implementation.
+
+| Plugin flag | Gradle isolation | Contract |
+| --- | --- | --- |
+| Off | Off | Existing behavior and APIs, without consumer changes. |
+| On | Off | New implementation and its explicit adoption requirements. |
+| On | On | Supported isolated workflows, with strict validation. |
+| Off | On | No new compatibility guarantee; do not silently enable the flag or disable isolation. |
+
+This follows the explicit opt-in pattern used by
+[dependency-recommender PR #162](https://github.com/nebula-plugins/nebula-dependency-recommender-plugin/pull/162).
+The flag permits staged delivery; it does not by itself establish compatibility.
+
+## Compatibility contract
+
+### Legacy mode
+
+With the flag disabled, preserve:
+
+- Existing plugin IDs, task names, extension methods and properties, strategy
+  interfaces, and aliases.
+- Root-only plugin application, implicit common version propagation, root DSL
+  customization, and custom `Project`-based strategies.
+- Lazy version inference and supported late configuration behavior.
+- Default version selection, scope/stage handling, explicit version overrides,
+  sanitization, branch metadata, timestamp precision, and last-tag reuse.
+- Release participation, publishing integration, task hooks, validation failures,
+  and tagging/pushing behavior.
+
+No settings changes or new plugin applications are required in legacy mode.
+Intentional behavior corrections must be reviewed separately from this feature.
+
+### Opt-in mode
+
+Consumers provide common configuration through an isolation-safe settings or
+convention entry point. Arbitrary root build-script state is not automatically
+imported into children.
+
+Keep existing public signatures. Add an isolation-safe strategy/configuration
+surface where needed; do not replace the existing `VersionStrategy` parameters
+or silently substitute a built-in strategy for a custom one.
+
+Existing root customization must either have a documented, validated mapping to
+the common input model or fail with a migration diagnostic. It must not be
+accepted and ignored. Consumer scripts that configure other projects directly
+also require migration.
+
+## Proposed architecture
+
+The following architecture must pass the prototype milestone before its public
+names and DSL are finalized.
+
+### 1. Common inputs and release engine
+
+Extract built-in inference into a project-independent engine. Preserve existing
+semantic-version calculations where possible rather than reimplementing them.
+
+Use immutable input and result models, provisionally `ReleaseInputs` and
+`ReleasePlan`. Separate common build configuration, tracked Git facts, and local
+project participation. Inputs must cover:
+
+- Effective stage, scope, explicit version, and default strategy selection.
+- Git root, tag-reading rules, remote, and last-tag behavior.
+- Branch inclusion/exclusion and metadata rules.
+- Sanitization, immutable-snapshot timestamp precision, and a common timestamp.
+- Git-check policy, including existing skip/check controls.
+
+The result must include the inferred version and the decisions needed for
+validation, status, preparation, and tagging. Preserve the existing
+`ReleaseVersion` contract through compatible adapters.
+
+Do not change root-based semantics by accidentally reading a child's name,
+properties, or extension defaults. Define property precedence explicitly. Use
+tracked Gradle properties for shared inputs; support local extra properties only
+where the adoption contract explicitly permits them.
+
+### 2. Settings companion and local configuration
+
+Provide an additive settings companion, provisionally
+`com.netflix.nebula.release-settings`, as the common configuration source.
+Configuration belongs in settings or a reusable isolation-safe convention;
+existing root DSL remains available in legacy mode.
+
+The companion must:
+
+- Establish common inputs before dependent project configuration consumes them.
+- Use `gradle.lifecycle.beforeProject` with state-isolating actions to install
+  local configuration, without capturing live `Settings`, other projects, or
+  mutable extensions.
+- Supply the necessary implementation classpath from the settings entry point.
+- Use immutable hierarchy/path metadata to support nested and leaf projects.
+- Require the rollout flag, and diagnose missing adoption configuration when the
+  opted-in project plugin needs it.
+
+Each project assigns its own version, stage, status, and publication metadata.
+Root and children must receive equivalent common inputs regardless of
+configuration order or whether root configuration is reused from cache.
+
+The common model must distinguish version-only projects from release
+participants. Installing local version support must not automatically apply the
+full release plugin, build Java projects, or publish additional projects.
+
+The public settings DSL, its freeze point, and the mapping from existing root
+extension properties are prototype deliverables. Examples must be added only
+after that surface is validated.
+
+### 3. Root orchestration and local forwarding tasks
+
+Keep release coordination and tag creation/pushing at the root. Introduce local
+forwarding tasks, provisionally `nebulaReleaseBuild` and
+`nebulaReleaseDescriptors`, in each included project.
+
+Configure forwarding dependencies using only local plugin, task, and publication
+state. Leave tasks empty for projects that do not participate. Root orchestration
+references explicit task paths rather than opening another project's task
+container or requiring children to mutate root tasks.
+
+```text
+root release
+  -> :child:nebulaReleaseBuild
+       -> local build, if that leaf participates
+
+root postRelease
+  -> root release
+  -> :child:nebulaReleaseDescriptors
+       -> local POM, Ivy, or supported Artifactory work
+```
+
+Preserve existing leaf selection, including nested aggregators with Java and the
+single-project root-as-leaf case. An extra forwarding task must not change which
+builds, publications, or descriptors run.
+
+Replace `taskGraph.whenReady` inspection with explicit workflow inputs and local
+task wiring. Preserve snapshot skipping, remote-check policy, setup tasks,
+last-tag behavior, and supported task invocation forms. Do not introduce a new
+ordering guarantee between publication and tagging; retain required legacy
+dependency and ordering relationships.
+
+### 4. Git tracking, shared state, and timestamps
+
+Retain tracked Git reads through appropriate providers/value sources and task
+inputs. Tag creation, fetching, and pushing remain task execution effects.
+
+A build service may memoize Git reads or immutable calculations from explicit
+inputs. It must not act as a mailbox containing a root `Project`, a live root
+extension, or a result whose availability depends on root configuration running
+first. Memoization must be thread-safe and must not hide cache invalidation.
+
+All projects must use the same immutable-snapshot timestamp and version. Reading
+the clock separately during each project's inference is insufficient. Specify
+the timestamp's capture, persistence, and invalidation policy in the prototype:
+reused and reconfigured projects must never disagree about the common version.
+
+### 5. Customization and diagnostics
+
+Continue supporting arbitrary existing strategies on the legacy path. Initially,
+the isolated path supports built-in strategies and only explicitly validated
+isolation-safe adapters. Arbitrary custom strategies, tag callbacks, or task
+hooks must not be advertised as supported without evidence.
+
+For unsupported configuration, report the project, affected customization, why
+it cannot be used, and the supported migration route. Diagnostics must cover
+known unsupported strategy registration, conflicting common/local inputs,
+missing settings setup, and attempts to alter frozen common configuration.
+
+Preserve meaningful failures such as invalid versions, direct assignment of
+`project.version`, dirty or invalid branches, and a missing required root
+coordinator. Do not suppress isolation errors, ignore customization, or weaken
+validation to make a build pass.
+
+## Initial support boundary
+
+The completed initial implementation must cover built-in release behavior for
+single, flat multi-project, and nested builds; Maven/Ivy descriptor integration;
+version-only projects; and explicitly configured release participants.
+
+Artifactory support requires an explicit tested version range. Its compatibility
+cannot be inferred from Maven/Ivy tests or from the release plugin alone. Resolve
+the range before claiming support; an incremental release must identify and
+diagnose unsupported integrations.
+
+Composite builds, independent release trains within one build, arbitrary
+cross-project consumer scripts, and unvalidated custom strategy/hook adapters
+are outside the initial guarantee. Existing supported behavior remains available
+with the flag disabled.
+
+## Validation
+
+### Equivalence harness
+
+Run equivalent legacy and adopted fixtures in separate local Git worktrees and
+remotes. Tags, dirty state, and publication outputs from one run must not affect
+the other. Use local artifact repositories and Git remotes.
+
+For time-dependent versions, give both fixtures the same controlled inference
+timestamp through an internal test seam. Also test real clock progression across
+precision boundaries and partial cache reuse; identical fixture timestamps must
+not conceal inconsistent production timestamp handling.
+
+Compare observable behavior:
+
+- Version strings, JAR names, POM/Ivy versions, and Ivy status.
+- Participating tasks and required dependency/ordering relationships.
+- Tag names, messages, target commits, pushed refs, and absence of duplicate tags.
+- Expected validation failures and snapshot/last-tag skipping behavior.
+
+Do not compare incidental log ordering or nondeterministic tag-object timestamps.
+
+### Required coverage
+
+| Dimension | Cases |
+| --- | --- |
+| Mode | Legacy; flag enabled with ordinary cache; flag enabled with isolation. |
+| Cache | No cache baseline; strict cold storage; warm reuse; input invalidation; partial project reuse. |
+| Layout | Single project; siblings; nested projects; Java aggregators; root as leaf; version-only and mixed participants. |
+| Workflow | Default build, `devSnapshot`, `snapshot`, `immutableSnapshot`, `candidate`, `final`, setup tasks, `release`, and `postRelease`. |
+| Invocation | Qualified paths and supported aliases/abbreviations; multiple requested tasks; changed task order and parallel configuration. |
+| Version inputs | Major/minor/patch scope, explicit version, last tag, sanitization, branch rules, tag configuration, and timestamp precision. |
+| Git | Custom Git root, no repository, no commits, changed HEAD/tags/branch/dirty state, behind-remote checks, and skip controls. |
+| Integration | Maven/Ivy descriptors and status, declared Artifactory versions, supported `dependsOn`/`finalizedBy` hooks. |
+| Compatibility | Plugin IDs, published signatures, legacy custom strategies/root DSL, flag toggling in one daemon, and adoption diagnostics. |
+
+Parameterize representative scenarios rather than multiplying every dimension
+indiscriminately. Test on the repository's minimum and current supported Gradle
+versions and supported JDKs; select the isolation switch accepted by each Gradle
+version. Newer Gradle coverage is additional evidence, not a replacement.
+
+Require zero isolation/configuration-cache problems, strict failure mode, cold
+storage, and warm reuse. Verify changes to common settings, project configuration,
+release properties, and Git facts invalidate affected state and update results.
+Specifically exercise children reconfiguring while root configuration is reused.
+
+Existing expected-failure isolation characterizations are diagnostic coverage.
+Convert each to successful behavior/cache assertions as its blocker is fixed.
+Retain legacy unit, integration, and API compatibility coverage.
+
+## Delivery milestones
+
+1. **Architecture prototype:** flat multi-project snapshot with the flag, common
+   version inputs, and forwarding tasks. Demonstrate artifact/participation
+   equivalence, cold/warm cache behavior, partial reuse, and timestamp consistency.
+   Finalize or revise the settings DSL, freeze point, and state model from this
+   evidence before expanding implementation.
+2. **Built-in inference and layouts:** nested/leaf behavior, version-only projects,
+   tracked Git/property inputs, overrides, branch metadata, and common timestamps.
+3. **Release and integrations:** real candidate/final tagging and pushing to local
+   remotes, preparation/remote checks, last-tag behavior, Maven/Ivy, and the agreed
+   Artifactory range.
+4. **Compatibility and rollout:** customization diagnostics/adapters, full
+   regression and API checks, supported version matrix, and public adoption
+   instructions. Advertise only the workflows demonstrated by successful tests.
+
+Planning estimate: a 2–3 engineer-day prototype and approximately 3–5
+engineer-weeks total for the defined initial scope, including validation. This is
+a preliminary estimate, not a delivery commitment. Settings/input-freezing
+feasibility, partial-cache timestamp semantics, Artifactory compatibility, and
+custom adapter scope may change it. Adding the flag is small; maintaining and
+validating both execution paths is part of the larger cost.
+
+## Acceptance criteria
+
+- Flag-disabled consumers require no build/settings changes and retain supported
+  APIs, lazy configuration behavior, release outcomes, and validation.
+- Flag-enabled supported workflows have equivalent versions, artifacts,
+  statuses, participation, and Git effects with strict Isolated Projects.
+- Cache storage, reuse, invalidation, partial reuse, and configuration-order
+  independence are demonstrated without a mutable root-to-child handoff.
+- Immutable-snapshot versions remain consistent across all affected projects.
+- Tagging/pushing stays root-owned, occurs only when required, and does not add
+  child builds or publications.
+- New public configuration is additive. Unsupported customization and
+  integrations receive actionable diagnostics without silently discarded state.
+- Supported Gradle/JDK/integration versions and adoption steps are documented;
+  no general compatibility claim precedes successful workflow evidence.
+
+## Public references
+
+- [Gradle Isolated Projects](https://docs.gradle.org/current/userguide/isolated_projects.html)
+- [Gradle Configuration Cache](https://docs.gradle.org/current/userguide/configuration_cache.html)
+- [Dependency-recommender opt-in adoption example](https://github.com/nebula-plugins/nebula-dependency-recommender-plugin/pull/162)

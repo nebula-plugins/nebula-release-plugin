@@ -17,6 +17,7 @@ package nebula.plugin.release.git.base
 
 import groovy.transform.CompileDynamic
 import nebula.plugin.release.git.GitBuildService
+import nebula.plugin.release.IsolatedReleaseSupport
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -40,6 +41,9 @@ class BaseReleasePlugin implements Plugin<Project> {
     private Provider<GitBuildService> gitBuildService
 
     void apply(Project project) {
+        if (IsolatedReleaseSupport.isEnabled(project.providers)) {
+            throw IsolatedReleaseSupport.unsupported('release-base and custom Project-based strategies are not implemented')
+        }
         ReleasePluginExtension releasePluginExtension = project.extensions.create('release', ReleasePluginExtension, project)
         File gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
