@@ -98,9 +98,10 @@ internal class IsolatedSnapshotReleaseTest {
     @EnumSource(SupportedGradleVersion::class)
     fun `unsupported adoption and workflows fail before legacy project access`(version: SupportedGradleVersion) {
         val project = fixture("diagnostics", adopted = true)
-        val unsupported = runner(project, version, true, tasks = listOf("candidate")).buildAndFail()
+        val unsupported = runner(project, version, true, tasks = listOf("help"),
+            extra = listOf("-Prelease.stage=custom")).buildAndFail()
         assertThat(unsupported.output).contains("Experimental isolated release")
-            .contains("workflow 'candidate' is not implemented")
+            .contains("release.stage must be")
             .doesNotContain("cannot access 'Project")
         val custom = runner(project, version, true,
             extra = listOf("-Prelease.defaultVersioningStrategy=example.CustomStrategy")).buildAndFail()
@@ -444,7 +445,7 @@ internal class IsolatedSnapshotReleaseTest {
         Git.open(project).use { git -> assertThat(git.tagList().call()).isEmpty() }
         for (workflow in listOf("immutableSnapshot", ":immutableSnapshotSetup")) {
             assertThat(runner(project, version, true, options, listOf(workflow)).buildAndFail().output)
-                .contains("snapshot orchestration requires an initial Git commit")
+                .contains("release orchestration requires an initial Git commit")
         }
         Git.open(project).use { git ->
             git.add().addFilepattern(".").call()
@@ -470,6 +471,307 @@ internal class IsolatedSnapshotReleaseTest {
         }
         project.resolve("build.gradle").appendText("\ntasks.register('iS')\n")
         assertThat(runner(project, version, true, tasks = listOf("iS")).build().task(":iS")).isNotNull()
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `candidate and final versions status artifacts and pushed tags match legacy`(version: SupportedGradleVersion) {
+        for (mode in listOf("legacy", "cache", "isolated")) {
+            for ((workflow, expected, status) in listOf(
+                Triple("candidate", "1.3.0-rc.1", "candidate"), Triple("final", "1.3.0", "release"))) {
+                val project = fixture("tagged-$mode-$workflow", adopted = mode != "legacy")
+                project.resolve("build.gradle").appendText("""
+
+                    apply plugin: 'ivy-publish'
+                    publishing { publications { ivy(IvyPublication) { from components.java } } }
+                """.trimIndent())
+                commit(project)
+                val remote = remote(project)
+                val result = runner(project, version, mode == "isolated",
+                    extra = if (mode == "legacy") listOf("--no-configuration-cache") else emptyList(),
+                    tasks = listOf(":$workflow", "recordVersion")).build()
+                verifySnapshot(result, project, expected)
+                verifyStatus(project, status)
+                assertThat(project.resolve("build/publications/ivy/ivy.xml").readText()).contains("status=\"$status\"")
+                assertThat(project.resolve("parent/leaf/build/publications/ivy/ivy.xml").readText()).contains("status=\"integration\"")
+                assertThat(result.task(":prepare")!!.outcome).isEqualTo(TaskOutcome.SKIPPED)
+                assertThat(result.task(":release")!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
+                verifyTag(project, remote, "v$expected", expected)
+                Git.open(remote).use { git ->
+                    assertThat(git.tagList().call().map { it.name }).containsExactly("refs/tags/v$expected")
+                }
+                if (mode == "isolated" && workflow == "candidate") {
+                    // Creating the first tag must invalidate inference, even with an unchanged HEAD.
+                    verifySnapshot(runner(project, version, true,
+                        tasks = listOf(workflow, "recordVersion")).build(), project, "1.3.0-rc.2")
+                    verifyTag(project, remote, "v1.3.0-rc.2", "1.3.0-rc.2")
+                }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `release setup tasks set local status without choosing a stage and reuse cache`(version: SupportedGradleVersion) {
+        for (adopted in listOf(false, true)) {
+            for ((setup, status) in listOf("candidateSetup" to "candidate", "finalSetup" to "release")) {
+                val project = fixture("setup-$adopted-$setup", adopted)
+                val tasks = listOf(setup, "recordVersion", ":parent:leaf:generateDescriptorFileForIvyPublication")
+                val cold = runner(project, version, adopted, tasks = tasks).build()
+                assertThat(cold.task(":release")).isNull()
+                assertThat(recordedVersion(project)).startsWith("1.3.0-dev.")
+                verifyStatus(project, status)
+                assertThat(project.resolve("parent/leaf/build/publications/ivy/ivy.xml").readText())
+                    .contains("status=\"integration\"")
+                assertThat(runner(project, version, adopted, tasks = tasks).build().output)
+                    .contains("Reusing configuration cache")
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `last tag reuse preserves validation precedence status and warm cache`(version: SupportedGradleVersion) {
+        for (mode in listOf("legacy", "cache", "isolated")) {
+            for ((workflow, tag) in listOf("candidate" to "1.3.0-rc.7", "final" to "1.3.0")) {
+                val project = fixture("reuse-$mode-$workflow", mode != "legacy")
+                Git.open(project).use { it.tag().setName("v$tag").setAnnotated(false).call() }
+                val remote = remote(project)
+                // Reuse wins over an explicit version.
+                val options = listOf("-Prelease.useLastTag=true", "-Prelease.version=9.9.9")
+                val tasks = listOf(workflow, "recordVersion")
+                val result = runner(project, version, mode == "isolated", options, tasks).build()
+                verifySnapshot(result, project, tag)
+                assertThat(result.task(":release")!!.outcome).isEqualTo(TaskOutcome.SKIPPED)
+                val warm = runner(project, version, mode == "isolated", options, tasks).build()
+                assertThat(warm.output).contains("Reusing configuration cache")
+                Git.open(project).use { git ->
+                    assertThat(git.tagList().call().map { it.name }).containsExactlyInAnyOrder("refs/tags/v1.2.3", "refs/tags/v$tag")
+                }
+                Git.open(remote).use { git -> assertThat(git.tagList().call()).isEmpty() }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `last tag rejects mismatched stages snapshots and untagged commits`(version: SupportedGradleVersion) {
+        for (adopted in listOf(false, true)) {
+            val project = fixture("reuse-validation-$adopted", adopted)
+            val options = listOf("-Prelease.useLastTag=true")
+            assertThat(runner(project, version, adopted, options, listOf("candidate")).buildAndFail().output)
+                .contains("does not appear to be a pre-release version")
+            Git.open(project).use { it.tag().setName("v1.3.0-rc.1").setAnnotated(false).call() }
+            assertThat(runner(project, version, adopted, options, listOf("final")).buildAndFail().output)
+                .contains("does not appear to be a final version")
+            for (workflow in listOf("snapshot", "immutableSnapshot", "devSnapshot")) {
+                assertThat(runner(project, version, adopted, options, listOf(workflow)).buildAndFail().output)
+                    .contains("Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks")
+            }
+            Git.open(project).use { git ->
+                git.commit().setAllowEmpty(true).setMessage("Untagged").setSign(false).call()
+            }
+            assertThat(runner(project, version, adopted, options, listOf("final")).buildAndFail().output)
+                .contains("Current commit does not have a tag")
+            Git.open(project).use { it.tag().setName("not-a-version").setAnnotated(false).call() }
+            assertThat(runner(project, version, adopted, options, listOf("help")).buildAndFail().output)
+                .contains("not recognized as valid versions")
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `release validation rejects dirty invalid and excluded branches even with Git skip flags`(version: SupportedGradleVersion) {
+        for (adopted in listOf(false, true)) {
+            val project = fixture("validation-$adopted", adopted)
+            project.resolve("alpha/src/main/java/Sample.java").appendText("// dirty\n")
+            for (skip in listOf("release.disableGitChecks", "release.travisci")) {
+                assertThat(runner(project, version, adopted, listOf("-P$skip=true"), listOf("final")).buildAndFail().output)
+                    .contains("Sample.java")
+            }
+            commit(project)
+            Git.open(project).use { it.checkout().setCreateBranch(true).setName("feature/invalid").call() }
+            val failed = runner(project, version, adopted, listOf("-Prelease.disableGitChecks=true"), listOf("candidate")).buildAndFail()
+            assertThat(failed.output).contains("does not match one of the included patterns")
+            assertThat(failed.task(":release")?.outcome).isIn(null, TaskOutcome.SKIPPED)
+            project.resolve(if (adopted) "settings.gradle" else "build.gradle").appendText(
+                if (adopted) "\nisolatedRelease { excludeBranchPatterns = ['feature/.*'] }\n"
+                else "\nnebulaRelease { excludeBranchPatterns = ['feature/.*'] }\n")
+            commit(project)
+            assertThat(runner(project, version, adopted, tasks = listOf("snapshotSetup")).buildAndFail().output)
+                .contains("matched an excluded pattern")
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `release scope explicit stages and settings control tagging`(version: SupportedGradleVersion) {
+        val project = fixture("tag-controls", true)
+        project.resolve("settings.gradle").appendText("\nisolatedRelease { prefixTagsWithV = false; scope = 'patch' }\n")
+        commit(project)
+        Git.open(project).use { it.tag().setName("2.0.0").setAnnotated(false).call() }
+        val remote = remote(project)
+        verifySnapshot(runner(project, version, true, tasks = listOf("candidate", "recordVersion")).build(), project, "2.0.1-rc.1")
+        verifyTag(project, remote, "2.0.1-rc.1", "2.0.1-rc.1")
+
+        val lower = runner(project, version, true, listOf("-Prelease.stage=milestone"), listOf("help")).buildAndFail()
+        assertThat(lower.output).contains("nearest version is 2.0.1-rc.1").contains("attempting to release 2.0.1-milestone.1")
+        for (stage in listOf("rc", "final")) {
+            val options = listOf("-Prelease.stage=$stage", "-Prelease.disableGitChecks=true")
+            val result = runner(project, version, true, options, listOf("release", "recordVersion")).build()
+            assertThat(result.task(":release")!!.outcome).isEqualTo(TaskOutcome.SKIPPED)
+            assertThat(recordedVersion(project)).isEqualTo(
+                if (stage == "final") "2.0.1" else "2.0.1-$stage.${if (stage == "rc") 2 else 1}")
+            assertThat(runner(project, version, true, options, listOf("release", "recordVersion")).build().output)
+                .contains("Reusing configuration cache")
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `optional preparation catches a branch behind its remote before tagging`(version: SupportedGradleVersion) {
+        val project = fixture("behind", true)
+        project.resolve("settings.gradle").appendText("\nisolatedRelease { checkRemoteBranchOnRelease = true }\n")
+        commit(project)
+        val remote = remote(project)
+        Git.open(project).use { git ->
+            git.push().setRemote("origin").add("main").call()
+            git.repository.config.apply {
+                setString("branch", "main", "remote", "origin")
+                setString("branch", "main", "merge", "refs/heads/main")
+                save()
+            }
+        }
+        Git.cloneRepository().setURI(remote.toURI().toString()).setDirectory(directory.resolve("ahead")).call().use { git ->
+            git.commit().setAllowEmpty(true).setMessage("Ahead").setAuthor("Test", "test@example.test")
+                .setCommitter("Test", "test@example.test").setSign(false).call()
+            git.push().setRemote("origin").add("main").call()
+        }
+        val result = runner(project, version, true, tasks = listOf("final")).buildAndFail()
+        assertThat(result.output).contains("Current branch is behind the tracked branch. Cannot release.")
+        assertThat(result.task(":prepare")!!.outcome).isEqualTo(TaskOutcome.FAILED)
+        assertThat(result.task(":release")).isNull()
+        Git.open(remote).use { assertThat(it.tagList().call()).isEmpty() }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `explicit release versions and Git skip controls preserve legacy outcomes`(version: SupportedGradleVersion) {
+        for (adopted in listOf(false, true)) {
+            for ((workflow, skip) in listOf("candidate" to "release.disableGitChecks", "final" to "release.travisci")) {
+                val project = fixture("explicit-$adopted-$workflow", adopted)
+                val remote = remote(project)
+                val tasks = listOf(workflow, "recordVersion")
+                val options = listOf("-Prelease.version=4.5.6-rc.8", "-P$skip=true")
+                val result = runner(project, version, adopted, options, tasks).build()
+                verifySnapshot(result, project, "4.5.6-rc.8")
+                assertThat(result.task(":release")!!.outcome).isEqualTo(TaskOutcome.SKIPPED)
+                assertThat(result.task(":prepare")!!.outcome).isEqualTo(TaskOutcome.SKIPPED)
+                assertThat(runner(project, version, adopted, options, tasks).build().output).contains("Reusing configuration cache")
+                Git.open(remote).use { assertThat(it.tagList().call()).isEmpty() }
+                val tagged = runner(project, version, adopted, listOf("-Prelease.version=4.5.6-rc.8"), tasks).build()
+                assertThat(tagged.task(":release")!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
+                verifyTag(project, remote, "v4.5.6-rc.8", "4.5.6-rc.8")
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `release Git identity checks are skipped only when reusing a tag`(version: SupportedGradleVersion) {
+        for (adopted in listOf(false, true)) {
+            val project = fixture("identity-$adopted", adopted)
+            Git.open(project).use { git ->
+                git.repository.config.apply {
+                    unset("user", null, "name")
+                    unset("user", null, "email")
+                    save()
+                }
+            }
+            val environment = System.getenv() + mapOf("GIT_CONFIG_GLOBAL" to "/dev/null", "GIT_CONFIG_NOSYSTEM" to "1")
+            assertThat(runner(project, version, adopted, tasks = listOf("final"))
+                .withEnvironment(environment).buildAndFail().output).contains("Git user.name is not set")
+            val reused = runner(project, version, adopted, listOf("-Prelease.useLastTag=true"),
+                listOf("final", "recordVersion")).withEnvironment(environment).build()
+            verifySnapshot(reused, project, "1.2.3")
+            assertThat(reused.task(":release")!!.outcome).isEqualTo(TaskOutcome.SKIPPED)
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `isolated release validates branches before tagging and diagnoses conflicting status`(version: SupportedGradleVersion) {
+        val project = fixture("branch-order", true)
+        val remote = remote(project)
+        Git.open(project).use { it.checkout().setCreateBranch(true).setName("feature/blocked").call() }
+        val invalid = runner(project, version, true, listOf("--parallel"), listOf("final")).buildAndFail()
+        assertThat(invalid.output).contains("does not match one of the included patterns")
+        assertThat(invalid.task(":release")).isNull()
+        Git.open(remote).use { assertThat(it.tagList().call()).isEmpty() }
+
+        val conflict = runner(project, version, true, tasks = listOf("candidateSetup", "finalSetup")).buildAndFail()
+        assertThat(conflict.output).contains("candidate and final setup/status cannot be combined")
+        val stages = runner(project, version, true, tasks = listOf("candidate", "final")).buildAndFail()
+        assertThat(stages.output).contains("Only one of snapshot, immutableSnapshot, devSnapshot, candidate, or final")
+        for (selector in listOf("cand", ":cS", "fi", ":fS")) {
+            assertThat(runner(project, version, true, tasks = listOf(selector)).buildAndFail().output)
+                .contains("abbreviated workflow selector '$selector'")
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `direct orchestration retains default selection participation and cache reuse`(version: SupportedGradleVersion) {
+        for (mode in listOf("legacy", "cache", "isolated")) {
+            for (workflow in listOf("prepare", "release", "postRelease")) {
+                val project = fixture("direct-$mode-$workflow", mode != "legacy")
+                val remote = remote(project)
+                val tasks = listOf(workflow, "recordVersion")
+                val cold = runner(project, version, mode == "isolated", tasks = tasks).build()
+                assertThat(recordedVersion(project)).startsWith("1.3.0-dev.")
+                verifyStatus(project, "integration")
+                assertThat(cold.task(":prepare")!!.outcome).isEqualTo(TaskOutcome.SKIPPED)
+                assertThat(cold.task(":alpha:jar") != null).isEqualTo(workflow != "prepare")
+                assertThat(cold.task(":parent:leaf:generateDescriptorFileForIvyPublication") != null)
+                    .isEqualTo(workflow == "postRelease")
+                if (workflow != "prepare") assertThat(cold.task(":release")!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
+                assertThat(cold.task(":versionOnly:jar")).isNull()
+                assertThat(runner(project, version, mode == "isolated", tasks = tasks).build().output)
+                    .contains("Reusing configuration cache")
+                Git.open(remote).use { assertThat(it.tagList().call()).isEmpty() }
+            }
+        }
+    }
+
+    private fun commit(project: File) = Git.open(project).use { git ->
+        git.add().addFilepattern(".").call()
+        git.commit().setMessage("Configure fixture").setSign(false).call()
+    }
+
+    private fun remote(project: File): File {
+        val remote = directory.resolve("${project.name}-remote.git")
+        Git.init().setBare(true).setInitialBranch("main").setDirectory(remote).call().close()
+        Git.open(project).use { it.remoteAdd().setName("origin").setUri(URIish(remote.toURI().toString())).call() }
+        return remote
+    }
+
+    private fun verifyTag(project: File, remote: File, tag: String, version: String) {
+        val head = Git.open(project).use { it.repository.resolve("HEAD") }
+        for (repository in listOf(project, remote)) {
+            Git.open(repository).use { git ->
+                RevWalk(git.repository).use { walk ->
+                    val annotation = walk.parseTag(git.repository.resolve("refs/tags/$tag"))
+                    assertThat(annotation.fullMessage).isEqualTo("Release of $version\n")
+                    assertThat(annotation.`object`.id).isEqualTo(head)
+                }
+            }
+        }
+    }
+
+    private fun verifyStatus(project: File, status: String) {
+        for (path in listOf("", "alpha", "parent", "parent/leaf", "versionOnly")) {
+            assertThat(project.resolve(path).resolve("build/release-version.properties").readText()).contains("status=$status")
+        }
     }
 
     private fun recordedVersion(project: File): String = java.util.Properties().apply {
@@ -501,6 +803,7 @@ internal class IsolatedSnapshotReleaseTest {
             tasks.register('recordVersion', WriteProperties) {
                 destinationFile = layout.buildDirectory.file('release-version.properties')
                 property 'version', inferredVersion
+                property 'status', providers.provider { project.status.toString() }
             }
         """.trimIndent()
         for (path in listOf("", "alpha", "parent", "parent/leaf", "versionOnly")) {

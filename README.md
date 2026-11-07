@@ -12,8 +12,8 @@ This plugin provides opinions and tasks for the release process provided by [gra
 
 ## Experimental Isolated Projects support
 
-The opt-in implementation currently covers ordinary `help`/`build` commands and
-root `snapshot` and setup workflows with a Git repository. It provides common versions, leaf Java builds,
+The opt-in implementation currently covers ordinary `help`/`build` commands,
+root snapshot, candidate/final, and setup workflows with a Git repository. It provides common versions, leaf Java builds,
 and Maven/Ivy descriptors without cross-project mutable-state access. It does
 not yet establish general Isolated Projects support.
 
@@ -50,7 +50,7 @@ Apply `com.netflix.nebula.release` in the root and in each participating project
 own build script or local convention. All projects receive the common version;
 projects without the release plugin do not become release participants.
 
-Run `./gradlew snapshot`, `devSnapshot`, or `immutableSnapshot`, or use ordinary
+Run `./gradlew snapshot`, `devSnapshot`, `immutableSnapshot`, `candidate`, or `final`, or use ordinary
 `help`/`build` commands with default development versioning. The existing
 `nebula.release.features.replaceDevWithImmutableSnapshot` and
 `nebula.release.features.immutableSnapshot.timestampPrecision` properties also
@@ -58,8 +58,9 @@ apply. Settings may override them using `replaceDevWithImmutableSnapshot` and
 `timestampPrecision`. One timestamp is captured during settings evaluation and
 shared by all projects; configuration-cache reuse retains that timestamp, and
 settings reevaluation captures a new one. Setup tasks retain default version
-selection unless a stage is explicitly supplied. Snapshot workflows require an
-initial Git commit; ordinary commands also support no-commit version inference.
+selection unless a stage is explicitly supplied. Primary release workflows and
+their setup tasks require an initial Git commit; ordinary commands also support
+no-commit version inference.
 Use the full root workflow names shown above, optionally prefixed with `:`;
 abbreviated workflow selectors receive a diagnostic. Custom workflow entry
 points have not been validated.
@@ -68,15 +69,29 @@ As in the existing implementation, inferred immutable snapshots do not create
 tags. Supplying `-Prelease.version` to `immutableSnapshot` creates and pushes a
 tag to `origin`; `snapshot` and `devSnapshot` skip tagging even with an explicit
 version. Set `isolatedRelease.checkRemoteBranchOnRelease = true` in settings to
-enable the optional remote check for immutable snapshots. The existing
+enable the optional remote check for immutable snapshots and candidate/final releases. The existing
 `release.disableGitChecks` and `release.travisci` flags skip preparation and tagging.
+
+`candidate` selects `rc` versioning; `final` selects a final version. Both require
+a clean working tree and an allowed release branch, including when Git skip
+flags are set. Settings expose `releaseBranchPatterns`, `excludeBranchPatterns`,
+and `allowReleaseFromDetached` with their existing defaults. Status is assigned
+locally as `candidate` or `release`; setup tasks assign that status without
+selecting a stage. Root Ivy descriptors receive the primary workflow status;
+child descriptor defaults retain existing behavior.
+
+Use `-Prelease.useLastTag=true` to reuse a valid version tag on the current commit
+without creating or pushing a tag. Reuse takes precedence over `release.version`
+and validates the tag against the requested candidate/final stage. Snapshot
+workflows reject last-tag reuse. Direct `release`, `postRelease`, and `prepare`
+tasks retain their existing behavior; supplying `release.stage` selects inference
+without adding primary workflow branch validation or status changes.
 
 Enable Gradle's own Isolated Projects setting separately,
 using the switch supported by your Gradle version. The plugin flag also selects
 the new implementation when Gradle isolation is disabled.
 
-The prototype rejects candidate/final stages and direct release orchestration,
-release-base, legacy `release` and `nebulaRelease` extension customizations,
+The prototype rejects release-base, legacy `release` and `nebulaRelease` extension customizations,
 custom strategies, Artifactory, and the
 no-Git fallback. Configure supported common inputs in settings or through Gradle
 properties; root extra properties are not imported. Keep the flag disabled to use

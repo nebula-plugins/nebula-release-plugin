@@ -16,6 +16,7 @@
 package nebula.plugin.release
 
 import groovy.transform.PackageScope
+import org.gradle.api.GradleException
 import nebula.plugin.release.git.model.Branch
 import nebula.plugin.release.git.model.Commit
 import nebula.plugin.release.git.semver.ChangeScope
@@ -35,6 +36,9 @@ final class IsolatedStrategyBridge {
                 stageFromProp: stage, currentBranch: new Branch(fullName: currentBranch),
                 currentHead: new Commit(id: head, abbreviatedId: head.take(7)), repoDirty: dirty)
         def strategy = NetflixOssStrategies.strategyFromInputs(stage, inputs.travisBranch())
+        if (dirty && !strategy.allowDirtyRepo) {
+            throw new GradleException("Cannot infer a ${stage} release version from a dirty repository.")
+        }
         state = strategy.normalStrategy.infer(state)
         if (stage == 'snapshot') {
             state = Strategies.PreRelease.STAGE_FLOAT.infer(state)
@@ -47,7 +51,16 @@ final class IsolatedStrategyBridge {
         if (stage == 'dev' || stage == 'snapshot') {
             state = NetflixOssStrategies.metadataFromInputs(state, inputs.releaseBranchPatterns(), inputs.shortenedBranchPattern())
         }
-        state.toVersion().toString()
+        def version = state.toVersion()
+        if (strategy.enforcePrecedence && version < nearest.any) {
+            throw new GradleException("Based on previous tags in this branch the nearest version is ${nearest.any} You're attempting to release ${version} based on the tag recently pushed. Please look at https://github.com/nebula-plugins/nebula-release-plugin/wiki/Error-Messages-Explained#orggradleapigradleexception-inferred-version-cannot-be-lower-than-nearest-required-by-selected-strategy")
+        }
+        version.toString()
+    }
+
+    static ReleaseVersion lastTag(NearestVersion nearest, IsolatedReleaseInputs inputs,
+                                  nebula.plugin.release.git.GitBuildService git) {
+        OverrideStrategies.ReleaseLastTagStrategy.inferFromTag(nearest, inputs.stage(), git, inputs.sanitize())
     }
 
     static ReleaseVersion version(String version, String previousVersion, boolean createTag) {

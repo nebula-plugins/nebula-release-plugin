@@ -4,18 +4,20 @@ Status: proposed. This document specifies an opt-in implementation; it does not
 describe support available in a released version.
 
 Implementation status: the working prototype covers ordinary `help`/`build`, root
-`snapshot`, `devSnapshot`, `immutableSnapshot`, and default version selection for
-their setup tasks with a Git repository, common inputs, local version assignment,
-leaf Java builds, and Maven/Ivy descriptors. Candidate/final stages,
-release-base, custom strategies/legacy extension DSL, Artifactory, and the no-Git
+`snapshot`, `devSnapshot`, `immutableSnapshot`, `candidate`, `final`, and default
+version selection for their setup tasks with a Git repository, common inputs,
+local version/status assignment, leaf Java builds, and Maven/Ivy descriptors.
+Last-tag reuse and direct root release orchestration are covered. Release-base,
+custom strategies/legacy extension DSL, Artifactory, and the no-Git
 fallback are rejected with adoption diagnostics. The remaining milestones below
 are still required before claiming general Isolated Projects compatibility.
 
 In this prototype, explicit `isolatedRelease` settings override the `git.root` and
 `release.scope` property defaults. A supplied `release.version` overrides version
 inference, except that the existing no-commits strategy still takes precedence.
-No-commit inference is supported for ordinary commands; snapshot orchestration
-requires an initial commit and reports an adoption diagnostic when it is absent.
+No-commit inference is supported for ordinary commands; primary release workflows
+and their setup tasks require an initial commit and report an adoption diagnostic
+when it is absent.
 Current workflow coverage uses full root task names, with and without a leading
 colon; abbreviated workflow selectors are diagnosed before task execution.
 Custom workflow entry points still need validation.
@@ -25,6 +27,24 @@ tag. An explicit `release.version` retains the existing tagging/pushing behavior
 for `immutableSnapshot`; `snapshot` and `devSnapshot` skip both preparation and
 tagging. Settings expose the existing optional `checkRemoteBranchOnRelease`
 policy. Existing Git skip controls still skip preparation and tagging.
+
+Candidate/final inference reuses the existing scope and prerelease strategies,
+including precedence checks. Primary workflows check Git identity, dirty state,
+and release branches with the existing policies; skip controls do not bypass
+those validations. Only the root owns preparation, tagging, and pushing.
+Release validation precedes tagging when both are in the graph. Direct
+`release`/`postRelease`/`prepare` retain the existing distinction from primary
+workflows: an explicit stage chooses inference without implicitly enabling their
+branch validation or status selection.
+
+Candidate/final setup assigns each project's status locally after its script is
+evaluated, without selecting a version stage. Primary workflows also configure
+the root Ivy descriptor status; child descriptor defaults retain legacy behavior.
+Last-tag validation is shared with the legacy implementation, takes precedence
+over supplied versions, and suppresses tagging/pushing. Snapshot stages reject
+last-tag reuse; untagged commits and incompatible candidate/final tags fail.
+Conflicting candidate/final setup statuses and abbreviated selectors are
+diagnosed rather than selecting a status or stage from task realization order.
 
 Immutable snapshots capture one UTC timestamp during settings evaluation using
 the existing precision formats. Every project's immutable inputs carry that

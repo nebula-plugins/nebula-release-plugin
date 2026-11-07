@@ -25,6 +25,8 @@ import org.gradle.api.initialization.Settings;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.publish.ivy.plugins.IvyPublishPlugin;
+import org.gradle.api.publish.ivy.IvyPublication;
+import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
@@ -54,33 +56,37 @@ public final class IsolatedReleaseSupport {
         boolean snapshot = tasks.stream().anyMatch(Set.of("snapshot", ":snapshot")::contains);
         boolean development = tasks.stream().anyMatch(Set.of("devSnapshot", ":devSnapshot")::contains);
         boolean immutable = tasks.stream().anyMatch(Set.of("immutableSnapshot", ":immutableSnapshot")::contains);
-        if ((snapshot ? 1 : 0) + (development ? 1 : 0) + (immutable ? 1 : 0) > 1) {
+        boolean candidate = tasks.stream().anyMatch(Set.of("candidate", ":candidate")::contains);
+        boolean finalRelease = tasks.stream().anyMatch(Set.of("final", ":final")::contains);
+        if ((snapshot ? 1 : 0) + (development ? 1 : 0) + (immutable ? 1 : 0)
+                + (candidate ? 1 : 0) + (finalRelease ? 1 : 0) > 1) {
             throw new GradleException("Only one of snapshot, immutableSnapshot, devSnapshot, candidate, or final can be specified.");
         }
-        for (var task : tasks) {
-            var name = task.substring(task.lastIndexOf(':') + 1);
-            if (Set.of("candidate", "final", "candidateSetup", "finalSetup").contains(name)) {
-                throw unsupported("workflow '" + task + "' is not implemented");
-            }
-        }
         var explicitStage = properties.gradleProperty("release.stage").getOrNull();
-        if (explicitStage != null && !Set.of("SNAPSHOT", "dev", "snapshot").contains(explicitStage)) {
-            throw unsupported("release.stage must be SNAPSHOT, snapshot or dev");
+        if (explicitStage != null && !Set.of("SNAPSHOT", "dev", "snapshot", "milestone", "rc", "final").contains(explicitStage)) {
+            throw unsupported("release.stage must be SNAPSHOT, snapshot, dev, milestone, rc or final");
         }
         if (properties.gradleProperty("release.defaultVersioningStrategy").isPresent()
                 || properties.gradleProperty("release.ignoreSuppliedVersionVerification").isPresent()) {
             throw unsupported("custom strategy and supplied-version validation overrides are not implemented");
         }
-        for (var name : List.of("release.useLastTag")) {
-            if (properties.gradleProperty(name).map(Boolean::parseBoolean).getOrElse(false)) {
-                throw unsupported(name + " is not implemented");
-            }
+        return finalRelease ? "final" : candidate ? "rc" : snapshot ? "SNAPSHOT"
+                : immutable || development && replaceDev ? "snapshot" : development ? "dev" : explicitStage;
+    }
+
+    static boolean isReleaseWorkflow(Settings settings) {
+        return settings.getGradle().getStartParameter().getTaskNames().stream()
+                .anyMatch(Set.of("candidate", ":candidate", "final", ":final")::contains);
+    }
+
+    static String workflowStatus(Settings settings) {
+        var tasks = settings.getGradle().getStartParameter().getTaskNames();
+        boolean candidate = tasks.stream().anyMatch(Set.of("candidate", ":candidate", "candidateSetup", ":candidateSetup")::contains);
+        boolean finalRelease = tasks.stream().anyMatch(Set.of("final", ":final", "finalSetup", ":finalSetup")::contains);
+        if (candidate && finalRelease) {
+            throw unsupported("candidate and final setup/status cannot be combined");
         }
-        if (!snapshot && !development && !immutable && tasks.stream().anyMatch(task -> Set.of("release", "postRelease", "prepare")
-                .contains(task.substring(task.lastIndexOf(':') + 1)))) {
-            throw unsupported("direct release orchestration is not implemented yet");
-        }
-        return snapshot ? "SNAPSHOT" : immutable || development && replaceDev ? "snapshot" : development ? "dev" : explicitStage;
+        return finalRelease ? "release" : candidate ? "candidate" : null;
     }
 
     static void install(Project project, IsolatedReleaseInputs inputs, List<String> paths, boolean leaf) {
@@ -91,6 +97,13 @@ public final class IsolatedReleaseSupport {
                 "nebulaIsolatedReleaseGit", GitBuildService.class,
                 spec -> spec.getParameters().getGitRootDir().set(inputs.gitRoot()));
         var git = service.get();
+        if (git.isGitRepo() && inputs.releaseWorkflow()) {
+            if (project.getPath().equals(":") && !inputs.useLastTag()) git.verifyUserGitConfig();
+            var status = git.getStatus();
+            if (status != null && !status.isEmpty()) {
+                throw new GradleException(new ErrorMessageFormatter().format(status));
+            }
+        }
         var inferred = IsolatedReleaseEngine.infer(inputs, git);
         var version = new LocalVersion(inferred.getVersion());
         var model = new LocalModel(paths, leaf, git.isGitRepo(), git.isGitRepo() && git.hasCommit(),
@@ -103,6 +116,9 @@ public final class IsolatedReleaseSupport {
         project.getTasks().register(BUILD);
         project.getTasks().register(DESCRIPTORS);
         project.afterEvaluate(local -> {
+            // Legacy setup tasks change status after project scripts have configured
+            // publications. Preserve those descriptor defaults when assigning locally.
+            if (inputs.status() != null) local.setStatus(inputs.status());
             var extras = local.getExtensions().getExtraProperties();
             for (var name : List.of(FLAG, "git.root", "release.scope", "release.version", "release.travisBranch",
                     "release.sanitizeVersion", "release.useLastTag", "release.defaultVersioningStrategy",
@@ -139,13 +155,14 @@ public final class IsolatedReleaseSupport {
                     + "applying the project plugin");
         }
         if (!model.gitRepo()) {
-            throw unsupported("snapshot orchestration requires a Git repository at the configured gitRoot");
+            throw unsupported("release orchestration requires a Git repository at the configured gitRoot");
         }
         if (!model.hasCommit() && project.getGradle().getStartParameter().getTaskNames().stream()
                 .anyMatch(Set.of("snapshot", ":snapshot", "devSnapshot", ":devSnapshot", "immutableSnapshot", ":immutableSnapshot",
                         "snapshotSetup", ":snapshotSetup", "devSnapshotSetup", ":devSnapshotSetup",
-                        "immutableSnapshotSetup", ":immutableSnapshotSetup")::contains)) {
-            throw unsupported("snapshot orchestration requires an initial Git commit; "
+                        "immutableSnapshotSetup", ":immutableSnapshotSetup", "candidate", ":candidate", "final", ":final",
+                        "candidateSetup", ":candidateSetup", "finalSetup", ":finalSetup")::contains)) {
+            throw unsupported("release orchestration requires an initial Git commit; "
                     + "ordinary help/build commands support no-commit version inference");
         }
         project.getPluginManager().withPlugin("com.jfrog.artifactory", ignored -> {
@@ -162,6 +179,13 @@ public final class IsolatedReleaseSupport {
                 project.getTasks().named(DESCRIPTORS).configure(task ->
                         task.dependsOn(project.getTasks().withType(GenerateIvyDescriptor.class))));
 
+        if (project.getPath().equals(":") && model.inputs().releaseWorkflow()) {
+            project.getPlugins().withType(IvyPublishPlugin.class, ignored ->
+                    project.getExtensions().getByType(PublishingExtension.class).getPublications()
+                            .withType(IvyPublication.class).configureEach(publication ->
+                                    publication.getDescriptor().setStatus(model.inputs().status())));
+        }
+
         if (project.getPath().equals(":")) {
             project.getExtensions().add("release", new RejectedReleaseDsl("release"));
             project.getExtensions().add("nebulaRelease", new RejectedReleaseDsl("nebulaRelease"));
@@ -173,7 +197,7 @@ public final class IsolatedReleaseSupport {
                 patterns.getExcludeBranchPatterns().set(model.inputs().excludeBranchPatterns());
                 patterns.getAllowReleaseFromDetached().set(model.inputs().allowReleaseFromDetached());
                 task.getPatterns().set(patterns);
-                task.getIsSnapshotRelease().set(true);
+                task.getIsSnapshotRelease().set(!model.inputs().releaseWorkflow());
             });
             var service = project.getGradle().getSharedServices().registerIfAbsent(
                     "nebulaIsolatedReleaseGit", GitBuildService.class,
@@ -195,12 +219,13 @@ public final class IsolatedReleaseSupport {
             project.getTasks().register("release", ReleaseTask.class, task -> {
                 task.setGroup(GROUP);
                 task.dependsOn("prepare");
+                task.shouldRunAfter(releaseCheck);
                 task.dependsOn(paths(model.paths(), BUILD));
                 task.getProjectVersion().set(model.version());
                 task.getTagStrategy().set(IsolatedStrategyBridge.tagStrategy(model.inputs().prefixTagsWithV()));
                 task.getRemote().set("origin");
                 task.getGitService().set(service);
-                task.setEnabled(!skip && !skipSnapshot);
+                task.setEnabled(!skip && !skipSnapshot && !model.inputs().useLastTag());
             });
             project.getTasks().register("postRelease", task -> {
                 task.setGroup(GROUP);
@@ -215,7 +240,7 @@ public final class IsolatedReleaseSupport {
                 task.setGroup(GROUP);
                 task.dependsOn("snapshotSetup", "postRelease");
             });
-            for (var name : List.of("devSnapshot", "immutableSnapshot")) {
+            for (var name : List.of("devSnapshot", "immutableSnapshot", "candidate", "final")) {
                 var setup = project.getTasks().register(name + "Setup", task -> {
                     task.setGroup(GROUP);
                     task.dependsOn(releaseCheck);
@@ -238,7 +263,8 @@ public final class IsolatedReleaseSupport {
         // Exact local task names remain available for consumer-defined tasks.
         var names = project.getTasks().getNames();
         var workflows = List.of("snapshot", "devSnapshot", "immutableSnapshot", "snapshotSetup",
-                "devSnapshotSetup", "immutableSnapshotSetup", "release", "postRelease", "prepare", "releaseCheck");
+                "devSnapshotSetup", "immutableSnapshotSetup", "candidate", "candidateSetup", "final", "finalSetup",
+                "release", "postRelease", "prepare", "releaseCheck");
         for (var requested : project.getGradle().getStartParameter().getTaskNames()) {
             var selector = requested.startsWith(":") ? requested.substring(1) : requested;
             if (selector.contains(":") || names.contains(selector)) continue;
