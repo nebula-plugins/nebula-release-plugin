@@ -26,14 +26,27 @@ import javax.inject.Inject;
  * Configure this extension in settings, before project configuration starts.
  */
 public abstract class IsolatedReleaseSettings extends ReleaseExtension {
+    /**
+     * Creates the common settings extension.
+     * @param objects Gradle's object factory
+     */
     @Inject
     public IsolatedReleaseSettings(ObjectFactory objects) {
         super(objects);
     }
 
+    /** @return the Git worktree directory, defaulting to git.root or the root project's directory */
     public abstract DirectoryProperty getGitRoot();
 
+    /** @return the optional version scope, defaulting to the release.scope Gradle property */
     public abstract Property<String> getScope();
 
+    /** @return whether version tags use the v prefix, for both reading and creation; defaults to true */
     public abstract Property<Boolean> getPrefixTagsWithV();
+
+    /** @return whether default and devSnapshot versions use immutable snapshots; defaults to the existing feature flag */
+    public abstract Property<Boolean> getReplaceDevWithImmutableSnapshot();
+
+    /** @return DAYS, HOURS, MINUTES, SECONDS, or MILLISECONDS; defaults to the existing precision property or MINUTES */
+    public abstract Property<String> getTimestampPrecision();
 }

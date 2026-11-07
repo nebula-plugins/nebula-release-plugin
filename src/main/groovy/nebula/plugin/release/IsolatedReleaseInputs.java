@@ -23,6 +23,8 @@ import java.util.Set;
 public record IsolatedReleaseInputs(File gitRoot, String scope, String travisBranch,
                                    boolean prefixTagsWithV, boolean sanitize, String suppliedVersion,
                                    String stage, Set<String> releaseBranchPatterns, Set<String> excludeBranchPatterns,
-                                   String shortenedBranchPattern, boolean allowReleaseFromDetached)
+                                   String shortenedBranchPattern, boolean allowReleaseFromDetached,
+                                   boolean replaceDevWithImmutableSnapshot, String timestamp,
+                                   boolean checkRemoteBranchOnRelease)
         implements Serializable {
 }

@@ -4,8 +4,9 @@ Status: proposed. This document specifies an opt-in implementation; it does not
 describe support available in a released version.
 
 Implementation status: the working prototype covers ordinary `help`/`build`, root
-`snapshot`, and default version selection for `snapshotSetup` with a Git repository, common inputs, local
-version assignment, leaf Java builds, and Maven/Ivy descriptors. Other stages,
+`snapshot`, `devSnapshot`, `immutableSnapshot`, and default version selection for
+their setup tasks with a Git repository, common inputs, local version assignment,
+leaf Java builds, and Maven/Ivy descriptors. Candidate/final stages,
 release-base, custom strategies/legacy extension DSL, Artifactory, and the no-Git
 fallback are rejected with adoption diagnostics. The remaining milestones below
 are still required before claiming general Isolated Projects compatibility.
@@ -13,6 +14,24 @@ are still required before claiming general Isolated Projects compatibility.
 In this prototype, explicit `isolatedRelease` settings override the `git.root` and
 `release.scope` property defaults. A supplied `release.version` overrides version
 inference, except that the existing no-commits strategy still takes precedence.
+No-commit inference is supported for ordinary commands; snapshot orchestration
+requires an initial commit and reports an adoption diagnostic when it is absent.
+Current workflow coverage uses full root task names, with and without a leading
+colon; abbreviated workflow selectors are diagnosed before task execution.
+Custom workflow entry points still need validation.
+
+Inferred immutable snapshots execute the root release task without creating a
+tag. An explicit `release.version` retains the existing tagging/pushing behavior
+for `immutableSnapshot`; `snapshot` and `devSnapshot` skip both preparation and
+tagging. Settings expose the existing optional `checkRemoteBranchOnRelease`
+policy. Existing Git skip controls still skip preparation and tagging.
+
+Immutable snapshots capture one UTC timestamp during settings evaluation using
+the existing precision formats. Every project's immutable inputs carry that
+same timestamp. Configuration-cache reuse retains it; settings reevaluation
+captures a new timestamp. Delayed project configuration and local script
+invalidation are covered on Gradle 9.0/9.5. This does not establish consistency
+under partial project-cache reuse on a future Gradle implementation.
 
 Gradle 9.0/9.5 task builds configure all projects on a configuration-cache miss.
 Local-script invalidation tests on these versions therefore do not prove partial
