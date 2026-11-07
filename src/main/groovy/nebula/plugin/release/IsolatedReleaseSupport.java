@@ -30,6 +30,7 @@ import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.ivy.tasks.GenerateIvyDescriptor;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
+import org.gradle.api.tasks.TaskProvider;
 
 import java.io.Serializable;
 import java.util.List;
@@ -50,9 +51,16 @@ public final class IsolatedReleaseSupport {
         return providers.gradleProperty(FLAG).map(Boolean::parseBoolean).getOrElse(false);
     }
 
-    static String validateWorkflow(Settings settings, boolean replaceDev) {
+    static String validateWorkflow(Settings settings, boolean replaceDev, boolean baseRelease) {
         var properties = settings.getProviders();
         var tasks = settings.getGradle().getStartParameter().getTaskNames();
+        var explicitStage = properties.gradleProperty("release.stage").getOrNull();
+        if (explicitStage != null) validateStage(explicitStage, "release.stage");
+        if (properties.gradleProperty("release.defaultVersioningStrategy").isPresent()) {
+            throw unsupported("custom strategy overrides are not implemented; use isolatedRelease.defaultStage for a built-in default");
+        }
+        // Base mode has no primary workflows. Consumer task names do not select a stage.
+        if (baseRelease) return explicitStage;
         boolean snapshot = tasks.stream().anyMatch(Set.of("snapshot", ":snapshot")::contains);
         boolean development = tasks.stream().anyMatch(Set.of("devSnapshot", ":devSnapshot")::contains);
         boolean immutable = tasks.stream().anyMatch(Set.of("immutableSnapshot", ":immutableSnapshot")::contains);
@@ -62,16 +70,14 @@ public final class IsolatedReleaseSupport {
                 + (candidate ? 1 : 0) + (finalRelease ? 1 : 0) > 1) {
             throw new GradleException("Only one of snapshot, immutableSnapshot, devSnapshot, candidate, or final can be specified.");
         }
-        var explicitStage = properties.gradleProperty("release.stage").getOrNull();
-        if (explicitStage != null && !Set.of("SNAPSHOT", "dev", "snapshot", "milestone", "rc", "final").contains(explicitStage)) {
-            throw unsupported("release.stage must be SNAPSHOT, snapshot, dev, milestone, rc or final");
-        }
-        if (properties.gradleProperty("release.defaultVersioningStrategy").isPresent()
-                || properties.gradleProperty("release.ignoreSuppliedVersionVerification").isPresent()) {
-            throw unsupported("custom strategy and supplied-version validation overrides are not implemented");
-        }
         return finalRelease ? "final" : candidate ? "rc" : snapshot ? "SNAPSHOT"
                 : immutable || development && replaceDev ? "snapshot" : development ? "dev" : explicitStage;
+    }
+
+    static void validateStage(String stage, String input) {
+        if (!Set.of("SNAPSHOT", "dev", "snapshot", "milestone", "rc", "final").contains(stage)) {
+            throw unsupported(input + " must be SNAPSHOT, snapshot, dev, milestone, rc or final");
+        }
     }
 
     static boolean isReleaseWorkflow(Settings settings) {
@@ -109,22 +115,25 @@ public final class IsolatedReleaseSupport {
         var model = new LocalModel(paths, leaf, git.isGitRepo(), git.isGitRepo() && git.hasCommit(),
                 git.isGitRepo() ? git.getCurrentBranch() : "", inputs, inferred);
         project.getExtensions().add(MODEL, model);
-        project.setVersion(version);
-        if (inputs.stage() != null) {
+        boolean active = inputs.baseRelease() || model.gitRepo();
+        if (active) project.setVersion(version);
+        if (active && inputs.stage() != null) {
             project.getExtensions().getExtraProperties().set("release.stage", inputs.stage());
         }
-        project.getTasks().register(BUILD);
-        project.getTasks().register(DESCRIPTORS);
+        if (active && !inputs.baseRelease()) {
+            project.getTasks().register(BUILD);
+            project.getTasks().register(DESCRIPTORS);
+        }
         project.afterEvaluate(local -> {
             // Legacy setup tasks change status after project scripts have configured
             // publications. Preserve those descriptor defaults when assigning locally.
             if (inputs.status() != null) local.setStatus(inputs.status());
             var extras = local.getExtensions().getExtraProperties();
-            for (var name : List.of(FLAG, "git.root", "release.scope", "release.version", "release.travisBranch",
+            for (var name : active ? List.of(FLAG, "git.root", "release.scope", "release.version", "release.travisBranch",
                     "release.sanitizeVersion", "release.useLastTag", "release.defaultVersioningStrategy",
                     "release.ignoreSuppliedVersionVerification", "release.disableGitChecks", "release.travisci",
                     FeatureFlags.NEBULA_RELEASE_REPLACE_DEV_SNAPSHOT_WITH_IMMUTABLE_SNAPSHOT,
-                    FeatureFlags.NEBULA_RELEASE_IMMUTABLE_SNAPSHOT_TIMESTAMP_PRECISION)) {
+                    FeatureFlags.NEBULA_RELEASE_IMMUTABLE_SNAPSHOT_TIMESTAMP_PRECISION) : List.of(FLAG)) {
                 var gradleProperty = local.getProviders().gradleProperty(name).getOrNull();
                 if (extras.has(name) && !String.valueOf(extras.get(name)).equals(gradleProperty)) {
                     throw unsupported("project " + local.getPath() + " sets extra property '" + name
@@ -132,30 +141,32 @@ public final class IsolatedReleaseSupport {
                 }
             }
             var localStage = extras.has("release.stage") ? extras.get("release.stage") : null;
-            if (!Objects.equals(inputs.stage(), localStage)) {
+            if (active && !Objects.equals(inputs.stage(), localStage)) {
                 throw unsupported("project " + local.getPath() + " changes release.stage; configure it through Gradle properties");
             }
-            if (local.getVersion() != version) {
+            if (active && local.getVersion() != version) {
                 throw unsupported("project " + local.getPath() + " assigns project.version directly; "
                         + "use -Prelease.version instead");
             }
             if (local.getPath().equals(":")) {
-                if (!isParticipant(local)) {
-                    throw unsupported("apply com.netflix.nebula.release at the root project");
+                if (inputs.baseRelease() ? !local.getPluginManager().hasPlugin("com.netflix.nebula.release-base") : !isParticipant(local)) {
+                    throw unsupported("apply " + (inputs.baseRelease() ? "com.netflix.nebula.release-base" : "com.netflix.nebula.release")
+                            + " at the root project");
                 }
-                validateSelectors(local);
+                if (active) validateSelectors(local, inputs.baseRelease());
             }
         });
     }
 
     public static void apply(Project project) {
-        var model = (LocalModel) project.getExtensions().findByName(MODEL);
-        if (model == null) {
-            throw unsupported("apply com.netflix.nebula.release-settings in settings.gradle before "
-                    + "applying the project plugin");
-        }
+        var model = model(project, false);
         if (!model.gitRepo()) {
-            throw unsupported("release orchestration requires a Git repository at the configured gitRoot");
+            // The legacy no-Git fallback affects only projects applying the full
+            // plugin and installs no release tasks, extensions, or publishing hooks.
+            project.setVersion(model.version().getVersion());
+            project.getLogger().warn("Git repository not found at {} -- nebula-release tasks will not be available. "
+                    + "Use the git.root Gradle property to specify a different directory.", model.inputs().gitRoot());
+            return;
         }
         if (!model.hasCommit() && project.getGradle().getStartParameter().getTaskNames().stream()
                 .anyMatch(Set.of("snapshot", ":snapshot", "devSnapshot", ":devSnapshot", "immutableSnapshot", ":immutableSnapshot",
@@ -199,34 +210,7 @@ public final class IsolatedReleaseSupport {
                 task.getPatterns().set(patterns);
                 task.getIsSnapshotRelease().set(!model.inputs().releaseWorkflow());
             });
-            var service = project.getGradle().getSharedServices().registerIfAbsent(
-                    "nebulaIsolatedReleaseGit", GitBuildService.class,
-                    spec -> spec.getParameters().getGitRootDir().set(model.inputs().gitRoot()));
-            var tasks = project.getGradle().getStartParameter().getTaskNames();
-            var skip = List.of("release.disableGitChecks", "release.travisci").stream().anyMatch(name ->
-                    project.getProviders().gradleProperty(name).map(Boolean::parseBoolean).getOrElse(false));
-            var skipSnapshot = tasks.stream().anyMatch(Set.of("snapshot", ":snapshot", "devSnapshot", ":devSnapshot")::contains);
-            var prepare = project.getTasks().register("prepare", PrepareTask.class, task -> {
-                task.setGroup(GROUP);
-                task.getProjectVersion().set(model.version());
-                task.getRemote().set("origin");
-                task.getGitService().set(service);
-                task.setEnabled(!skip && !skipSnapshot && model.inputs().checkRemoteBranchOnRelease());
-            });
-            project.getTasks().configureEach(task -> {
-                if (!task.getName().equals("prepare")) task.shouldRunAfter(prepare);
-            });
-            project.getTasks().register("release", ReleaseTask.class, task -> {
-                task.setGroup(GROUP);
-                task.dependsOn("prepare");
-                task.shouldRunAfter(releaseCheck);
-                task.dependsOn(paths(model.paths(), BUILD));
-                task.getProjectVersion().set(model.version());
-                task.getTagStrategy().set(IsolatedStrategyBridge.tagStrategy(model.inputs().prefixTagsWithV()));
-                task.getRemote().set("origin");
-                task.getGitService().set(service);
-                task.setEnabled(!skip && !skipSnapshot && !model.inputs().useLastTag());
-            });
+            registerGitTasks(project, model, releaseCheck);
             project.getTasks().register("postRelease", task -> {
                 task.setGroup(GROUP);
                 task.dependsOn("release");
@@ -253,16 +237,74 @@ public final class IsolatedReleaseSupport {
         }
     }
 
+    /** Installs the root-only coordinator without full-plugin build or publishing policies. */
+    public static void applyBase(Project project) {
+        var model = model(project, true);
+        if (!project.getPath().equals(":")) {
+            throw unsupported("apply com.netflix.nebula.release-base only at the root; "
+                    + "the settings companion assigns versions to other projects locally");
+        }
+        project.getExtensions().add("release", new RejectedReleaseDsl("release"));
+        registerGitTasks(project, model, null);
+    }
+
+    private static LocalModel model(Project project, boolean baseRelease) {
+        var model = (LocalModel) project.getExtensions().findByName(MODEL);
+        if (model == null) {
+            throw unsupported("apply com.netflix.nebula.release-settings in settings.gradle before applying the project plugin");
+        }
+        if (model.inputs().baseRelease() != baseRelease) {
+            throw unsupported(baseRelease ? "release-base requires isolatedRelease.baseRelease = true in settings.gradle"
+                    : "isolatedRelease.baseRelease = true requires the release-base coordinator; "
+                    + "use baseRelease = false for the full release plugin");
+        }
+        return model;
+    }
+
+    private static void registerGitTasks(Project project, LocalModel model, TaskProvider<ReleaseCheck> releaseCheck) {
+        boolean base = model.inputs().baseRelease();
+        var service = project.getGradle().getSharedServices().registerIfAbsent(
+                "nebulaIsolatedReleaseGit", GitBuildService.class,
+                spec -> spec.getParameters().getGitRootDir().set(model.inputs().gitRoot()));
+        var tasks = project.getGradle().getStartParameter().getTaskNames();
+        boolean skip = !base && List.of("release.disableGitChecks", "release.travisci").stream().anyMatch(name ->
+                project.getProviders().gradleProperty(name).map(Boolean::parseBoolean).getOrElse(false));
+        boolean skipSnapshot = !base && tasks.stream().anyMatch(Set.of("snapshot", ":snapshot", "devSnapshot", ":devSnapshot")::contains);
+        var prepare = project.getTasks().register("prepare", PrepareTask.class, task -> {
+            if (!base) task.setGroup(GROUP);
+            task.setDescription("Verifies that the project could be released.");
+            task.getProjectVersion().set(model.version());
+            task.getRemote().set(model.inputs().remote());
+            task.getGitService().set(service);
+            task.setEnabled(base || !skip && !skipSnapshot && model.inputs().checkRemoteBranchOnRelease());
+        });
+        project.getTasks().configureEach(task -> {
+            if (!task.getName().equals("prepare")) task.shouldRunAfter(prepare);
+        });
+        project.getTasks().register("release", ReleaseTask.class, task -> {
+            if (!base) task.setGroup(GROUP);
+            task.setDescription("Releases this project.");
+            task.dependsOn(prepare);
+            if (releaseCheck != null) task.shouldRunAfter(releaseCheck);
+            if (!base) task.dependsOn(paths(model.paths(), BUILD));
+            task.getProjectVersion().set(model.version());
+            task.getTagStrategy().set(IsolatedStrategyBridge.tagStrategy(model.inputs().prefixTagsWithV(), base));
+            task.getRemote().set(model.inputs().remote());
+            task.getGitService().set(service);
+            task.setEnabled(!model.inputs().useLastTag() && (base || !skip && !skipSnapshot));
+        });
+    }
+
     private static List<String> paths(List<String> projects, String task) {
         return projects.stream().map(path -> path.equals(":") ? ":" + task : path + ":" + task).toList();
     }
 
-    private static void validateSelectors(Project project) {
+    private static void validateSelectors(Project project, boolean baseRelease) {
         // Stage selection happens before project configuration. Reject workflow
         // abbreviations before task execution can use a different inferred stage.
         // Exact local task names remain available for consumer-defined tasks.
         var names = project.getTasks().getNames();
-        var workflows = List.of("snapshot", "devSnapshot", "immutableSnapshot", "snapshotSetup",
+        var workflows = baseRelease ? List.of("release", "prepare") : List.of("snapshot", "devSnapshot", "immutableSnapshot", "snapshotSetup",
                 "devSnapshotSetup", "immutableSnapshotSetup", "candidate", "candidateSetup", "final", "finalSetup",
                 "release", "postRelease", "prepare", "releaseCheck");
         for (var requested : project.getGradle().getStartParameter().getTaskNames()) {

@@ -13,9 +13,10 @@ This plugin provides opinions and tasks for the release process provided by [gra
 ## Experimental Isolated Projects support
 
 The opt-in implementation currently covers ordinary `help`/`build` commands,
-root snapshot, candidate/final, and setup workflows with a Git repository. It provides common versions, leaf Java builds,
-and Maven/Ivy descriptors without cross-project mutable-state access. It does
-not yet establish general Isolated Projects support.
+root snapshot, candidate/final, and setup workflows with a Git repository, plus
+release-base and the full plugin's no-Git fallback. It provides common versions,
+leaf Java builds, and Maven/Ivy descriptors without cross-project mutable-state
+access. It does not yet establish general Isolated Projects support.
 
 Enable the build-wide rollout flag in root `gradle.properties`:
 
@@ -34,17 +35,23 @@ plugins {
 rootProject.name = 'sample'
 include 'library', 'application'
 
-// Optional common inputs; defaults use git.root/release.scope Gradle properties
-// and tags prefixed with v.
+// Optional common inputs; defaults use Gradle properties and tags prefixed with v.
 isolatedRelease {
     scope = 'minor'
     prefixTagsWithV = true
+    remote = providers.gradleProperty('releaseRemote').orElse('origin')
 }
 ```
 
-Explicit `isolatedRelease` values take precedence over the `git.root` and
-`release.scope` property defaults. `-Prelease.version` selects an explicit common
-version instead of inferring one from scope.
+Explicit `isolatedRelease` values take precedence over property conventions.
+`gitRoot`, `scope`, and `version` default to `git.root`, `release.scope`, and
+`release.version`, respectively. `version` and `remote` also accept providers.
+All common settings are frozen when settings evaluation completes; configure
+them in settings rather than project callbacks. `-Prelease.version` selects an
+explicit common version instead of inferring one from scope.
+`verifySuppliedVersion` defaults to true unless
+`release.ignoreSuppliedVersionVerification` is present (even with value `false`);
+an explicit settings value overrides that convention.
 
 Apply `com.netflix.nebula.release` in the root and in each participating project's
 own build script or local convention. All projects receive the common version;
@@ -67,8 +74,9 @@ points have not been validated.
 
 As in the existing implementation, inferred immutable snapshots do not create
 tags. Supplying `-Prelease.version` to `immutableSnapshot` creates and pushes a
-tag to `origin`; `snapshot` and `devSnapshot` skip tagging even with an explicit
-version. Set `isolatedRelease.checkRemoteBranchOnRelease = true` in settings to
+tag to the configured remote (default `origin`); `snapshot` and `devSnapshot` skip
+tagging even with an explicit version. Set
+`isolatedRelease.checkRemoteBranchOnRelease = true` in settings to
 enable the optional remote check for immutable snapshots and candidate/final releases. The existing
 `release.disableGitChecks` and `release.travisci` flags skip preparation and tagging.
 
@@ -91,10 +99,43 @@ Enable Gradle's own Isolated Projects setting separately,
 using the switch supported by your Gradle version. The plugin flag also selects
 the new implementation when Gradle isolation is disabled.
 
-The prototype rejects release-base, legacy `release` and `nebulaRelease` extension customizations,
-custom strategies, Artifactory, and the
-no-Git fallback. Configure supported common inputs in settings or through Gradle
-properties; root extra properties are not imported. Keep the flag disabled to use
+For `com.netflix.nebula.release-base`, select base mode in settings and apply the
+project plugin only at the root:
+
+```groovy
+isolatedRelease {
+    baseRelease = true
+    defaultStage = 'dev'
+}
+```
+
+Base mode exposes only root `prepare` and `release` tasks and assigns common
+versions locally. It does not add Java builds or publication descriptors to the
+release graph; wire consumer tasks explicitly, for example
+`tasks.named('release') { dependsOn ':library:build' }`. Consumer task names do
+not select a stage. Choose `defaultStage`, `release.stage`, a supplied version,
+or last-tag reuse. Built-in stages are `dev`, `SNAPSHOT`, `snapshot`, `milestone`,
+`rc`, and `final`; full mode also accepts `defaultStage` and defaults to `dev`
+(or `snapshot` with development replacement). Base uses stock strategy defaults:
+patch scope except uppercase `SNAPSHOT`, which defaults to minor, and commit-only
+development metadata. Base preparation remains enabled with last-tag reuse and
+the full plugin's Git skip flags. Built-in base inference and last-tag reuse
+require an initial Git commit; supplied versions work for ordinary commands
+without one.
+
+Without a Git repository, the full plugin assigns the literal
+`0.1.0-dev.0.uncommitted` version only to projects applying that plugin. Other
+projects retain their versions. It installs no release tasks or extensions,
+ignores release inference options, and permits subsequent direct version
+assignment, matching legacy behavior. Ordinary Java/Maven/Ivy tasks remain
+available. Creating or removing the Git repository invalidates cached mode
+selection.
+
+The prototype rejects legacy `release` and `nebulaRelease` extension customizations,
+arbitrary custom strategies, and Artifactory integration in active full mode.
+Use the settings adapters for built-in defaults, versions, remotes, tag prefixes,
+and branch/check policies. Configure supported common inputs in settings or
+through Gradle properties; root extra properties are not imported. Keep the flag disabled to use
 existing release behavior. Remove or conditionally apply the settings companion
 when disabling the flag.
 

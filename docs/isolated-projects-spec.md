@@ -7,15 +7,24 @@ Implementation status: the working prototype covers ordinary `help`/`build`, roo
 `snapshot`, `devSnapshot`, `immutableSnapshot`, `candidate`, `final`, and default
 version selection for their setup tasks with a Git repository, common inputs,
 local version/status assignment, leaf Java builds, and Maven/Ivy descriptors.
-Last-tag reuse and direct root release orchestration are covered. Release-base,
-custom strategies/legacy extension DSL, Artifactory, and the no-Git
-fallback are rejected with adoption diagnostics. The remaining milestones below
-are still required before claiming general Isolated Projects compatibility.
+Last-tag reuse, direct root release orchestration, root release-base, and the
+full plugin's no-Git fallback are covered. Arbitrary custom strategies/legacy
+extension DSL and active full-plugin Artifactory integration are rejected with
+adoption diagnostics. No Artifactory version range has been validated. The
+remaining milestones below are still required before claiming general Isolated
+Projects compatibility.
 
-In this prototype, explicit `isolatedRelease` settings override the `git.root` and
-`release.scope` property defaults. A supplied `release.version` overrides version
-inference, except that the existing no-commits strategy still takes precedence.
-No-commit inference is supported for ordinary commands; primary release workflows
+In this prototype, explicit `isolatedRelease` settings override property
+conventions. `gitRoot`, `scope`, and `version` default to `git.root`,
+`release.scope`, and `release.version`. The `version` and `remote` settings accept
+providers; `remote` defaults to `origin`. Common inputs freeze at the end of
+settings evaluation, before project configuration. `verifySuppliedVersion`
+defaults to true unless `release.ignoreSuppliedVersionVerification` is present,
+even with value `false`; explicit settings configuration overrides that convention.
+Supplied versions override built-in inference, except that full mode's existing
+no-commit strategy still takes precedence. Last-tag reuse precedes supplied
+versions in both modes.
+No-commit full inference is supported for ordinary commands; primary release workflows
 and their setup tasks require an initial commit and report an adoption diagnostic
 when it is absent.
 Current workflow coverage uses full root task names, with and without a leading
@@ -26,7 +35,37 @@ Inferred immutable snapshots execute the root release task without creating a
 tag. An explicit `release.version` retains the existing tagging/pushing behavior
 for `immutableSnapshot`; `snapshot` and `devSnapshot` skip both preparation and
 tagging. Settings expose the existing optional `checkRemoteBranchOnRelease`
-policy. Existing Git skip controls still skip preparation and tagging.
+policy. Existing Git skip controls still skip full-plugin preparation and tagging.
+
+Release-base adoption requires `isolatedRelease.baseRelease = true` and applies
+`com.netflix.nebula.release-base` only at the root. Settings assign common versions
+to all projects without installing forwarding tasks. Only root `prepare` and
+`release` are provided; Java builds, descriptors, status selection, and full
+workflow branch validation are not added. Explicit consumer dependencies such as
+`tasks.named('release') { dependsOn ':alpha:build' }` remain usable. Consumer task
+names do not select a base stage.
+
+The built-in adapter `defaultStage` accepts `dev`, `SNAPSHOT`, `snapshot`,
+`milestone`, `rc`, and `final`. Full mode defaults to `dev` (or `snapshot` with
+development replacement). Base mode requires an explicit default, `release.stage`,
+a supplied version, or last-tag reuse. It uses stock base strategies: patch scope
+except uppercase `SNAPSHOT` (minor), and commit-only development metadata.
+Development replacement is a full-plugin convention; base consumers select
+`defaultStage = 'snapshot'` instead. Base preparation remains enabled for last-tag
+reuse and ignores full-plugin Git skip flags. Release still skips tagging for
+last-tag reuse or a strategy that does not create tags. Built-in base inference
+and last-tag reuse require an initial commit, while supplied base versions work
+for ordinary commands without Git or commits. Arbitrary Project-based strategy
+registration and tag callbacks remain legacy-only.
+
+With no Git repository, full mode preserves the legacy fallback: only projects
+applying the full plugin receive the literal String version
+`0.1.0-dev.0.uncommitted`; other projects retain their versions. No release tasks,
+extensions, forwarding tasks, or publication hooks are installed. Release
+inference policies are ignored and later direct version assignment remains
+allowed. Ordinary Java/Maven/Ivy tasks work independently. Repository discovery
+is tracked in settings so creating or removing `.git` invalidates cached mode
+selection. Base mode has no full-plugin no-Git fallback.
 
 Candidate/final inference reuses the existing scope and prerelease strategies,
 including precedence checks. Primary workflows check Git identity, dirty state,

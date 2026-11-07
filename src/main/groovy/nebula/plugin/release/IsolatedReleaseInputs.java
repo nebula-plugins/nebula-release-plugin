@@ -26,6 +26,7 @@ public record IsolatedReleaseInputs(File gitRoot, String scope, String travisBra
                                    String shortenedBranchPattern, boolean allowReleaseFromDetached,
                                    boolean replaceDevWithImmutableSnapshot, String timestamp,
                                    boolean checkRemoteBranchOnRelease, boolean releaseWorkflow,
-                                   String status, boolean useLastTag)
+                                   String status, boolean useLastTag, boolean baseRelease,
+                                   String defaultStage, String remote, boolean verifySuppliedVersion)
         implements Serializable {
 }

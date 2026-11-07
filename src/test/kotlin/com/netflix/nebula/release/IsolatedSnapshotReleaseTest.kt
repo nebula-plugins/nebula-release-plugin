@@ -105,7 +105,7 @@ internal class IsolatedSnapshotReleaseTest {
             .doesNotContain("cannot access 'Project")
         val custom = runner(project, version, true,
             extra = listOf("-Prelease.defaultVersioningStrategy=example.CustomStrategy")).buildAndFail()
-        assertThat(custom.output).contains("custom strategy and supplied-version validation overrides are not implemented")
+        assertThat(custom.output).contains("custom strategy overrides are not implemented")
 
         val disabled = runner(project, version, false,
             extra = listOf("-Pnebula.release.isolatedProjectsSupport=false")).buildAndFail()
@@ -114,7 +114,7 @@ internal class IsolatedSnapshotReleaseTest {
         val rootBuild = project.resolve("build.gradle").readText()
         project.resolve("build.gradle").writeText(rootBuild.replace("com.netflix.nebula.release'", "com.netflix.nebula.release-base'"))
         assertThat(runner(project, version, true).buildAndFail().output)
-            .contains("release-base and custom Project-based strategies are not implemented")
+            .contains("release-base requires isolatedRelease.baseRelease = true")
         project.resolve("build.gradle").writeText(rootBuild)
 
         project.resolve("settings.gradle").writeText("rootProject.name = 'sample'\n")

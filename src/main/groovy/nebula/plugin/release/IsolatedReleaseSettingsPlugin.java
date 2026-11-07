@@ -16,6 +16,7 @@
 package nebula.plugin.release;
 
 import nebula.plugin.release.git.opinion.TimestampPrecision;
+import nebula.plugin.release.git.GitBuildService;
 import org.gradle.api.GradleException;
 import org.gradle.api.IsolatedAction;
 import org.gradle.api.Plugin;
@@ -44,6 +45,12 @@ public final class IsolatedReleaseSettingsPlugin implements Plugin<Settings> {
         var extension = settings.getExtensions().create("isolatedRelease", IsolatedReleaseSettings.class);
         extension.getScope().convention(settings.getProviders().gradleProperty("release.scope"));
         extension.getPrefixTagsWithV().convention(true);
+        extension.getBaseRelease().convention(false);
+        extension.getVersion().convention(settings.getProviders().gradleProperty("release.version"));
+        extension.getRemote().convention("origin");
+        // The legacy flag disables verification by presence, even when its value is false.
+        extension.getVerifySuppliedVersion().convention(!settings.getProviders()
+                .gradleProperty("release.ignoreSuppliedVersionVerification").isPresent());
         extension.getReplaceDevWithImmutableSnapshot().convention(settings.getProviders()
                 .gradleProperty(FeatureFlags.NEBULA_RELEASE_REPLACE_DEV_SNAPSHOT_WITH_IMMUTABLE_SNAPSHOT)
                 .map(Boolean::parseBoolean).orElse(false));
@@ -51,15 +58,6 @@ public final class IsolatedReleaseSettingsPlugin implements Plugin<Settings> {
                 .gradleProperty(FeatureFlags.NEBULA_RELEASE_IMMUTABLE_SNAPSHOT_TIMESTAMP_PRECISION).orElse("MINUTES"));
 
         settings.getGradle().settingsEvaluated(evaluated -> {
-            extension.getReplaceDevWithImmutableSnapshot().finalizeValue();
-            extension.getTimestampPrecision().finalizeValue();
-            var replaceDev = extension.getReplaceDevWithImmutableSnapshot().get();
-            var stage = IsolatedReleaseSupport.validateWorkflow(evaluated, replaceDev);
-            // One settings snapshot is copied into every isolated project action and
-            // retained with the cached configuration. No per-project clock reads.
-            var timestamp = replaceDev || "snapshot".equals(stage)
-                    ? TimestampPrecision.from(extension.getTimestampPrecision().get())
-                            .getDateTimeFormatter().format(Instant.now()) : "";
             // Settings and the root project may live in different directories.
             // Resolve defaults only after the root descriptor has been configured.
             if (!extension.getGitRoot().isPresent()) {
@@ -68,6 +66,40 @@ public final class IsolatedReleaseSettingsPlugin implements Plugin<Settings> {
                         .map(value -> resolveRoot(projectDir, value)).getOrElse(projectDir));
             }
             extension.getGitRoot().finalizeValue();
+            extension.getBaseRelease().finalizeValue();
+            extension.getReplaceDevWithImmutableSnapshot().finalizeValue();
+            extension.getTimestampPrecision().finalizeValue();
+            extension.getVersion().finalizeValue();
+            extension.getRemote().finalizeValue();
+            extension.getVerifySuppliedVersion().finalizeValue();
+            var baseRelease = extension.getBaseRelease().get();
+            var replaceDev = extension.getReplaceDevWithImmutableSnapshot().get();
+            if (!baseRelease && !extension.getDefaultStage().isPresent()) {
+                extension.getDefaultStage().convention(replaceDev ? "snapshot" : "dev");
+            }
+            extension.getDefaultStage().finalizeValue();
+            // Track repository discovery in settings as well as project inference.
+            // A no-Git build must ignore full-plugin release policies, as the legacy fallback does.
+            var git = evaluated.getGradle().getSharedServices().registerIfAbsent("nebulaIsolatedReleaseGit",
+                    GitBuildService.class, spec -> spec.getParameters().getGitRootDir()
+                            .set(extension.getGitRoot().get().getAsFile())).get();
+            var active = baseRelease || git.isGitRepo();
+            var stage = active ? IsolatedReleaseSupport.validateWorkflow(evaluated, replaceDev, baseRelease) : null;
+            if (active && extension.getDefaultStage().isPresent()) {
+                IsolatedReleaseSupport.validateStage(extension.getDefaultStage().get(), "isolatedRelease.defaultStage");
+            }
+            if (active && extension.getRemote().get().isBlank()) {
+                throw IsolatedReleaseSupport.unsupported("isolatedRelease.remote must not be blank");
+            }
+            if (baseRelease && replaceDev) {
+                throw IsolatedReleaseSupport.unsupported("development replacement is a full-plugin convention; "
+                        + "use isolatedRelease.defaultStage = 'snapshot' for release-base");
+            }
+            // One timestamp is retained with cached settings and copied to every project.
+            var effectiveStage = stage == null ? extension.getDefaultStage().getOrNull() : stage;
+            var timestamp = git.isGitRepo() && (!baseRelease && replaceDev || "snapshot".equals(effectiveStage))
+                    ? TimestampPrecision.from(extension.getTimestampPrecision().get())
+                            .getDateTimeFormatter().format(Instant.now()) : "";
             extension.getScope().finalizeValue();
             extension.getPrefixTagsWithV().finalizeValue();
             extension.getReleaseBranchPatterns().finalizeValue();
@@ -81,14 +113,16 @@ public final class IsolatedReleaseSettingsPlugin implements Plugin<Settings> {
                     extension.getPrefixTagsWithV().get(),
                     evaluated.getProviders().gradleProperty("release.sanitizeVersion")
                             .map(Boolean::parseBoolean).getOrElse(false),
-                    evaluated.getProviders().gradleProperty("release.version").getOrNull(), stage,
+                    extension.getVersion().getOrNull(), stage,
                     Set.copyOf(extension.getReleaseBranchPatterns().get()),
                     Set.copyOf(extension.getExcludeBranchPatterns().get()),
                     extension.getShortenedBranchPattern().get(), extension.getAllowReleaseFromDetached().get(),
                     replaceDev, timestamp, extension.getCheckRemoteBranchOnRelease().get(),
-                    IsolatedReleaseSupport.isReleaseWorkflow(evaluated),
-                    IsolatedReleaseSupport.workflowStatus(evaluated),
-                    evaluated.getProviders().gradleProperty("release.useLastTag").map(Boolean::parseBoolean).getOrElse(false));
+                    active && !baseRelease && IsolatedReleaseSupport.isReleaseWorkflow(evaluated),
+                    active && !baseRelease ? IsolatedReleaseSupport.workflowStatus(evaluated) : null,
+                    evaluated.getProviders().gradleProperty("release.useLastTag").map(Boolean::parseBoolean).getOrElse(false),
+                    baseRelease, extension.getDefaultStage().getOrNull(), extension.getRemote().get(),
+                    extension.getVerifySuppliedVersion().get());
             var paths = new ArrayList<String>();
             var leaves = new HashSet<String>();
             collectProjects(evaluated.getRootProject(), paths, leaves);
