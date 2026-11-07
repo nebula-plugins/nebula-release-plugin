@@ -10,7 +10,8 @@ local version/status assignment, leaf Java builds, and Maven/Ivy descriptors.
 Last-tag reuse, direct root release orchestration, root release-base, and the
 full plugin's no-Git fallback are covered. Arbitrary custom strategies/legacy
 extension DSL and active full-plugin Artifactory integration are rejected with
-adoption diagnostics. No Artifactory version range has been validated. The
+adoption diagnostics. Artifactory 6.0.0/6.0.4 have been tested and fail isolation
+independently of this plugin; no supported Artifactory range is established. The
 remaining milestones below are still required before claiming general Isolated
 Projects compatibility.
 
@@ -324,10 +325,31 @@ The completed initial implementation must cover built-in release behavior for
 single, flat multi-project, and nested builds; Maven/Ivy descriptor integration;
 version-only projects; and explicitly configured release participants.
 
+Native Maven/Ivy publishing hooks are supported for the full and base
+coordinators. Configure publications locally and use explicit task paths with
+`dependsOn`/`finalizedBy` on root `release`. Dependencies publish before release;
+finalizers publish after it, including skipped or failed execution. Last-tag
+reuse does not suppress these hooks. This preserves Gradle scheduling rather
+than adding success-only finalization. Direct descriptor requests do not publish,
+and version-only projects are not added to publishing automatically.
+
 Artifactory support requires an explicit tested version range. Its compatibility
-cannot be inferred from Maven/Ivy tests or from the release plugin alone. Resolve
-the range before claiming support; an incremental release must identify and
-diagnose unsupported integrations.
+cannot be inferred from Maven/Ivy tests or from the release plugin alone. Real
+plugin characterization on Gradle 9.0/9.5 establishes this boundary:
+
+| Integration | Ordinary strict cache | Strict Isolated Projects | Release support |
+| --- | --- | --- | --- |
+| Native Maven/Ivy task hooks | Publishing and warm reuse covered | Publishing and warm reuse covered | Explicit dependencies/finalizers in full and base modes. |
+| Artifactory 6.0.0 and 6.0.4 alone | `help` stores and reuses cache | `help` fails on cross-project configuration, state, callbacks, and tasks | No supported Artifactory range established; active full mode rejects adoption with migration guidance. |
+
+The Artifactory tests apply the real Maven Central artifacts without the release
+plugin first, then verify release adoption diagnostics in either plugin order.
+They do not claim Artifactory publication or execution-cache compatibility.
+Source inspection of [Artifactory 6.0.4](https://github.com/jfrog/artifactory-gradle-plugin/blob/405eac9627c7c0cfc83da910724d08a8c99e13ae/src/main/java/org/jfrog/gradle/plugin/artifactory/ArtifactoryPlugin.java)
+also shows root-to-child configuration access. A release-side task adapter cannot
+remove those accesses. Upstream compatibility is required before adding a
+supported version range. Consumers can use native Maven/Ivy hooks or retain the
+legacy release path with Gradle isolation disabled for Artifactory builds.
 
 Composite builds, independent release trains within one build, arbitrary
 cross-project consumer scripts, and unvalidated custom strategy/hook adapters
@@ -395,7 +417,8 @@ Retain legacy unit, integration, and API compatibility coverage.
    tracked Git/property inputs, overrides, branch metadata, and common timestamps.
 3. **Release and integrations:** real candidate/final tagging and pushing to local
    remotes, preparation/remote checks, last-tag behavior, Maven/Ivy, and the agreed
-   Artifactory range.
+   Artifactory range. Artifactory 6.0.0/6.0.4 are characterized as unsupported;
+   this part of the milestone remains dependent on upstream compatibility.
 4. **Compatibility and rollout:** customization diagnostics/adapters, full
    regression and API checks, supported version matrix, and public adoption
    instructions. Advertise only the workflows demonstrated by successful tests.
