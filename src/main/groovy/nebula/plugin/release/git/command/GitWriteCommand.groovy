@@ -19,15 +19,17 @@ abstract class GitWriteCommand implements ValueSource<String, GitWriteCommandPar
         ByteArrayOutputStream error = new ByteArrayOutputStream()
         List<String> commandLineArgs = ["git", "--git-dir=${rootDir.absolutePath}/.git".toString(), "--work-tree=${rootDir.absolutePath}".toString()]
         commandLineArgs.addAll(args)
-        execOperations.exec {
+        def result = execOperations.exec {
             it.ignoreExitValue = true
             it.setCommandLine(commandLineArgs)
             it.standardOutput = output
             it.errorOutput = error
         }
         def errorMsg = new String(error.toByteArray(), Charset.defaultCharset())
-        if (errorMsg) {
-            throw new GradleException(errorMsg)
+        // Git reports successful fetch/push progress on stderr. Only a nonzero
+        // process exit indicates failure, including commands with no diagnostic.
+        if (result.exitValue != 0) {
+            throw new GradleException(errorMsg ?: "Git command failed with exit code ${result.exitValue}")
         }
         return new String(output.toByteArray(), Charset.defaultCharset())
     }
