@@ -6,9 +6,14 @@ import org.gradle.api.Project
 class FeatureFlags {
     public static final String NEBULA_RELEASE_REPLACE_DEV_SNAPSHOT_WITH_IMMUTABLE_SNAPSHOT = "nebula.release.features.replaceDevWithImmutableSnapshot"
     public static final String NEBULA_RELEASE_IMMUTABLE_SNAPSHOT_TIMESTAMP_PRECISION = "nebula.release.features.immutableSnapshot.timestampPrecision"
+    public static final String NEBULA_RELEASE_UNSHALLOW_ENABLED = "nebula.release.features.unshallowEnabled"
 
     static boolean isDevSnapshotReplacementEnabled(Project project) {
         return project.findProperty(NEBULA_RELEASE_REPLACE_DEV_SNAPSHOT_WITH_IMMUTABLE_SNAPSHOT)?.toString()?.toBoolean()
+    }
+
+    static boolean isUnshallowEnabled(Project project) {
+        return project.findProperty(NEBULA_RELEASE_UNSHALLOW_ENABLED)?.toString()?.toBoolean()
     }
 
     static TimestampPrecision immutableSnapshotTimestampPrecision(Project project) {
