@@ -177,7 +177,10 @@ public final class IsolatedReleaseSupport {
                     + "ordinary help/build commands support no-commit version inference");
         }
         project.getPluginManager().withPlugin("com.jfrog.artifactory", ignored -> {
-            throw unsupported("Artifactory integration has not been validated");
+            throw unsupported("Artifactory integration is not supported in project " + project.getPath()
+                    + "; tested Artifactory 6 releases access other projects' configuration independently of this plugin. "
+                    + "Use Maven/Ivy publish tasks with explicit release dependencies or finalizers, "
+                    + "or use the legacy release path with Gradle Isolated Projects disabled");
         });
         if (model.leaf()) {
             project.getPlugins().withType(JavaPlugin.class, ignored ->

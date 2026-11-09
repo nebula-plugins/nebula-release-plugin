@@ -436,5 +436,6 @@ internal class IsolatedReleaseAdoptionTest {
                        extra: List<String> = emptyList(), tasks: List<String> = listOf("help", "recordVersion")) =
         GradleRunner.create().withProjectDir(project).withPluginClasspath().apply { withGradle(version.version) }
             .withArguments(tasks + extra + listOf("-Dorg.gradle.unsafe.isolated-projects=$isolated",
-                "--configuration-cache", "--configuration-cache-problems=fail", "--stacktrace"))
+                // Fixtures edit settings between immediate invocations; avoid asynchronous watcher delivery.
+                "--no-watch-fs", "--configuration-cache", "--configuration-cache-problems=fail", "--stacktrace"))
 }

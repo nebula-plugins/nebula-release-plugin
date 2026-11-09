@@ -133,6 +133,11 @@ selection.
 
 The prototype rejects legacy `release` and `nebulaRelease` extension customizations,
 arbitrary custom strategies, and Artifactory integration in active full mode.
+Artifactory 6.0.0 and 6.0.4 fail strict Isolated Projects on `help` even without
+the release plugin, because they configure other projects. No supported
+Artifactory version range has been established. Use native Maven/Ivy publishing
+hooks below, or retain the legacy release path with Gradle isolation disabled
+for Artifactory builds.
 Use the settings adapters for built-in defaults, versions, remotes, tag prefixes,
 and branch/check policies. Configure supported common inputs in settings or
 through Gradle properties; root extra properties are not imported. Keep the flag disabled to use
@@ -146,12 +151,22 @@ boundary, validation requirements, and remaining milestones.
 
 If you want the release plugin to trigger or finalize a publishing task you will need to configure it:
 
-    tasks.release.dependsOn tasks.<publish task name>
+```groovy
+tasks.named('release') {
+    dependsOn ':library:publish'
+    finalizedBy ':application:publish'
+}
+```
 
--or-
+Configure each project's Maven/Ivy publications and repositories in its own build
+script or local convention. Task paths allow the root to request publishing
+without accessing another project's task container. Both full and base modes
+support these hooks. The release plugin does not add publishing tasks for other
+projects automatically, and direct descriptor commands do not trigger these hooks.
 
-    tasks.release.finalizedBy tasks.<publish task name>
-
+Gradle runs dependencies before `release` and finalizers after it, including when
+`release` is skipped or fails. Last-tag reuse suppresses tagging but still runs
+the publishing hooks. Choose finalizers only when that behavior is intended.
 
 # Opinions
 
