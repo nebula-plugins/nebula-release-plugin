@@ -15,6 +15,7 @@
  */
 package nebula.plugin.release;
 
+import nebula.plugin.release.git.opinion.TimestampPrecision;
 import org.gradle.api.GradleException;
 import org.gradle.api.IsolatedAction;
 import org.gradle.api.Plugin;
@@ -23,6 +24,7 @@ import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -42,9 +44,22 @@ public final class IsolatedReleaseSettingsPlugin implements Plugin<Settings> {
         var extension = settings.getExtensions().create("isolatedRelease", IsolatedReleaseSettings.class);
         extension.getScope().convention(settings.getProviders().gradleProperty("release.scope"));
         extension.getPrefixTagsWithV().convention(true);
+        extension.getReplaceDevWithImmutableSnapshot().convention(settings.getProviders()
+                .gradleProperty(FeatureFlags.NEBULA_RELEASE_REPLACE_DEV_SNAPSHOT_WITH_IMMUTABLE_SNAPSHOT)
+                .map(Boolean::parseBoolean).orElse(false));
+        extension.getTimestampPrecision().convention(settings.getProviders()
+                .gradleProperty(FeatureFlags.NEBULA_RELEASE_IMMUTABLE_SNAPSHOT_TIMESTAMP_PRECISION).orElse("MINUTES"));
 
         settings.getGradle().settingsEvaluated(evaluated -> {
-            var stage = IsolatedReleaseSupport.validateWorkflow(evaluated);
+            extension.getReplaceDevWithImmutableSnapshot().finalizeValue();
+            extension.getTimestampPrecision().finalizeValue();
+            var replaceDev = extension.getReplaceDevWithImmutableSnapshot().get();
+            var stage = IsolatedReleaseSupport.validateWorkflow(evaluated, replaceDev);
+            // One settings snapshot is copied into every isolated project action and
+            // retained with the cached configuration. No per-project clock reads.
+            var timestamp = replaceDev || "snapshot".equals(stage)
+                    ? TimestampPrecision.from(extension.getTimestampPrecision().get())
+                            .getDateTimeFormatter().format(Instant.now()) : "";
             // Settings and the root project may live in different directories.
             // Resolve defaults only after the root descriptor has been configured.
             if (!extension.getGitRoot().isPresent()) {
@@ -59,6 +74,7 @@ public final class IsolatedReleaseSettingsPlugin implements Plugin<Settings> {
             extension.getExcludeBranchPatterns().finalizeValue();
             extension.getShortenedBranchPattern().finalizeValue();
             extension.getAllowReleaseFromDetached().finalizeValue();
+            extension.getCheckRemoteBranchOnRelease().finalizeValue();
             var inputs = new IsolatedReleaseInputs(extension.getGitRoot().get().getAsFile(),
                     extension.getScope().getOrNull(),
                     evaluated.getProviders().gradleProperty("release.travisBranch").getOrNull(),
@@ -68,7 +84,8 @@ public final class IsolatedReleaseSettingsPlugin implements Plugin<Settings> {
                     evaluated.getProviders().gradleProperty("release.version").getOrNull(), stage,
                     Set.copyOf(extension.getReleaseBranchPatterns().get()),
                     Set.copyOf(extension.getExcludeBranchPatterns().get()),
-                    extension.getShortenedBranchPattern().get(), extension.getAllowReleaseFromDetached().get());
+                    extension.getShortenedBranchPattern().get(), extension.getAllowReleaseFromDetached().get(),
+                    replaceDev, timestamp, extension.getCheckRemoteBranchOnRelease().get());
             var paths = new ArrayList<String>();
             var leaves = new HashSet<String>();
             collectProjects(evaluated.getRootProject(), paths, leaves);

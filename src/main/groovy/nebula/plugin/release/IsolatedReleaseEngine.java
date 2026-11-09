@@ -18,6 +18,7 @@ package nebula.plugin.release;
 import com.github.zafarkhaja.semver.Version;
 import nebula.plugin.release.git.GitBuildService;
 import nebula.plugin.release.git.base.TagStrategy;
+import nebula.plugin.release.git.base.ReleaseVersion;
 import nebula.plugin.release.git.semver.ChangeScope;
 import nebula.plugin.release.git.semver.NearestVersionLocator;
 import org.gradle.api.GradleException;
@@ -28,14 +29,15 @@ import java.util.Locale;
 final class IsolatedReleaseEngine {
     private IsolatedReleaseEngine() {}
 
-    static String infer(IsolatedReleaseInputs inputs, GitBuildService git) {
+    static ReleaseVersion infer(IsolatedReleaseInputs inputs, GitBuildService git) {
         if (!git.isGitRepo()) {
-            return "0.1.0-dev.0.uncommitted";
+            return IsolatedStrategyBridge.version("0.1.0-dev.0.uncommitted", null, false);
         }
         var branch = git.getCurrentBranch();
         ReleasePlugin.checkBranchName(branch);
         if (!git.hasCommit()) {
-            return "0.1.0-dev.0.uncommitted";
+            return IsolatedStrategyBridge.version(inputs.replaceDevWithImmutableSnapshot()
+                    ? "0.1.0-snapshot." + inputs.timestamp() + ".uncommitted" : "0.1.0-dev.0.uncommitted", null, false);
         }
         if (inputs.suppliedVersion() != null) {
             var version = inputs.suppliedVersion();
@@ -50,13 +52,14 @@ final class IsolatedReleaseEngine {
             } catch (RuntimeException e) {
                 throw new GradleException("Supplied release.version (" + version + ") is not valid per semver spec.", e);
             }
-            return version;
+            return IsolatedStrategyBridge.version(version, null, true);
         }
         var tags = new TagStrategy();
         tags.setPrefixNameWithV(inputs.prefixTagsWithV());
         var nearest = new NearestVersionLocator(git, tags).locate();
         var scope = inputs.scope() == null ? null : ChangeScope.valueOf(inputs.scope().toUpperCase(Locale.ROOT));
         var version = IsolatedStrategyBridge.infer(nearest, scope, inputs, branch, git.getHead(), !git.isCleanStatus());
-        return inputs.sanitize() ? VersionSanitizerUtil.sanitize(version) : version;
+        return IsolatedStrategyBridge.version(inputs.sanitize() ? VersionSanitizerUtil.sanitize(version) : version,
+                nearest.getNormal().toString(), false);
     }
 }

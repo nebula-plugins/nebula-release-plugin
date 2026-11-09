@@ -66,7 +66,8 @@ class NetflixOssStrategies {
 
     @PackageScope
     static SemVerStrategy strategyFromInputs(String stage, String travisReleaseBranch) {
-        def strategy = stage == 'SNAPSHOT' ? Strategies.SNAPSHOT : Strategies.DEVELOPMENT
+        def strategy = stage == 'SNAPSHOT' ? Strategies.SNAPSHOT :
+                (stage == 'snapshot' ? Strategies.IMMUTABLE_SNAPSHOT : Strategies.DEVELOPMENT)
         strategy.copyWith(normalStrategy: scopesFromInputs(travisReleaseBranch))
     }
 

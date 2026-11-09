@@ -21,23 +21,41 @@ import nebula.plugin.release.git.model.Commit
 import nebula.plugin.release.git.semver.ChangeScope
 import nebula.plugin.release.git.semver.NearestVersion
 import nebula.plugin.release.git.semver.SemVerStrategyState
+import nebula.plugin.release.git.opinion.Strategies
+import nebula.plugin.release.git.base.ReleaseVersion
+import nebula.plugin.release.git.base.TagStrategy
 
 /** Keeps construction of Groovy's AST-generated immutable state in Groovy. */
 @PackageScope
 final class IsolatedStrategyBridge {
     static String infer(NearestVersion nearest, ChangeScope scope, IsolatedReleaseInputs inputs,
                         String currentBranch, String head, boolean dirty) {
-        String stage = inputs.stage() ?: 'dev'
+        String stage = inputs.stage() ?: (inputs.replaceDevWithImmutableSnapshot() ? 'snapshot' : 'dev')
         def state = new SemVerStrategyState(nearestVersion: nearest, scopeFromProp: scope,
                 stageFromProp: stage, currentBranch: new Branch(fullName: currentBranch),
                 currentHead: new Commit(id: head, abbreviatedId: head.take(7)), repoDirty: dirty)
         def strategy = NetflixOssStrategies.strategyFromInputs(stage, inputs.travisBranch())
         state = strategy.normalStrategy.infer(state)
-        state = strategy.preReleaseStrategy.infer(state)
+        if (stage == 'snapshot') {
+            state = Strategies.PreRelease.STAGE_FLOAT.infer(state)
+            state = state.copyWith(inferredPreRelease: "${state.inferredPreRelease}.${inputs.timestamp()}".toString())
+            state = Strategies.PreRelease.SHOW_UNCOMMITTED.infer(state)
+        } else {
+            state = strategy.preReleaseStrategy.infer(state)
+        }
         state = strategy.buildMetadataStrategy.infer(state)
-        if (stage == 'dev') {
+        if (stage == 'dev' || stage == 'snapshot') {
             state = NetflixOssStrategies.metadataFromInputs(state, inputs.releaseBranchPatterns(), inputs.shortenedBranchPattern())
         }
         state.toVersion().toString()
+    }
+
+    static ReleaseVersion version(String version, String previousVersion, boolean createTag) {
+        new ReleaseVersion(version, previousVersion, createTag)
+    }
+
+    static TagStrategy tagStrategy(boolean prefixTagsWithV) {
+        new TagStrategy(prefixNameWithV: prefixTagsWithV,
+                generateMessage: { ReleaseVersion version -> "Release of ${version.version}\n\n".toString() })
     }
 }
