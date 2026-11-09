@@ -89,9 +89,17 @@ internal class IsolatedSnapshotReleaseTest {
     fun `settings inputs and local version only projects work without enabling participation`(version: SupportedGradleVersion) {
         val project = fixture("settings", adopted = true, pluginId = "nebula.release")
         project.resolve("settings.gradle").appendText("\nisolatedRelease { scope = 'major' }\n")
-        verifySnapshot(run(project, version, true), project, "2.0.0-SNAPSHOT")
+        val cold = run(project, version, true)
+        assertThat(cold.output).contains("Configuration cache entry stored")
+        verifySnapshot(cold, project, "2.0.0-SNAPSHOT")
+        assertThat(run(project, version, true).output).contains("Reusing configuration cache")
         project.resolve("settings.gradle").appendText("\nisolatedRelease { scope = 'patch' }\n")
-        verifySnapshot(run(project, version, true), project, "1.2.4-SNAPSHOT")
+        val changed = run(project, version, true)
+        assertThat(changed.output).contains("Configuration cache entry stored").doesNotContain("Reusing configuration cache")
+        verifySnapshot(changed, project, "1.2.4-SNAPSHOT")
+        val warm = run(project, version, true)
+        assertThat(warm.output).contains("Reusing configuration cache")
+        verifySnapshot(warm, project, "1.2.4-SNAPSHOT")
     }
 
     @ParameterizedTest
@@ -873,7 +881,8 @@ internal class IsolatedSnapshotReleaseTest {
         GradleRunner.create().withProjectDir(project).withPluginClasspath()
             .apply { withGradle(version.version) }
             .withArguments(tasks + extra + listOf(
+                // Fixtures edit scripts between immediate invocations; check inputs without watcher delivery delays.
                 "-Dorg.gradle.unsafe.isolated-projects=$isolated", "--configuration-cache",
-                "--configuration-cache-problems=fail", "--stacktrace"
+                "--configuration-cache-problems=fail", "--no-watch-fs", "--stacktrace"
             ))
 }
