@@ -10,6 +10,63 @@ nebula-release-plugin
 
 This plugin provides opinions and tasks for the release process provided by [gradle-git](https://github.com/ajoberstar/gradle-git).
 
+## Experimental Isolated Projects support
+
+The opt-in implementation currently covers ordinary `help`/`build` commands and
+root `snapshot` and setup workflows with a Git repository. It provides common versions, leaf Java builds,
+and Maven/Ivy descriptors without cross-project mutable-state access. It does
+not yet establish general Isolated Projects support.
+
+Enable the build-wide rollout flag in root `gradle.properties`:
+
+```properties
+nebula.release.isolatedProjectsSupport=true
+```
+
+Apply the companion in `settings.gradle`, using the same plugin version as the
+project plugin:
+
+```groovy
+plugins {
+    id 'com.netflix.nebula.release-settings' version '<plugin-version>'
+}
+
+rootProject.name = 'sample'
+include 'library', 'application'
+
+// Optional common inputs; defaults use git.root/release.scope Gradle properties
+// and tags prefixed with v.
+isolatedRelease {
+    scope = 'minor'
+    prefixTagsWithV = true
+}
+```
+
+Explicit `isolatedRelease` values take precedence over the `git.root` and
+`release.scope` property defaults. `-Prelease.version` selects an explicit common
+version instead of inferring one from scope.
+
+Apply `com.netflix.nebula.release` in the root and in each participating project's
+own build script or local convention. All projects receive the common version;
+projects without the release plugin do not become release participants.
+
+Run `./gradlew snapshot`, or use ordinary `help`/`build` commands with default
+development versioning. Setup tasks retain default version selection unless a
+stage is explicitly supplied. Enable Gradle's own Isolated Projects setting separately,
+using the switch supported by your Gradle version. The plugin flag also selects
+the new implementation when Gradle isolation is disabled.
+
+The prototype rejects other explicit release stages and direct release orchestration,
+release-base, legacy `release` and
+`nebulaRelease` extension customizations, custom strategies, Artifactory, and the
+no-Git fallback. Configure supported common inputs in settings or through Gradle
+properties; root extra properties are not imported. Keep the flag disabled to use
+existing release behavior. Remove or conditionally apply the settings companion
+when disabling the flag.
+
+See the [implementation spec](docs/isolated-projects-spec.md) for the support
+boundary, validation requirements, and remaining milestones.
+
 # Optional Configuration
 
 If you want the release plugin to trigger or finalize a publishing task you will need to configure it:

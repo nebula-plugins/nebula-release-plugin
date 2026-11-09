@@ -16,6 +16,7 @@
 package nebula.plugin.release
 
 import groovy.transform.CompileDynamic
+import groovy.transform.PackageScope
 import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.base.BaseReleasePlugin
 import nebula.plugin.release.git.base.ReleasePluginExtension
@@ -58,6 +59,12 @@ class ReleasePlugin implements Plugin<Project> {
     @CompileDynamic
     @Inject
     ReleasePlugin(Project project, ExecOperations execOperations, ProviderFactory providerFactory) {
+        if (IsolatedReleaseSupport.isEnabled(providerFactory)) {
+            this.gitRoot = null
+            this.gitBuildService = null
+            this.providers = providerFactory
+            return
+        }
         this.gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir
         providers = providerFactory
         this.gitBuildService = project.getGradle().getSharedServices().registerIfAbsent("gitBuildService", GitBuildService.class, spec -> {
@@ -68,6 +75,10 @@ class ReleasePlugin implements Plugin<Project> {
     @CompileDynamic
     @Override
     void apply(Project project) {
+        if (IsolatedReleaseSupport.isEnabled(providers)) {
+            IsolatedReleaseSupport.apply(project)
+            return
+        }
 
         boolean isGitRepo = gitBuildService.get().isGitRepo()
         if(!isGitRepo) {
@@ -388,7 +399,11 @@ class ReleasePlugin implements Plugin<Project> {
     }
 
     void checkForBadBranchNames() {
-        String currentBranch = gitBuildService.get().currentBranch
+        checkBranchName(gitBuildService.get().currentBranch)
+    }
+
+    @PackageScope
+    static void checkBranchName(String currentBranch) {
         if (!currentBranch) {
             return
         }

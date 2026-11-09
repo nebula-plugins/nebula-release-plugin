@@ -16,6 +16,7 @@
 package nebula.plugin.release
 
 import groovy.transform.CompileDynamic
+import groovy.transform.PackageScope
 
 import nebula.plugin.release.git.opinion.Strategies
 import nebula.plugin.release.git.semver.ChangeScope
@@ -60,6 +61,16 @@ class NetflixOssStrategies {
 
     private static getScopes(Project project) {
         Object travisReleaseBranch = (project.hasProperty(TRAVIS_BRANCH_PROP)) ? project.property(TRAVIS_BRANCH_PROP) : null
+        scopesFromInputs(travisReleaseBranch)
+    }
+
+    @PackageScope
+    static SemVerStrategy strategyFromInputs(String stage, String travisReleaseBranch) {
+        def strategy = stage == 'SNAPSHOT' ? Strategies.SNAPSHOT : Strategies.DEVELOPMENT
+        strategy.copyWith(normalStrategy: scopesFromInputs(travisReleaseBranch))
+    }
+
+    private static scopesFromInputs(Object travisReleaseBranch) {
         final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_X = fromTravisPropertyPattern(travisReleaseBranch, ~/^(\d+)\.x$/)
         final PartialSemVerStrategy TRAVIS_BRANCH_MAJOR_MINOR_X = fromTravisPropertyPattern(travisReleaseBranch, ~/^(\d+)\.(\d+)\.x$/)
         final PartialSemVerStrategy NEAREST_HIGHER_ANY = nearestHigherAny()
@@ -130,16 +141,22 @@ class NetflixOssStrategies {
     static private PartialSemVerStrategy developmentMetadataStrategy(Project project) {
         return { state ->
             def nebulaReleaseExtension = project.extensions.findByType(ReleaseExtension)
-            boolean needsBranchMetadata = true
-            nebulaReleaseExtension.releaseBranchPatterns.get().each {
-                if (state.currentBranch.name =~ it) {
-                    needsBranchMetadata = false
-                }
-            }
-            String shortenedBranch = (state.currentBranch.name =~ nebulaReleaseExtension.shortenedBranchPattern.get())[0][1]
-            shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
-            def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
-            state.copyWith(inferredBuildMetadata: metadata)
+            metadataFromInputs(state, nebulaReleaseExtension.releaseBranchPatterns.get(),
+                    nebulaReleaseExtension.shortenedBranchPattern.get())
         }
+    }
+
+    @PackageScope
+    static SemVerStrategyState metadataFromInputs(SemVerStrategyState state, Set<String> releasePatterns, String shortenedPattern) {
+        boolean needsBranchMetadata = true
+        releasePatterns.each {
+            if (state.currentBranch.name =~ it) {
+                needsBranchMetadata = false
+            }
+        }
+        String shortenedBranch = (state.currentBranch.name =~ shortenedPattern)[0][1]
+        shortenedBranch = shortenedBranch.replaceAll(/[_\/-]/, '.')
+        def metadata = needsBranchMetadata ? "${shortenedBranch}.${state.currentHead.abbreviatedId}" : state.currentHead.abbreviatedId
+        state.copyWith(inferredBuildMetadata: metadata)
     }
 }
