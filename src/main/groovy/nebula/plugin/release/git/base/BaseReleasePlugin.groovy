@@ -42,7 +42,8 @@ class BaseReleasePlugin implements Plugin<Project> {
 
     void apply(Project project) {
         if (IsolatedReleaseSupport.isEnabled(project.providers)) {
-            throw IsolatedReleaseSupport.unsupported('release-base and custom Project-based strategies are not implemented')
+            IsolatedReleaseSupport.applyBase(project)
+            return
         }
         ReleasePluginExtension releasePluginExtension = project.extensions.create('release', ReleasePluginExtension, project)
         File gitRoot = project.hasProperty('git.root') ? project.file(project.property('git.root')) : project.rootProject.projectDir

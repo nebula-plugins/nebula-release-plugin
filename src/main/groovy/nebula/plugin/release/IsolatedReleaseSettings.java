@@ -49,4 +49,23 @@ public abstract class IsolatedReleaseSettings extends ReleaseExtension {
 
     /** @return DAYS, HOURS, MINUTES, SECONDS, or MILLISECONDS; defaults to the existing precision property or MINUTES */
     public abstract Property<String> getTimestampPrecision();
+
+    /** @return whether the root coordinator is release-base instead of the full plugin; defaults to false */
+    public abstract Property<Boolean> getBaseRelease();
+
+    /**
+     * @return the built-in default stage: dev, SNAPSHOT, snapshot, milestone, rc, or final.
+     * Full mode defaults to dev (or snapshot with development replacement); base mode requires an explicit choice
+     * when neither release.stage, a supplied version, nor last-tag reuse selects inference.
+     */
+    public abstract Property<String> getDefaultStage();
+
+    /** @return an optional supplied version, defaulting to the release.version Gradle property */
+    public abstract Property<String> getVersion();
+
+    /** @return the remote used for preparation and tag pushes; defaults to origin */
+    public abstract Property<String> getRemote();
+
+    /** @return whether supplied versions must be valid semver; defaults to the existing verification policy */
+    public abstract Property<Boolean> getVerifySuppliedVersion();
 }

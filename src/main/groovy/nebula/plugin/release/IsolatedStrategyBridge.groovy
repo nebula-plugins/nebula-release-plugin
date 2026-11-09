@@ -29,13 +29,13 @@ import nebula.plugin.release.git.base.TagStrategy
 /** Keeps construction of Groovy's AST-generated immutable state in Groovy. */
 @PackageScope
 final class IsolatedStrategyBridge {
-    static String infer(NearestVersion nearest, ChangeScope scope, IsolatedReleaseInputs inputs,
+    static ReleaseVersion infer(NearestVersion nearest, ChangeScope scope, IsolatedReleaseInputs inputs,
                         String currentBranch, String head, boolean dirty) {
-        String stage = inputs.stage() ?: (inputs.replaceDevWithImmutableSnapshot() ? 'snapshot' : 'dev')
+        String stage = inputs.stage() ?: inputs.defaultStage()
         def state = new SemVerStrategyState(nearestVersion: nearest, scopeFromProp: scope,
                 stageFromProp: stage, currentBranch: new Branch(fullName: currentBranch),
                 currentHead: new Commit(id: head, abbreviatedId: head.take(7)), repoDirty: dirty)
-        def strategy = NetflixOssStrategies.strategyFromInputs(stage, inputs.travisBranch())
+        def strategy = inputs.baseRelease() ? baseStrategy(stage) : NetflixOssStrategies.strategyFromInputs(stage, inputs.travisBranch())
         if (dirty && !strategy.allowDirtyRepo) {
             throw new GradleException("Cannot infer a ${stage} release version from a dirty repository.")
         }
@@ -48,14 +48,26 @@ final class IsolatedStrategyBridge {
             state = strategy.preReleaseStrategy.infer(state)
         }
         state = strategy.buildMetadataStrategy.infer(state)
-        if (stage == 'dev' || stage == 'snapshot') {
+        if (!inputs.baseRelease() && (stage == 'dev' || stage == 'snapshot')) {
             state = NetflixOssStrategies.metadataFromInputs(state, inputs.releaseBranchPatterns(), inputs.shortenedBranchPattern())
         }
         def version = state.toVersion()
         if (strategy.enforcePrecedence && version < nearest.any) {
             throw new GradleException("Based on previous tags in this branch the nearest version is ${nearest.any} You're attempting to release ${version} based on the tag recently pushed. Please look at https://github.com/nebula-plugins/nebula-release-plugin/wiki/Error-Messages-Explained#orggradleapigradleexception-inferred-version-cannot-be-lower-than-nearest-required-by-selected-strategy")
         }
-        version.toString()
+        new ReleaseVersion(inputs.sanitize() ? VersionSanitizerUtil.sanitize(version.toString()) : version.toString(),
+                nearest.normal.toString(), strategy.createTag)
+    }
+
+    private static nebula.plugin.release.git.semver.SemVerStrategy baseStrategy(String stage) {
+        switch (stage) {
+            case 'SNAPSHOT': return Strategies.SNAPSHOT
+            case 'snapshot': return Strategies.IMMUTABLE_SNAPSHOT
+            case 'dev': return Strategies.DEVELOPMENT
+            case 'milestone': case 'rc': return Strategies.PRE_RELEASE
+            case 'final': return Strategies.FINAL
+            default: throw IsolatedReleaseSupport.unsupported("unsupported base stage '${stage}'")
+        }
     }
 
     static ReleaseVersion lastTag(NearestVersion nearest, IsolatedReleaseInputs inputs,
@@ -68,7 +80,11 @@ final class IsolatedStrategyBridge {
     }
 
     static TagStrategy tagStrategy(boolean prefixTagsWithV) {
+        tagStrategy(prefixTagsWithV, false)
+    }
+
+    static TagStrategy tagStrategy(boolean prefixTagsWithV, boolean baseRelease) {
         new TagStrategy(prefixNameWithV: prefixTagsWithV,
-                generateMessage: { ReleaseVersion version -> "Release of ${version.version}\n\n".toString() })
+                generateMessage: { ReleaseVersion version -> "Release of ${version.version}${baseRelease ? '' : '\n\n'}".toString() })
     }
 }
