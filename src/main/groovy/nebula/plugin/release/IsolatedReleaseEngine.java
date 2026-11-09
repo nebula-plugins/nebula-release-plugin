@@ -24,6 +24,7 @@ import nebula.plugin.release.git.semver.NearestVersionLocator;
 import org.gradle.api.GradleException;
 
 import java.util.Locale;
+import java.util.Set;
 
 /** Built-in inference with explicit inputs and no Project dependency. */
 final class IsolatedReleaseEngine {
@@ -38,6 +39,12 @@ final class IsolatedReleaseEngine {
         if (!git.hasCommit()) {
             return IsolatedStrategyBridge.version(inputs.replaceDevWithImmutableSnapshot()
                     ? "0.1.0-snapshot." + inputs.timestamp() + ".uncommitted" : "0.1.0-dev.0.uncommitted", null, false);
+        }
+        var tags = new TagStrategy();
+        tags.setPrefixNameWithV(inputs.prefixTagsWithV());
+        // Last-tag reuse precedes supplied versions, just as on the legacy path.
+        if (inputs.useLastTag()) {
+            return IsolatedStrategyBridge.lastTag(new NearestVersionLocator(git, tags).locate(), inputs, git);
         }
         if (inputs.suppliedVersion() != null) {
             var version = inputs.suppliedVersion();
@@ -54,12 +61,10 @@ final class IsolatedReleaseEngine {
             }
             return IsolatedStrategyBridge.version(version, null, true);
         }
-        var tags = new TagStrategy();
-        tags.setPrefixNameWithV(inputs.prefixTagsWithV());
         var nearest = new NearestVersionLocator(git, tags).locate();
         var scope = inputs.scope() == null ? null : ChangeScope.valueOf(inputs.scope().toUpperCase(Locale.ROOT));
         var version = IsolatedStrategyBridge.infer(nearest, scope, inputs, branch, git.getHead(), !git.isCleanStatus());
         return IsolatedStrategyBridge.version(inputs.sanitize() ? VersionSanitizerUtil.sanitize(version) : version,
-                nearest.getNormal().toString(), false);
+                nearest.getNormal().toString(), Set.of("rc", "milestone", "final").contains(inputs.stage() == null ? "" : inputs.stage()));
     }
 }

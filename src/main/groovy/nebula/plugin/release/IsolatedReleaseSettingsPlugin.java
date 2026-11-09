@@ -85,7 +85,10 @@ public final class IsolatedReleaseSettingsPlugin implements Plugin<Settings> {
                     Set.copyOf(extension.getReleaseBranchPatterns().get()),
                     Set.copyOf(extension.getExcludeBranchPatterns().get()),
                     extension.getShortenedBranchPattern().get(), extension.getAllowReleaseFromDetached().get(),
-                    replaceDev, timestamp, extension.getCheckRemoteBranchOnRelease().get());
+                    replaceDev, timestamp, extension.getCheckRemoteBranchOnRelease().get(),
+                    IsolatedReleaseSupport.isReleaseWorkflow(evaluated),
+                    IsolatedReleaseSupport.workflowStatus(evaluated),
+                    evaluated.getProviders().gradleProperty("release.useLastTag").map(Boolean::parseBoolean).getOrElse(false));
             var paths = new ArrayList<String>();
             var leaves = new HashSet<String>();
             collectProjects(evaluated.getRootProject(), paths, leaves);

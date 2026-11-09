@@ -18,6 +18,7 @@ package nebula.plugin.release
 import com.github.zafarkhaja.semver.UnexpectedCharacterException
 import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileDynamic
+import groovy.transform.PackageScope
 import nebula.plugin.release.git.GitBuildService
 import nebula.plugin.release.git.base.ReleasePluginExtension
 import nebula.plugin.release.git.base.ReleaseVersion
@@ -26,6 +27,7 @@ import nebula.plugin.release.git.model.TagRef
 import nebula.plugin.release.git.opinion.TimestampPrecision
 import nebula.plugin.release.git.opinion.TimestampUtil
 import nebula.plugin.release.git.semver.NearestVersionLocator
+import nebula.plugin.release.git.semver.NearestVersion
 import nebula.plugin.release.util.ReleaseTasksUtil
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -81,6 +83,15 @@ class OverrideStrategies {
                 logger.info("Note: It is recommended to supply a release strategy of <snapshot|immutableSnapshot|devSnapshot|candidate|final> to make 'useLastTag' most explicit. Please add one to your list of tasks.")
             }
 
+            inferFromTag(locate, releaseStage, gitBuildService, VersionSanitizerUtil.hasSanitizeFlag(project))
+        }
+
+        /** Shared validation and inference without project or task mutation. */
+        @PackageScope
+        @CompileDynamic
+        static ReleaseVersion inferFromTag(NearestVersion locate, String stage, GitBuildService gitBuildService, boolean sanitize) {
+            String releaseStage = stage != null ? stage : NOT_SUPPLIED
+
             if (releaseStage == 'dev' ||  releaseStage == 'snapshot' || releaseStage == 'SNAPSHOT') {
                 throw new GradleException("Cannot use useLastTag with snapshot, immutableSnapshot and devSnapshot tasks")
             }
@@ -104,7 +115,7 @@ class OverrideStrategies {
                 }
 
                 String inferredVersion = locate.any.toString()
-                if(VersionSanitizerUtil.hasSanitizeFlag(project)) {
+                if(sanitize) {
                     inferredVersion = VersionSanitizerUtil.sanitize(inferredVersion)
                 }
 

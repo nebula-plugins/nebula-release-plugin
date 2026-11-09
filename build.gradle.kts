@@ -52,7 +52,7 @@ gradlePlugin {
         create("nebulaReleaseSettings") {
             id = "com.netflix.nebula.release-settings"
             displayName = "Nebula Release settings plugin"
-            description = "Experimental settings entry point for isolated snapshot release workflows"
+            description = "Experimental settings entry point for isolated release workflows"
             implementationClass = "nebula.plugin.release.IsolatedReleaseSettingsPlugin"
             tags.addAll("nebula", "release", "versioning")
         }
