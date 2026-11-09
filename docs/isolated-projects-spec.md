@@ -90,13 +90,27 @@ Immutable snapshots capture one UTC timestamp during settings evaluation using
 the existing precision formats. Every project's immutable inputs carry that
 same timestamp. Configuration-cache reuse retains it; settings reevaluation
 captures a new timestamp. Delayed project configuration and local script
-invalidation are covered on Gradle 9.0/9.5. This does not establish consistency
-under partial project-cache reuse on a future Gradle implementation.
+invalidation are covered on Gradle 9.0/9.5, with a dedicated cache-boundary probe
+also covering 9.9. This does not establish consistency under partial project-cache
+reuse on a future Gradle implementation.
 
-Gradle 9.0/9.5 task builds configure all projects on a configuration-cache miss.
-Local-script invalidation tests on these versions therefore do not prove partial
-project-cache reuse. That acceptance criterion requires an implementation or
-invocation mode that actually supports partial reuse.
+The cache-boundary fixture records settings/project configuration separately from
+task outcomes. Cold configuration evaluates every project; whole-build warm reuse
+evaluates none and retains the common timestamp across a real precision boundary.
+It then edits a Git-ignored applied script in one child, verifies Git remains
+clean, and observes settings plus every project reconfiguring on Gradle
+9.0.0/9.5.0/9.9.0. All project versions, a real JAR, and a POM agree on the new
+timestamp, and the next invocation reuses it. The Git-ignored edit separates
+Gradle input invalidation from shared Git-state invalidation.
+
+Gradle 9.9.0 still documents that task builds have no project configuration
+avoidance through cached results. Its documentation also records that tooling
+model caching was disabled in 9.3.0 because of correctness issues. Neither a
+whole-build cache hit nor these invalidation tests proves partial project-cache
+reuse. That acceptance criterion remains dependent on an upstream implementation
+or supported invocation mode that actually provides it. See the
+[compatibility review](isolated-projects-review.md) and the pinned
+[Gradle 9.9.0 documentation](https://docs.gradle.org/9.9.0/userguide/isolated_projects.html#sec:perf_tasks).
 
 ## Objective
 

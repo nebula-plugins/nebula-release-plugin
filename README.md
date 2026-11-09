@@ -68,6 +68,13 @@ settings reevaluation captures a new one. Setup tasks retain default version
 selection unless a stage is explicitly supplied. Primary release workflows and
 their setup tasks require an initial Git commit; ordinary commands also support
 no-commit version inference.
+Cache-boundary tests on Gradle 9.0, 9.5, and 9.9 distinguish a whole-build cache
+hit from reconfiguration. Even an ignored child-script edit, with unchanged Git
+state, reconfigures settings and every project on these versions. Each project
+then receives the same refreshed timestamp. Partial project-cache reuse remains
+unverified: current Gradle task builds do not provide that mode. See the
+[compatibility review](docs/isolated-projects-review.md) for the evidence and
+remaining limits.
 Use the full root workflow names shown above, optionally prefixed with `:`;
 abbreviated workflow selectors receive a diagnostic. Custom workflow entry
 points have not been validated.
@@ -333,13 +340,19 @@ Please note that now the build metadata is part of the pre-release information a
 Gradle and Java Compatibility
 =============================
 
-Built with OpenJDK8
-Tested with OpenJDK 8, 17 and 21
+The current development build uses a Java 17 toolchain for plugin compilation.
+CI runs the full build with test JVMs 17, 21, and 25.
 
-| Gradle Version | Working version |
-|:--------------:|:---------------:|
-|      8.x       |      19.x       |
-|      7.x       |      20.x       |
+| Validation | Gradle versions |
+| --- | --- |
+| Legacy and experimental opt-in workflow suites | 9.0.0 and 9.5.0 |
+| Additional configuration-cache/timestamp boundary probe | 9.9.0 |
+
+The 9.9.0 probe covers cold configuration, whole-build cache reuse, and an ignored
+child-script change. It does not establish the complete release workflow matrix
+on that version. These results describe the development branch, including its
+experimental opt-in implementation; they do not change the compatibility of
+older published plugin versions.
 
 LICENSE
 =======
